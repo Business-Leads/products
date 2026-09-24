@@ -1,0 +1,44 @@
+{
+  "name": "business-leads-products-hq",
+  "version": "1.0.0",
+  "description": "Central autonomous operations dashboard for the five white-label products",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json && cp -r src/db/migrations dist/db/ && cp -r src/web/static dist/web/",
+    "migrate": "tsx src/db/migrate.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Business-Leads/products.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Business-Leads/products/issues"
+  },
+  "homepage": "https://github.com/Business-Leads/products#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/formbody": "^9.0.0",
+    "fastify": "^5.12.5",
+    "nodemailer": "^10.0.10",
+    "pg": "^8.23.0",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}

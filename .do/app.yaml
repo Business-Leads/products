@@ -1,0 +1,50 @@
+# DigitalOcean App Platform spec. Create the app with:
+#   doctl apps create --spec .do/app.yaml
+# then set the SECRET values in the control panel (App > Settings > Environment variables).
+name: products-hq
+region: lon
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    github:
+      repo: Business-Leads/products
+      branch: main
+      deploy_on_push: true
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    health_check:
+      http_path: /healthz
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+      - key: DATABASE_CA_CERT
+        scope: RUN_TIME
+        value: ${db.CA_CERT}
+      - key: BASE_URL
+        scope: RUN_TIME
+        value: ${APP_URL}
+      - key: ADMIN_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
+      - key: ALERT_EMAIL
+        scope: RUN_TIME
+        value: info@felixclarke.com
+      - key: STRIPE_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: STRIPE_WEBHOOK_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: SMTP_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: ANTHROPIC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    production: false
