@@ -1,6 +1,6 @@
 import { one, query } from "../db/index.js";
 import { logEvent } from "../lib/events.js";
-import { resolveTask, type Task } from "../lib/tasks.js";
+import type { Task } from "../lib/tasks.js";
 import type { DeliveryRow, StepRow } from "./types.js";
 import { requireProduct } from "../products/index.js";
 import { advanceOnboarding, completeStep, executeStep, loadCustomer, runDelivery, saveCustomerData } from "./workflow.js";
@@ -20,17 +20,20 @@ export interface DecisionForm {
  * onboarding step) and lets the automation continue from there.
  */
 export async function decideTask(taskId: string, decision: Decision, form: DecisionForm = {}): Promise<void> {
-  const task = await one<Task>(`SELECT * FROM tasks WHERE id = $1`, [taskId]);
-  if (!task || task.status !== "open") return;
+  // Claim the task atomically so a double click can't act on it twice.
+  const status = { approve: "approved", reject: "rejected", done: "done", dismiss: "dismissed" }[decision];
+  const task = await one<Task>(
+    `UPDATE tasks SET status = $2, resolution = $3, resolved_at = now() WHERE id = $1 AND status = 'open' RETURNING *`,
+    [taskId, status, form.note ?? null],
+  );
+  if (!task) return;
   const p = task.payload ?? {};
 
   if (decision === "dismiss") {
-    await resolveTask(task.id, "dismissed", form.note);
     return;
   }
 
   if (decision === "reject") {
-    await resolveTask(task.id, "rejected", form.note);
     if (p.emailId) await query(`UPDATE emails SET status = 'cancelled' WHERE id = $1 AND status = 'draft'`, [p.emailId]);
     await markRejected(p, form.note);
     await logEvent({
@@ -44,7 +47,6 @@ export async function decideTask(taskId: string, decision: Decision, form: Decis
   }
 
   // approve / done
-  await resolveTask(task.id, decision === "approve" ? "approved" : "done", form.note);
   await logEvent({
     type: decision === "approve" ? "task.approved" : "task.done",
     message: task.title,

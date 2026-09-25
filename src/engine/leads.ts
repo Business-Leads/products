@@ -145,7 +145,8 @@ async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): P
 /** Reply to new enquiries and send follow-ups to those who haven't signed up. */
 export async function processLeads(): Promise<{ drafted: number; failed: number }> {
   const due = await query<LeadRow>(
-    `SELECT * FROM leads WHERE status IN ('new','contacted') AND next_touch_at <= now()
+    `SELECT * FROM leads l WHERE status IN ('new','contacted') AND next_touch_at <= now()
+       AND NOT EXISTS (SELECT 1 FROM emails e WHERE e.lead_id = l.id AND e.status = 'draft')
      ORDER BY next_touch_at LIMIT 25`,
   );
   let drafted = 0;
@@ -210,5 +211,13 @@ export async function markLeadWon(leadId: string | null, customerId: string, ema
     `UPDATE leads SET status = 'won', customer_id = $3, next_touch_at = NULL, updated_at = now()
      WHERE (id = $1 OR (product = $4 AND lower(email) = lower($2))) AND status <> 'won'`,
     [leadId, email, customerId, product],
+  );
+  // Nothing salesy should reach someone who has just bought.
+  const leadIds = `SELECT id FROM leads WHERE customer_id = $1`;
+  await query(`UPDATE emails SET status = 'cancelled' WHERE lead_id IN (${leadIds}) AND status IN ('draft','queued')`, [customerId]);
+  await query(
+    `UPDATE tasks SET status = 'dismissed', resolution = 'Lead became a customer', resolved_at = now()
+     WHERE lead_id IN (${leadIds}) AND status = 'open'`,
+    [customerId],
   );
 }
