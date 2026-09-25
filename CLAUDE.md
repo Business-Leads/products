@@ -61,5 +61,5 @@ shell.
    Awaz (Speed to Lead), MailWizz (EmailFirst), then FeedBoss and Sbl.so
    (Linkn, where approval stays mandatory), then ScoreApp. Needs API keys and
    docs from the owner; don't guess endpoints.
-4. Inbound email handling (replies, "stop" requests) so leads and customer
-   replies land in the inbox.
+4. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
+   needs to set REPLY_TO and IMAP_URL for a mailbox that all replies reach.

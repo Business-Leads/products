@@ -23,9 +23,10 @@ const { duePeriod, runRoutines, skipStep, setCustomerStatus } = await import("..
 const { buildCheckoutParams } = await import("../src/lib/stripe.js");
 const { requireProduct, getPlan } = await import("../src/products/index.js");
 const { buildServer } = await import("../src/web/server.js");
+const { handleInbound, stripQuoted } = await import("../src/engine/inbound.js");
 
 async function reset() {
-  await query(`TRUNCATE leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
+  await query(`TRUNCATE inbound_emails, leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
     events, job_runs, health_checks, settings, sessions RESTART IDENTITY CASCADE`);
 }
 
@@ -307,6 +308,40 @@ describe("manual controls", () => {
     await setCustomerStatus(c.id, "cancelled");
     assert.equal((await one(`SELECT status FROM customers`)).status, "cancelled");
     assert.equal((await openTasks()).length, 0);
+  });
+});
+
+describe("replies by email", () => {
+  it("strips the quoted thread", () => {
+    assert.equal(stripQuoted("Yes please.\n\nOn Tue, 1 Oct, Felix wrote:\n> earlier"), "Yes please.");
+  });
+
+  it("handles stop, out-of-office and real replies from leads, and customer replies", async () => {
+    await createLead({ product: "firstpagelocal", email: "stopper@example.com" });
+    await createLead({ product: "linkn", email: "keen@example.com" });
+    await processLeads();
+
+    assert.equal(await handleInbound({ from: "Stopper@Example.com", subject: "Re: hi", text: "STOP\n\nOn x wrote:" }), "stop");
+    const stopper = await one(`SELECT * FROM leads WHERE email = 'stopper@example.com'`);
+    assert.equal(stopper.status, "unsubscribed");
+    assert.equal((await one(`SELECT status FROM emails WHERE lead_id = $1`, [stopper.id])).status, "cancelled");
+
+    assert.equal(await handleInbound({ from: "keen@example.com", subject: "Automatic reply: away", text: "I'm away" }), "auto_reply");
+    assert.equal((await one(`SELECT status FROM leads WHERE email = 'keen@example.com'`)).status, "contacted");
+
+    await handleInbound({ messageId: "<m1@x>", from: "keen@example.com", subject: "Re: Linkn", text: "Could we talk on Friday?" });
+    await handleInbound({ messageId: "<m1@x>", from: "keen@example.com", subject: "Re: Linkn", text: "Could we talk on Friday?" });
+    const keen = await one(`SELECT * FROM leads WHERE email = 'keen@example.com'`);
+    assert.equal(keen.status, "replied");
+    assert.equal(keen.next_touch_at, null);
+    const replyTasks = (await openTasks()).filter((t) => t.title.startsWith("Reply from"));
+    assert.equal(replyTasks.length, 1);
+    assert.match(replyTasks[0].body, /Could we talk on Friday/);
+
+    await handleStripeEvent(checkoutEvent("evt_8", "firstpagelocal", "monthly"));
+    await handleInbound({ from: "owner@example.co.uk", subject: "Question", text: "stop the report going to my old address" });
+    const customerTask = (await openTasks()).find((t) => t.customer_id);
+    assert.ok(customerTask, "customer replies are never treated as unsubscribes");
   });
 });
 

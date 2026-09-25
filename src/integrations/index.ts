@@ -37,6 +37,15 @@ export const integrations: Integration[] = [
     notes: "Each product's from-address domain needs SPF/DKIM for this server.",
   },
   {
+    id: "imap",
+    name: "Reply mailbox (IMAP)",
+    purpose: "Reads replies: stops follow-ups, handles 'stop' requests, drafts answers",
+    envVars: ["IMAP_URL", "REPLY_TO"],
+    configured: () => Boolean(config.imap.url),
+    automation: "full",
+    notes: "Set REPLY_TO to this mailbox so every customer and lead reply lands here.",
+  },
+  {
     id: "anthropic",
     name: "Claude API",
     purpose: "Drafts replies, scripts, copy and reports",

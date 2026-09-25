@@ -59,7 +59,10 @@ async function taskCard(t: any): Promise<Raw> {
     const email = await one(`SELECT * FROM emails WHERE id = $1`, [p.emailId]);
     const bodyText: string = email?.body_text ?? "";
     const footerAt = bodyText.indexOf("\n\n--\n");
+    const inbound = p.inboundId ? await one(`SELECT * FROM inbound_emails WHERE id = $1`, [p.inboundId]) : undefined;
     form = html`<form method="post" action="/tasks/${t.id}">
+      ${inbound ? html`<div class="small muted">Their message${inbound.summary ? html` · ${inbound.summary}` : ""}</div>
+        <div class="pre small" style="margin-bottom:10px">${inbound.body_text}</div>` : ""}
       <div class="small muted">To ${email?.to_address} · from ${email?.from_address}</div>
       <label>Subject</label><input name="subject" value="${email?.subject ?? ""}">
       <label>Email</label><textarea name="body" style="min-height:220px">${footerAt >= 0 ? bodyText.slice(0, footerAt) : bodyText}</textarea>
@@ -463,7 +466,7 @@ export async function adminRoutes(app: FastifyInstance) {
        ORDER BY created_at DESC LIMIT 300`,
       [req.query.product || null, req.query.status || null],
     );
-    const statuses = ["new", "contacted", "followed_up", "won", "lost", "unsubscribed"];
+    const statuses = ["new", "contacted", "followed_up", "replied", "won", "lost", "unsubscribed"];
     const body = html`<div class="spread"><h1>Leads</h1>
       <form class="row" method="get">
         <select name="product"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>

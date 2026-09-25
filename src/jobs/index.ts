@@ -1,6 +1,7 @@
 import { config } from "../config.js";
 import { query } from "../db/index.js";
 import { pauseOverdueCustomers } from "../engine/billing.js";
+import { processInbound } from "../engine/inbound.js";
 import { processLeads } from "../engine/leads.js";
 import { advanceOnboarding, runRoutines } from "../engine/workflow.js";
 import { queueEmail, sendDueEmails } from "../lib/email.js";
@@ -123,6 +124,7 @@ export const jobs: Job[] = [
       return `${r.drafted} drafted, ${r.failed} failed`;
     },
   },
+  { name: "inbox", description: "Read replies from the monitored mailbox", schedule: { everyMinutes: 5 }, run: processInbound },
   { name: "onboarding", description: "Move customer onboarding forward", schedule: { everyMinutes: 5 }, run: onboardingTick },
   {
     name: "routines",

@@ -33,6 +33,14 @@ export const config = {
   smtp: {
     // e.g. smtps://user:pass@smtp.example.com:465
     url: str("SMTP_URL"),
+    // Optional shared reply-to for customer and lead email, so every reply lands
+    // in the one mailbox this app reads (IMAP_URL).
+    replyTo: str("REPLY_TO"),
+  },
+
+  imap: {
+    // e.g. imaps://replies%40example.com:password@imap.example.com:993
+    url: str("IMAP_URL"),
   },
 
   anthropic: {

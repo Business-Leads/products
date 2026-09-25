@@ -20,6 +20,7 @@ onboarding steps, recurring routines, sender address and tone of voice.
 | Job | When | What it does |
 |---|---|---|
 | leads | every 5 min | Replies to new enquiries from the product sites (Claude drafts; a plain template if Claude isn't connected), then follows up on the product's schedule until they buy or say stop |
+| inbox | every 5 min | Reads replies from the reply mailbox. "Stop" requests and "not interested" replies end follow-ups at once, out-of-office replies are ignored, and anything else stops automated follow-ups and goes to the inbox with a drafted answer |
 | onboarding | every 5 min | Moves every new customer through their product's checklist: welcome email, intake form and reminders, setup, first delivery, go-live |
 | routines | every 30 min | Creates each live customer's recurring work (monthly reports, weekly reviews, content plans) and runs it |
 | outbox | every minute | Sends queued email, with retries |

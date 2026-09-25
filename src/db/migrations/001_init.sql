@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS leads (
   message       TEXT,
   data          JSONB NOT NULL DEFAULT '{}',
   source        TEXT NOT NULL DEFAULT 'website',
-  status        TEXT NOT NULL DEFAULT 'new',   -- new | contacted | followed_up | won | lost | unsubscribed
+  status        TEXT NOT NULL DEFAULT 'new',   -- new | contacted | followed_up | replied | won | lost | unsubscribed
   next_touch_at TIMESTAMPTZ,
   touches       INT NOT NULL DEFAULT 0,
   customer_id   BIGINT,

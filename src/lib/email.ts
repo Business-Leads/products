@@ -66,7 +66,7 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
       e.kind,
       e.to,
       from,
-      e.replyTo ?? product?.email.replyTo ?? null,
+      e.replyTo ?? product?.email.replyTo ?? (e.product ? config.smtp.replyTo || null : null),
       e.subject,
       e.body + footer(e.product),
       status,
