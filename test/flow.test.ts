@@ -19,7 +19,7 @@ const { migrate } = await import("../src/db/migrate.js");
 const { createLead, processLeads } = await import("../src/engine/leads.js");
 const { decideTask } = await import("../src/engine/actions.js");
 const { handleStripeEvent } = await import("../src/engine/billing.js");
-const { duePeriod, runRoutines } = await import("../src/engine/workflow.js");
+const { duePeriod, runRoutines, skipStep, setCustomerStatus } = await import("../src/engine/workflow.js");
 const { buildCheckoutParams } = await import("../src/lib/stripe.js");
 const { requireProduct, getPlan } = await import("../src/products/index.js");
 const { buildServer } = await import("../src/web/server.js");
@@ -288,6 +288,25 @@ describe("Linkn plan-specific onboarding", () => {
     const steps = await query(`SELECT key, status FROM onboarding_steps ORDER BY position`);
     const skipped = steps.filter((s) => s.status === "skipped").map((s) => s.key);
     assert.deepEqual(skipped, ["campaign_drafts", "launch", "call_guide"]);
+  });
+});
+
+describe("manual controls", () => {
+  it("skipping a waiting step closes its task and moves on; cancelling clears pending work", async () => {
+    await handleStripeEvent(checkoutEvent("evt_7", "firstpagelocal", "monthly"));
+    const c = await one(`SELECT * FROM customers`);
+    const intake = await one(`SELECT * FROM onboarding_steps WHERE key = 'intake'`);
+    assert.equal(intake.status, "waiting");
+    await skipStep(intake.id);
+    const tasks = await openTasks();
+    assert.equal(tasks.length, 1);
+    assert.match(tasks[0].title, /Set up location/);
+    await skipStep(tasks[0].payload.stepId);
+    assert.equal((await one(`SELECT status FROM tasks WHERE id = $1`, [tasks[0].id])).status, "dismissed");
+
+    await setCustomerStatus(c.id, "cancelled");
+    assert.equal((await one(`SELECT status FROM customers`)).status, "cancelled");
+    assert.equal((await openTasks()).length, 0);
   });
 });
 

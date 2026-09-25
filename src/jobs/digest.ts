@@ -51,6 +51,29 @@ export async function buildDigest(): Promise<{ subject: string; body: string }> 
   }
   lines.push("");
 
+  const disputes = await query(
+    `SELECT d.*, c.business, c.email FROM disputes d LEFT JOIN customers c ON c.id = d.customer_id
+     WHERE d.status NOT IN ('won','lost','warning_closed') ORDER BY d.evidence_due NULLS LAST`,
+  );
+  if (disputes.length) {
+    lines.push("PAYMENT DISPUTES");
+    for (const d of disputes) {
+      lines.push(`- ${formatPrice(d.amount_pence)} from ${d.business ?? d.email ?? "unknown"}: evidence due ${d.evidence_due ? fmtDate(d.evidence_due) : "unknown"}`);
+    }
+    lines.push("");
+  }
+  const stuck = await query(
+    `SELECT c.id, c.business, c.email, c.product, min(s.started_at) AS since FROM customers c
+     JOIN onboarding_steps s ON s.customer_id = c.id AND s.status IN ('waiting','failed')
+     WHERE c.status = 'onboarding' AND s.started_at < now() - interval '5 days'
+     GROUP BY c.id ORDER BY since LIMIT 10`,
+  );
+  if (stuck.length) {
+    lines.push("ONBOARDING STALLED (5+ days on one step)");
+    for (const s of stuck) lines.push(`- ${s.business ?? s.email} (${s.product}): ${config.baseUrl}/customers/${s.id}`);
+    lines.push("");
+  }
+
   const failedJobs = await query(
     `SELECT job, count(*) AS n, max(error) AS error FROM job_runs
      WHERE status = 'error' AND started_at > now() - interval '1 day' GROUP BY job`,

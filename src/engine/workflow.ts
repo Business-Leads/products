@@ -156,6 +156,42 @@ export async function retryStep(stepId: string): Promise<void> {
   await advanceOnboarding(step.customer_id);
 }
 
+/** Skip a step a person has decided isn't needed; open tasks for it are closed. */
+export async function skipStep(stepId: string): Promise<void> {
+  const step = await one<StepRow>(`SELECT * FROM onboarding_steps WHERE id = $1`, [stepId]);
+  if (!step || step.status === "done") return;
+  await query(`UPDATE onboarding_steps SET status = 'skipped', completed_at = now() WHERE id = $1`, [stepId]);
+  await query(
+    `UPDATE tasks SET status = 'dismissed', resolution = 'Step skipped', resolved_at = now()
+     WHERE status = 'open' AND (payload->>'stepId') = $1`,
+    [String(stepId)],
+  );
+  const customer = await loadCustomer(step.customer_id);
+  await logEvent({ type: "onboarding.step_skipped", message: `Skipped: ${step.title}`, product: customer?.product, customerId: step.customer_id });
+  await advanceOnboarding(step.customer_id);
+}
+
+/**
+ * Change a customer's status by hand. Cancelling here does not cancel their
+ * Stripe subscription; do that in Stripe, which also updates this record.
+ */
+export async function setCustomerStatus(customerId: string, status: "active" | "paused" | "cancelled"): Promise<void> {
+  await query(
+    `UPDATE customers SET status = $2, updated_at = now(),
+       activated_at = CASE WHEN $2 = 'active' THEN COALESCE(activated_at, now()) ELSE activated_at END,
+       cancelled_at = CASE WHEN $2 = 'cancelled' THEN now() ELSE cancelled_at END
+     WHERE id = $1`,
+    [customerId, status],
+  );
+  if (status === "cancelled") {
+    await query(`UPDATE tasks SET status = 'dismissed', resolution = 'Customer cancelled', resolved_at = now()
+                 WHERE customer_id = $1 AND status = 'open'`, [customerId]);
+    await query(`UPDATE emails SET status = 'cancelled' WHERE customer_id = $1 AND status IN ('draft','queued')`, [customerId]);
+  }
+  const customer = await loadCustomer(customerId);
+  await logEvent({ type: `customer.${status}`, level: status === "active" ? "info" : "warn", message: `Set to ${status} by hand`, product: customer?.product, customerId });
+}
+
 function customerLabel(c: CustomerRow): string {
   return c.business || c.name || c.email;
 }

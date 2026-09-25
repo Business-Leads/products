@@ -3,7 +3,7 @@ import { assertProductionConfig, config } from "../config.js";
 import { one, query } from "../db/index.js";
 import { decideTask, type Decision } from "../engine/actions.js";
 import type { CustomerRow } from "../engine/types.js";
-import { advanceOnboarding, instantiateSteps, retryDelivery, retryStep } from "../engine/workflow.js";
+import { advanceOnboarding, instantiateSteps, retryDelivery, retryStep, setCustomerStatus, skipStep } from "../engine/workflow.js";
 import { runJob } from "../engine/scheduler.js";
 import { jobs } from "../jobs/index.js";
 import { integrations } from "../integrations/index.js";
@@ -391,7 +391,12 @@ export async function adminRoutes(app: FastifyInstance) {
     const body = html`
       <div class="spread"><div><h1>${c.business || c.name || c.email}</h1>
         <div class="muted">${product.name} · ${plan?.name ?? c.plan} · ${formatPrice(c.amount_pence, c.interval)} · since ${fmtDate(c.created_at)}</div></div>
-        ${chip(c.status)}</div>
+        <form method="post" action="/customers/${c.id}/status" class="row">
+          ${chip(c.status)}
+          ${c.status !== "active" && c.status !== "cancelled" ? html`<button class="small" name="status" value="active">Mark live</button>` : ""}
+          ${c.status === "active" ? html`<button class="small" name="status" value="paused">Pause</button>` : ""}
+          ${c.status !== "cancelled" ? html`<button class="small danger" name="status" value="cancelled" onclick="return confirm('Cancel this customer? Their Stripe subscription must be cancelled in Stripe.')">Cancel</button>` : ""}
+        </form></div>
       <div class="grid-2">
         <div class="panel"><h2>Contact</h2>
           <table><tr><td class="muted">Name</td><td>${c.name}</td></tr>
@@ -403,7 +408,8 @@ export async function adminRoutes(app: FastifyInstance) {
         <div class="panel"><h2>Onboarding</h2>
           <table>${steps.map((s) => html`<tr><td>${s.title}${s.last_error ? html`<div class="small" style="color:var(--bad)">${s.last_error}</div>` : ""}</td>
             <td>${chip(s.status)}</td>
-            <td>${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Retry</button></form>` : ""}</td></tr>`)}</table>
+            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Retry</button></form>` : ""}
+              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step?')"><button class="small">Skip</button></form>` : ""}</td></tr>`)}</table>
         </div>
       </div>
       ${tasks.length ? html`<h2>Waiting on you</h2>${await Promise.all(tasks.map(taskCard))}` : ""}
@@ -431,6 +437,18 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post<{ Params: { id: string; stepId: string } }>("/customers/:id/steps/:stepId/retry", async (req, reply) => {
     await retryStep(req.params.stepId);
     return back(reply, `/customers/${req.params.id}`, "Retried.");
+  });
+
+  app.post<{ Params: { id: string; stepId: string } }>("/customers/:id/steps/:stepId/skip", async (req, reply) => {
+    await skipStep(req.params.stepId);
+    return back(reply, `/customers/${req.params.id}`, "Skipped.");
+  });
+
+  app.post<{ Params: { id: string }; Body: { status?: string } }>("/customers/:id/status", async (req, reply) => {
+    const status = req.body?.status;
+    if (status !== "active" && status !== "paused" && status !== "cancelled") return reply.code(400).send("Bad status");
+    await setCustomerStatus(req.params.id, status);
+    return back(reply, `/customers/${req.params.id}`, status === "cancelled" ? "Cancelled here. Also cancel the subscription in Stripe if they had one." : "Updated.");
   });
 
   app.post<{ Params: { id: string; deliveryId: string } }>("/customers/:id/deliveries/:deliveryId/retry", async (req, reply) => {
