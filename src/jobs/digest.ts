@@ -42,7 +42,17 @@ export async function buildDigest(): Promise<{ subject: string; body: string }> 
   const delivered = await one(
     `SELECT count(*) AS n FROM deliveries WHERE status = 'delivered' AND delivered_at > now() - interval '1 day'`,
   );
-  lines.push("WORK DONE AUTOMATICALLY", `- ${sent.n} emails sent`, `- ${delivered.n} customer deliverables completed`, "");
+  const outreach = await one(
+    `SELECT count(*) FILTER (WHERE kind LIKE 'outreach%' AND status = 'sent')::int AS sent,
+            (SELECT count(*)::int FROM inbound_emails WHERE prospect_id IS NOT NULL AND received_at > now() - interval '1 day') AS replies
+     FROM emails WHERE sent_at > now() - interval '1 day'`,
+  );
+  lines.push(
+    "WORK DONE AUTOMATICALLY",
+    `- ${sent.n} emails sent (${outreach.sent} of them cold outreach, ${outreach.replies} prospect replies)`,
+    `- ${delivered.n} customer deliverables completed`,
+    "",
+  );
 
   lines.push(`WAITING ON YOU (${openTasks.length}${openTasks.length === 30 ? "+" : ""})`);
   if (!openTasks.length) lines.push("- Nothing. The inbox is clear.");

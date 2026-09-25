@@ -118,6 +118,7 @@ export async function publicRoutes(app: FastifyInstance) {
       const plan = product && getPlan(product, req.params.plan);
       if (!product || !plan) return reply.code(404).send("Not found");
       if (product.quoted) return reply.redirect(product.bookingUrl);
+      if (rateLimited(`buy:${req.ip}`)) return reply.code(429).send("Too many requests. Please try again later.");
       if (!stripeConfigured()) {
         await createTask({
           kind: "alert",
