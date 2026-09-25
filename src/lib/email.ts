@@ -23,6 +23,7 @@ export interface EmailInput {
   product?: string | null;
   customerId?: number | string | null;
   leadId?: number | string | null;
+  prospectId?: number | string | null;
   kind: string;
   to: string;
   subject: string;
@@ -57,8 +58,8 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
   const from = product ? `${product.email.fromName} <${product.email.from}>` : `Products HQ <${config.admin.alertEmail}>`;
   const status = autonomy === "approve" ? "draft" : "queued";
   const row = await one<{ id: string }>(
-    `INSERT INTO emails (product, customer_id, lead_id, kind, to_address, from_address, reply_to, subject, body_text, status, send_after)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+    `INSERT INTO emails (product, customer_id, lead_id, kind, to_address, from_address, reply_to, subject, body_text, status, send_after, prospect_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
     [
       e.product ?? null,
       e.customerId ?? null,
@@ -71,6 +72,7 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
       e.body + footer(e.product),
       status,
       e.sendAfter ?? new Date(),
+      e.prospectId ?? null,
     ],
   );
   const id = row!.id;

@@ -24,9 +24,11 @@ const { buildCheckoutParams } = await import("../src/lib/stripe.js");
 const { requireProduct, getPlan } = await import("../src/products/index.js");
 const { buildServer } = await import("../src/web/server.js");
 const { handleInbound, stripQuoted } = await import("../src/engine/inbound.js");
+const { importProspects, isSuppressed, normaliseCompanyType, parseCsv, runOutreach } = await import("../src/engine/outreach.js");
+const { setSetting } = await import("../src/lib/settings.js");
 
 async function reset() {
-  await query(`TRUNCATE inbound_emails, leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
+  await query(`TRUNCATE suppressions, prospects, inbound_emails, leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
     events, job_runs, health_checks, settings, sessions RESTART IDENTITY CASCADE`);
 }
 
@@ -342,6 +344,53 @@ describe("replies by email", () => {
     await handleInbound({ from: "owner@example.co.uk", subject: "Question", text: "stop the report going to my old address" });
     const customerTask = (await openTasks()).find((t) => t.customer_id);
     assert.ok(customerTask, "customer replies are never treated as unsubscribes");
+  });
+});
+
+describe("outreach", () => {
+  it("parses CSV and classifies company types", () => {
+    const rows = parseCsv('Email,First Name,Company\r\n"a@x.co","Ann","Smith, Jones Ltd"\nb@y.co,Bob,Bob Plumbing\n');
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0]!.company, "Smith, Jones Ltd");
+    assert.equal(normaliseCompanyType("", "Smith, Jones Ltd"), "limited");
+    assert.equal(normaliseCompanyType("", "Bob Plumbing"), "unknown");
+    assert.equal(normaliseCompanyType("Sole trader", "Bob Ltd"), "sole_trader");
+    assert.equal(normaliseCompanyType("", "Acme LLP"), "llp");
+  });
+
+  it("imports, skips suppressed and duplicate addresses", async () => {
+    await query(`INSERT INTO suppressions (value, reason) VALUES ('@blocked.co', 'test')`);
+    const csv = "email,name,company,sector\nann@acme.co,Ann,Acme Ltd,Plumbing\nann@acme.co,Ann,Acme Ltd,\nx@blocked.co,X,Blocked Ltd,\nnot-an-email,,,\n";
+    const r = await importProspects("firstpagelocal", csv, "test");
+    assert.deepEqual(r, { added: 1, duplicates: 1, invalid: 1, suppressed: 1 });
+    const p = await one(`SELECT * FROM prospects`);
+    assert.equal(p.company_type, "limited");
+    assert.equal(p.data.sector, "Plumbing");
+  });
+
+  it("stays off by default, respects hours, and won't send without Claude", async () => {
+    await importProspects("linkn", "email,company\nceo@firm.co,Firm Ltd\n", "test");
+    const weekdayMorning = new Date("2026-09-29T09:00:00Z"); // Tue 10:00 UK
+    assert.equal(await runOutreach(weekdayMorning), "nothing due");
+    assert.equal(await runOutreach(new Date("2026-09-27T10:00:00Z")), "outside sending hours");
+    await setSetting("outreach:linkn", { enabled: true, dailyCap: 5 });
+    assert.equal(await runOutreach(weekdayMorning), "waiting for ANTHROPIC_API_KEY");
+    assert.equal((await query(`SELECT * FROM emails`)).length, 0);
+  });
+
+  it("turns prospect replies into leads and stop requests into suppressions", async () => {
+    await importProspects("emailfirst", "email,company\nkeen@firm.co,Firm Ltd\nno@other.co,Other Ltd\n", "test");
+    await handleInbound({ from: "no@other.co", subject: "Re: pitch", text: "Please remove me" });
+    assert.equal(await isSuppressed("no@other.co"), true);
+    assert.equal((await one(`SELECT status FROM prospects WHERE email = 'no@other.co'`)).status, "suppressed");
+
+    await handleInbound({ from: "keen@firm.co", subject: "Re: pitch", text: "Interesting - what does it cost?" });
+    const p = await one(`SELECT * FROM prospects WHERE email = 'keen@firm.co'`);
+    assert.equal(p.status, "replied");
+    const lead = await one(`SELECT * FROM leads WHERE id = $1`, [p.lead_id]);
+    assert.equal(lead.status, "replied");
+    assert.equal(lead.source, "outreach reply");
+    assert.equal(lead.next_touch_at, null);
   });
 });
 

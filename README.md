@@ -21,6 +21,7 @@ onboarding steps, recurring routines, sender address and tone of voice.
 |---|---|---|
 | leads | every 5 min | Replies to new enquiries from the product sites (Claude drafts; a plain template if Claude isn't connected), then follows up on the product's schedule until they buy or say stop |
 | inbox | every 5 min | Reads replies from the reply mailbox. "Stop" requests and "not interested" replies end follow-ups at once, out-of-office replies are ignored, and anything else stops automated follow-ups and goes to the inbox with a drafted answer |
+| outreach | every 30 min, weekdays 9 to 5 | Cold email to imported prospects (Outreach page): written individually by Claude, a short sequence, a daily cap per product. Off until switched on. Only limited companies, LLPs, PLCs and public bodies by default (PECR). Replies become leads; "stop" goes on a permanent do-not-contact list shared by all products |
 | onboarding | every 5 min | Moves every new customer through their product's checklist: welcome email, intake form and reminders, setup, first delivery, go-live |
 | routines | every 30 min | Creates each live customer's recurring work (monthly reports, weekly reviews, content plans) and runs it |
 | outbox | every minute | Sends queued email, with retries |

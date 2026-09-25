@@ -28,6 +28,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     ${link("/inbox", "Inbox", opts.counts?.inbox)}
     ${link("/customers", "Customers")}
     ${link("/leads", "Leads")}
+    ${link("/outreach", "Outreach")}
     <div class="section">Products</div>
     ${products.map((p) => link(`/products/${p.slug}`, p.name))}
     <div class="section">System</div>

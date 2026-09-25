@@ -3,6 +3,7 @@ import { query } from "../db/index.js";
 import { pauseOverdueCustomers } from "../engine/billing.js";
 import { processInbound } from "../engine/inbound.js";
 import { processLeads } from "../engine/leads.js";
+import { runOutreach } from "../engine/outreach.js";
 import { advanceOnboarding, runRoutines } from "../engine/workflow.js";
 import { queueEmail, sendDueEmails } from "../lib/email.js";
 import { createTask } from "../lib/tasks.js";
@@ -125,6 +126,7 @@ export const jobs: Job[] = [
     },
   },
   { name: "inbox", description: "Read replies from the monitored mailbox", schedule: { everyMinutes: 5 }, run: processInbound },
+  { name: "outreach", description: "Send the next cold emails within each product's daily cap", schedule: { everyMinutes: 30 }, run: () => runOutreach() },
   { name: "onboarding", description: "Move customer onboarding forward", schedule: { everyMinutes: 5 }, run: onboardingTick },
   {
     name: "routines",

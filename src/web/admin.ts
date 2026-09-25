@@ -3,6 +3,7 @@ import { assertProductionConfig, config } from "../config.js";
 import { one, query } from "../db/index.js";
 import { decideTask, type Decision } from "../engine/actions.js";
 import type { CustomerRow } from "../engine/types.js";
+import { importProspects, outreachSettings, suppress } from "../engine/outreach.js";
 import { advanceOnboarding, instantiateSteps, retryDelivery, retryStep, setCustomerStatus, skipStep } from "../engine/workflow.js";
 import { runJob } from "../engine/scheduler.js";
 import { jobs } from "../jobs/index.js";
@@ -236,6 +237,7 @@ export async function adminRoutes(app: FastifyInstance) {
       [product.slug],
     );
     const leadAutonomy = await autonomyFor(product.slug, "lead_replies", "approve");
+    const outreachAutonomy = await autonomyFor(product.slug, "outreach", "approve");
     const routineAutonomy = await Promise.all(
       product.routines.map(async (r) => autonomyFor(product.slug, `routine:${r.key}`, r.approval ? "approve" : "auto")),
     );
@@ -270,6 +272,7 @@ export async function adminRoutes(app: FastifyInstance) {
         <div class="panel"><h2>Autonomy</h2>
           <form method="post" action="/products/${product.slug}/autonomy">
             <label>Replies to new enquiries and follow-ups</label>${autonomySelect("lead_replies", leadAutonomy)}
+            <label>Cold outreach emails (<a href="/outreach">settings</a>)</label>${autonomySelect("outreach", outreachAutonomy)}
             ${product.routines.map((r, i) => html`<label>${r.title}</label>${autonomySelect(`routine:${r.key}`, routineAutonomy[i]!)}`)}
             <p class="help">Start with approval on and switch to fully automatic once you're happy with the drafts.</p>
             <button class="primary">Save</button>
@@ -317,7 +320,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { slug: string }; Body: Record<string, string> }>("/products/:slug/autonomy", async (req, reply) => {
     const product = requireProduct(req.params.slug);
-    const keys = ["lead_replies", ...product.routines.map((r) => `routine:${r.key}`)];
+    const keys = ["lead_replies", "outreach", ...product.routines.map((r) => `routine:${r.key}`)];
     for (const k of keys) {
       const v = req.body?.[k];
       if (v === "auto" || v === "approve") await setSetting(`autonomy:${product.slug}:${k}`, v);
@@ -498,12 +501,116 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { id: string }; Body: { status?: string } }>("/leads/:id/status", async (req, reply) => {
     const status = req.body?.status;
+    if (status === "unsubscribed") {
+      const lead = await one(`SELECT email FROM leads WHERE id = $1`, [req.params.id]);
+      if (lead?.email) await suppress(lead.email, "Asked to stop (marked by hand)");
+    }
     if (status === "lost" || status === "unsubscribed") {
       await query(`UPDATE leads SET status = $2, next_touch_at = NULL, updated_at = now() WHERE id = $1`, [req.params.id, status]);
       await query(`UPDATE emails SET status = 'cancelled' WHERE lead_id = $1 AND status IN ('draft','queued')`, [req.params.id]);
       await query(`UPDATE tasks SET status = 'dismissed', resolved_at = now() WHERE lead_id = $1 AND status = 'open'`, [req.params.id]);
     }
     return back(reply, `/leads/${req.params.id}`, "Updated.");
+  });
+
+  // Outreach --------------------------------------------------------------
+  app.get<{ Querystring: { product?: string } }>("/outreach", async (req, reply) => {
+    const product = getProduct(req.query.product ?? "") ?? products[0]!;
+    const s = await outreachSettings(product.slug);
+    const counts = await query(
+      `SELECT status, count(*)::int AS n FROM prospects WHERE product = $1 GROUP BY status`,
+      [product.slug],
+    );
+    const byType = await query(
+      `SELECT company_type, count(*)::int AS n FROM prospects WHERE product = $1 AND status IN ('new','in_sequence') GROUP BY company_type`,
+      [product.slug],
+    );
+    const recent = await query(`SELECT * FROM prospects WHERE product = $1 ORDER BY updated_at DESC LIMIT 40`, [product.slug]);
+    const sentWeek = await one(
+      `SELECT count(*) FILTER (WHERE status = 'sent')::int AS sent, count(*) FILTER (WHERE status = 'draft')::int AS drafts
+       FROM emails WHERE product = $1 AND kind LIKE 'outreach%' AND created_at > now() - interval '7 days'`,
+      [product.slug],
+    );
+    const replies = await one(
+      `SELECT count(*)::int AS n FROM inbound_emails WHERE product = $1 AND prospect_id IS NOT NULL AND received_at > now() - interval '7 days'`,
+      [product.slug],
+    );
+    const n = (st: string) => counts.find((c) => c.status === st)?.n ?? 0;
+    const eligible = byType.filter((t) => ["limited", "llp", "plc", "public_sector"].includes(t.company_type) || (s.allowUnknown && t.company_type === "unknown"))
+      .reduce((a, t) => a + t.n, 0);
+    const excluded = byType.filter((t) => !["limited", "llp", "plc", "public_sector"].includes(t.company_type) && !(s.allowUnknown && t.company_type === "unknown"));
+
+    const body = html`<div class="spread"><h1>Outreach</h1>
+        <form class="row" method="get"><select name="product" onchange="this.form.submit()">
+          ${products.map((p) => html`<option value="${p.slug}" ${p.slug === product.slug ? "selected" : ""}>${p.name}</option>`)}
+        </select></form></div>
+      <p class="muted">Cold email to imported prospects: written individually by Claude, a short sequence, capped per day,
+        weekdays 9 to 5. Anyone who replies becomes a lead; anyone who says stop is never emailed again by any product.</p>
+      <div class="grid">
+        <div class="stat"><div class="label">Ready to email</div><div class="value">${eligible}</div>
+          ${excluded.length ? html`<div class="sub">${excluded.map((t) => `${t.n} ${t.company_type.replace("_", " ")}`).join(", ")} held back</div>` : ""}</div>
+        <div class="stat"><div class="label">In sequence</div><div class="value">${n("in_sequence")}</div></div>
+        <div class="stat"><div class="label">Sent, last 7 days</div><div class="value">${sentWeek?.sent ?? 0}</div>
+          <div class="sub">${sentWeek?.drafts ?? 0} awaiting approval</div></div>
+        <div class="stat"><div class="label">Replies, last 7 days</div><div class="value">${replies?.n ?? 0}</div></div>
+        <div class="stat"><div class="label">Opted out</div><div class="value">${n("suppressed")}</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><h2>${product.name} settings</h2>
+          <form method="post" action="/outreach/${product.slug}/settings">
+            <label><input type="checkbox" name="enabled" value="1" style="width:auto" ${s.enabled ? "checked" : ""}> Outreach on</label>
+            <label>Emails per day (first emails and follow-ups together)</label><input name="dailyCap" type="number" min="0" max="200" value="${s.dailyCap}">
+            <label>Follow-up days after the first email</label><input name="days" value="${s.days.slice(1).join(", ")}">
+            <label><input type="checkbox" name="allowUnknown" value="1" style="width:auto" ${s.allowUnknown ? "checked" : ""}> Also email prospects whose company type is unknown</label>
+            <div class="help">Sole traders and partnerships are never cold-emailed: UK rules (PECR) need their consent first.
+              Start at 20 a day or fewer and raise it slowly to protect the sending domain.</div>
+            <p><button class="primary">Save</button></p>
+          </form></div>
+        <div class="panel"><h2>Import prospects</h2>
+          <form method="post" action="/outreach/${product.slug}/import">
+            <label>Paste CSV with a header row</label>
+            <textarea name="csv" placeholder="email,first_name,last_name,company,company_type,website,town" required></textarea>
+            <div class="help">Recognised columns: email, name or first_name/last_name, company, company_type, website, town.
+              Any other columns are kept and can be used in the email. Company type is guessed from "Ltd", "LLP" or "PLC" if missing.</div>
+            <label>Source label</label><input name="source" placeholder="e.g. Apollo, Sept 2026, Stockport electricians">
+            <p><button class="primary">Import</button></p>
+          </form></div>
+      </div>
+      <div class="panel"><h2>Prospects</h2>
+        ${recent.length ? html`<table><tr><th>Prospect</th><th>Type</th><th>Status</th><th class="num">Emails</th><th>Next</th></tr>
+          ${recent.map((p) => html`<tr><td>${p.business || p.name || p.email}<div class="small muted">${p.email} · ${p.source}</div></td>
+            <td class="small">${p.company_type.replace("_", " ")}</td><td>${chip(p.status)}${p.lead_id ? html` <a class="small" href="/leads/${p.lead_id}">lead</a>` : ""}</td>
+            <td class="num">${p.step}</td><td class="small">${p.next_send_at ? fmtDate(p.next_send_at) : ""}</td></tr>`)}</table>` : empty("No prospects imported yet.")}
+      </div>
+      <div class="panel"><h2>Do-not-contact list</h2>
+        <form method="post" action="/outreach/suppress" class="row">
+          <input name="value" placeholder="email@example.com or @example.com for a whole domain" style="max-width:380px" required>
+          <input name="reason" placeholder="Reason" style="max-width:220px">
+          <button>Add</button></form>
+        <p class="small muted">Applies to every product. Stop requests from replies are added automatically.</p></div>`;
+    return send(reply, req, "Outreach", body, "/outreach");
+  });
+
+  app.post<{ Params: { slug: string }; Body: Record<string, string> }>("/outreach/:slug/settings", async (req, reply) => {
+    const product = requireProduct(req.params.slug);
+    const b = req.body ?? {};
+    const followUps = String(b.days ?? "").split(/[,\s]+/).map(Number).filter((d) => Number.isFinite(d) && d > 0).sort((a, c) => a - c);
+    const cap = Math.max(0, Math.min(200, Number.parseInt(b.dailyCap ?? "20", 10) || 0));
+    await setSetting(`outreach:${product.slug}`, { enabled: b.enabled === "1", dailyCap: cap, allowUnknown: b.allowUnknown === "1", days: [0, ...followUps.slice(0, 4)] });
+    await logEvent({ type: "outreach.settings", message: `${product.name} outreach ${b.enabled === "1" ? `on, ${cap} a day` : "off"}`, product: product.slug });
+    return back(reply, `/outreach?product=${product.slug}`, "Saved.");
+  });
+
+  app.post<{ Params: { slug: string }; Body: { csv?: string; source?: string } }>("/outreach/:slug/import", async (req, reply) => {
+    const r = await importProspects(req.params.slug, req.body?.csv ?? "", req.body?.source ?? "import");
+    return back(reply, `/outreach?product=${req.params.slug}`,
+      `Imported ${r.added}. ${r.duplicates} already there, ${r.invalid} without a valid email, ${r.suppressed} on the do-not-contact list.`);
+  });
+
+  app.post<{ Body: { value?: string; reason?: string } }>("/outreach/suppress", async (req, reply) => {
+    await suppress(req.body?.value ?? "", req.body?.reason || "Added by hand");
+    const ref = req.headers.referer;
+    return back(reply, ref ? new URL(ref).pathname + new URL(ref).search.replace(/[?&]flash=[^&]*/, "") : "/outreach", "Added to the do-not-contact list.");
   });
 
   // Activity and system ----------------------------------------------------

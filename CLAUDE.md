@@ -61,5 +61,9 @@ shell.
    Awaz (Speed to Lead), MailWizz (EmailFirst), then FeedBoss and Sbl.so
    (Linkn, where approval stays mandatory), then ScoreApp. Needs API keys and
    docs from the owner; don't guess endpoints.
-4. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
+4. Outreach (`engine/outreach.ts`) sends through the app's own SMTP. For
+   volume, sending should move to Mailpulse/MailWizz once that API is wired.
+   Keep the PECR rules: corporate subscribers only by default, opt-out in
+   every email, global suppression.
+5. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
    needs to set REPLY_TO and IMAP_URL for a mailbox that all replies reach.

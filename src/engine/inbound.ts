@@ -8,6 +8,8 @@ import { logEvent } from "../lib/events.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
 import { getProduct } from "../products/index.js";
+import { createLead } from "./leads.js";
+import { suppress } from "./outreach.js";
 
 export interface InboundMessage {
   messageId?: string;
@@ -45,10 +47,14 @@ export async function handleInbound(msg: InboundMessage): Promise<Intent> {
      ORDER BY status = 'cancelled', created_at DESC LIMIT 1`,
     [from],
   );
-  const lead = customer
+  let lead = customer
     ? undefined
     : await one(`SELECT * FROM leads WHERE lower(email) = $1 ORDER BY created_at DESC LIMIT 1`, [from]);
-  const productSlug: string | null = customer?.product ?? lead?.product ?? null;
+  const prospect =
+    customer || lead
+      ? undefined
+      : await one(`SELECT * FROM prospects WHERE lower(email) = $1 ORDER BY updated_at DESC LIMIT 1`, [from]);
+  const productSlug: string | null = customer?.product ?? lead?.product ?? prospect?.product ?? null;
   const product = productSlug ? getProduct(productSlug) : undefined;
   const body = stripQuoted(msg.text);
 
@@ -58,7 +64,7 @@ export async function handleInbound(msg: InboundMessage): Promise<Intent> {
 
   if (msg.autoSubmitted || AUTO_SUBJECT.test(msg.subject)) {
     intent = "auto_reply";
-  } else if (!customer && STOP.test(body)) {
+  } else if (!customer && (STOP.test(body) || STOP.test(msg.subject))) {
     intent = "stop";
   } else if (claudeConfigured() && product) {
     try {
@@ -101,8 +107,36 @@ export async function handleInbound(msg: InboundMessage): Promise<Intent> {
 
   if (intent === "auto_reply") return intent;
 
+  if (prospect) {
+    await query(`UPDATE inbound_emails SET prospect_id = $2 WHERE id = $1`, [inboundId, prospect.id]);
+    if (intent === "stop" || intent === "not_interested") {
+      await suppress(from, intent === "stop" ? "Asked to stop (outreach reply)" : "Not interested (outreach reply)");
+      await logEvent({ type: "outreach.stop", message: `${prospect.business ?? from} asked not to be contacted`, product: productSlug });
+      return intent;
+    }
+    // A prospect who replies becomes a lead, handled from here like any other enquiry.
+    const created = await createLead({
+      product: prospect.product,
+      name: prospect.name ?? undefined,
+      email: from,
+      business: prospect.business ?? undefined,
+      website: prospect.website ?? undefined,
+      town: prospect.town ?? undefined,
+      message: body,
+      source: "outreach reply",
+    });
+    await query(`UPDATE prospects SET status = 'replied', next_send_at = NULL, lead_id = $2, updated_at = now() WHERE id = $1`, [
+      prospect.id,
+      created.id,
+    ]);
+    await query(`UPDATE emails SET status = 'cancelled' WHERE prospect_id = $1 AND status IN ('draft','queued')`, [prospect.id]);
+    lead = await one(`SELECT * FROM leads WHERE id = $1`, [created.id]);
+    await query(`UPDATE inbound_emails SET lead_id = $2 WHERE id = $1`, [inboundId, created.id]);
+  }
+
   if (lead && (intent === "stop" || intent === "not_interested")) {
     const status = intent === "stop" ? "unsubscribed" : "lost";
+    if (intent === "stop") await suppress(from, "Asked to stop (lead reply)");
     await query(`UPDATE leads SET status = $2, next_touch_at = NULL, updated_at = now() WHERE lower(email) = $1`, [from, status]);
     await query(`UPDATE emails SET status = 'cancelled' WHERE lower(to_address) = $1 AND status IN ('draft','queued')`, [from]);
     await query(
