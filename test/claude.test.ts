@@ -42,6 +42,7 @@ const { createLead, processLeads } = await import("../src/engine/leads.js");
 const { handleInbound } = await import("../src/engine/inbound.js");
 const { runOutreach, importProspects } = await import("../src/engine/outreach.js");
 const { setSetting } = await import("../src/lib/settings.js");
+const { claudeSpendThisMonth } = await import("../src/lib/claude.js");
 
 before(async () => {
   await migrate();
@@ -65,7 +66,7 @@ it("drafts enquiry replies with Claude using structured output and server-side f
   const sent = requests[0];
   assert.equal(sent.url, "/v1/messages?beta=true");
   assert.match(String(sent.headers["anthropic-beta"]), /server-side-fallback-2026-07-01/);
-  assert.equal(sent.body.model, "claude-opus-5");
+  assert.equal(sent.body.model, "claude-opus-5-5");
   assert.equal(sent.body.fallbacks, "default");
   assert.deepEqual(sent.body.thinking, { type: "adaptive" });
   assert.equal(sent.body.output_config.format.type, "json_schema");
@@ -103,4 +104,20 @@ it("writes cold emails individually with the opt-out line, within the daily cap"
   const p = await one(`SELECT * FROM prospects WHERE email = 'a@one.co'`);
   assert.equal(p.status, "in_sequence");
   assert.equal(p.step, 1);
+});
+
+it("records spend and stops drafting at the monthly budget, falling back to templates", async () => {
+  nextReply = { subject: "S", body: "B" };
+  await createLead({ product: "linkn", email: "one@x.co" });
+  await processLeads();
+  const spent = await claudeSpendThisMonth();
+  assert.ok(spent > 0 && spent < 0.01, `spend recorded: ${spent}`);
+
+  await setSetting(`claude_spend:${new Date().toISOString().slice(0, 7)}`, 999);
+  const before = requests.length;
+  await createLead({ product: "linkn", email: "two@x.co", name: "Two" });
+  await processLeads();
+  assert.equal(requests.length, before, "no API call once over budget");
+  const email = await one(`SELECT * FROM emails WHERE to_address = 'two@x.co'`);
+  assert.match(email.body_text, /Thank you for getting in touch about Linkn/);
 });

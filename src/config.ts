@@ -45,8 +45,11 @@ export const config = {
 
   anthropic: {
     apiKey: str("ANTHROPIC_API_KEY"),
-    model: str("CLAUDE_MODEL", "claude-opus-5"),
+    model: str("CLAUDE_MODEL", "claude-opus-5-5"),
     effort: str("CLAUDE_EFFORT", "medium") as "low" | "medium" | "high",
+    // Hard monthly spending cap in US dollars. Drafting stops (and raises an
+    // alert) once this month's estimated spend reaches it.
+    monthlyBudgetUsd: Number.parseFloat(str("CLAUDE_MONTHLY_BUDGET_USD", "20")),
   },
 
   scheduler: {

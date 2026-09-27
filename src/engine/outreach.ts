@@ -1,5 +1,5 @@
 import { one, query } from "../db/index.js";
-import { claudeConfigured, draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
+import { claudeAvailable, draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
 import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { getSetting, isProductPaused } from "../lib/settings.js";
@@ -205,11 +205,11 @@ export async function runOutreach(now = new Date()): Promise<string> {
   for (const product of products) {
     const s = await outreachSettings(product.slug);
     if (!s.enabled || (await isProductPaused(product.slug))) continue;
-    if (!claudeConfigured()) {
+    if (!(await claudeAvailable())) {
       await createTask({
         kind: "alert",
-        title: "Outreach is switched on but Claude isn't connected",
-        body: "Cold emails are always written individually. Set ANTHROPIC_API_KEY, or switch outreach off.",
+        title: "Outreach is switched on but Claude isn't available",
+        body: "Cold emails are always written individually. Claude isn't connected or this month's budget is used up.",
         dedupeKey: "alert:outreach-no-claude",
       });
       return "waiting for ANTHROPIC_API_KEY";

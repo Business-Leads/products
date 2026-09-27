@@ -1,6 +1,7 @@
-# DigitalOcean App Platform spec. Create the app with:
-#   doctl apps create --spec .do/app.yaml
-# then set the SECRET values in the control panel (App > Settings > Environment variables).
+# DigitalOcean App Platform spec, sized for minimum cost:
+#   web: apps-s-1vcpu-0.5gb (about $5/month)
+#   db:  dev database (about $7/month)
+# Deployed by scripts/deploy.sh, which fills in the secrets from the environment.
 name: products-hq
 region: lon
 services:
@@ -8,11 +9,11 @@ services:
     dockerfile_path: Dockerfile
     github:
       repo: Business-Leads/products
-      branch: main
+      branch: claude/sharp-mayer-p52klq
       deploy_on_push: true
     http_port: 8080
     instance_count: 1
-    instance_size_slug: apps-s-1vcpu-1gb
+    instance_size_slug: apps-s-1vcpu-0.5gb
     health_check:
       http_path: /healthz
     envs:
@@ -40,9 +41,18 @@ services:
       - key: SMTP_URL
         scope: RUN_TIME
         type: SECRET
+      - key: IMAP_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: REPLY_TO
+        scope: RUN_TIME
+        type: SECRET
       - key: ANTHROPIC_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: CLAUDE_MONTHLY_BUDGET_USD
+        scope: RUN_TIME
+        value: "20"
 databases:
   - name: db
     engine: PG

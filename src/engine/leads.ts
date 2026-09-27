@@ -1,6 +1,6 @@
 import { config } from "../config.js";
 import { one, query } from "../db/index.js";
-import { claudeConfigured, draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
+import { claudeAvailable, draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
 import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { isProductPaused } from "../lib/settings.js";
@@ -107,7 +107,7 @@ function leadDetails(lead: LeadRow): string {
 
 async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): Promise<EmailDraft> {
   const first = touch === 0;
-  if (!claudeConfigured()) {
+  if (!(await claudeAvailable())) {
     // Plain fallback so enquiries are never left unanswered while the Claude key is missing.
     return first
       ? {

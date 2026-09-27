@@ -51,9 +51,40 @@ npm run typecheck
 Don't `pkill -f` a pattern that matches your own shell command; it kills the
 shell.
 
+## Budget (owner's hard limit: about $40/month in total)
+- DigitalOcean: smallest app (apps-s-1vcpu-0.5gb, ~$5) plus dev database (~$7). Don't upsize.
+- Claude: the dashboard defaults to claude-opus-5-5 with a hard cap,
+  CLAUDE_MONTHLY_BUDGET_USD=20. Over budget, drafting falls back to templates
+  and manual tasks.
+- Never buy domains or anything else.
+
+## Deploying
+Keys live in the Claude Code environment settings, not the repo:
+DIGITALOCEAN_ACCESS_TOKEN, STRIPE_SECRET_KEY, HQ_ANTHROPIC_API_KEY (named so it
+doesn't switch Claude Code's own billing), and optionally GODADDY_API_KEY and
+GODADDY_API_SECRET, MAIL_ADDRESS and MAIL_APP_PASSWORD (Google Workspace).
+
+```bash
+npm ci && node scripts/deploy.mjs
+```
+
+The script creates or updates the app from `.do/app.yaml` (deploying branch
+`claude/sharp-mayer-p52klq`), waits for it to go live, and creates the Stripe
+webhook and stores its secret. On first run it prints a generated dashboard
+password; tell the owner.
+
+Known blockers:
+- The environment's network policy must allow api.digitalocean.com and
+  api.stripe.com. If it doesn't, read the environment.network documentation
+  and tell the owner.
+- DigitalOcean must have GitHub access to Business-Leads/products. If app
+  creation fails on the GitHub source, the owner installs the DigitalOcean
+  GitHub app at cloud.digitalocean.com/apps/github/install.
+- Pushing a new `main` branch was blocked by the session safety check. The
+  app deploys from the working branch instead.
+
 ## Next work, in order
-1. Merge to `main` and deploy (owner does the DigitalOcean and Stripe steps
-   in the README).
+1. Deploy with `node scripts/deploy.mjs` (see Deploying above).
 2. Point the five Netlify sites' forms at `/api/leads/<product>` and their
    buy buttons at `/buy/<product>/<plan>`. The Netlify MCP connector can
    deploy. Confirm with the owner before publishing site changes.

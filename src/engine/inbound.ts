@@ -2,7 +2,7 @@ import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { config } from "../config.js";
 import { one, query } from "../db/index.js";
-import { claudeConfigured, draftJson } from "../lib/claude.js";
+import { claudeAvailable, draftJson } from "../lib/claude.js";
 import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { createTask } from "../lib/tasks.js";
@@ -66,7 +66,7 @@ export async function handleInbound(msg: InboundMessage): Promise<Intent> {
     intent = "auto_reply";
   } else if (!customer && (STOP.test(body) || STOP.test(msg.subject))) {
     intent = "stop";
-  } else if (claudeConfigured() && product) {
+  } else if (product && (await claudeAvailable())) {
     try {
       const r = await draftJson<{ intent: Intent; summary: string; reply_subject: string; reply_body: string }>({
         system:
