@@ -1,0 +1,28 @@
+# Read-only check that the GoDaddy API key stored as a repository secret works.
+# Lists domain names and their status; never prints the key.
+name: GoDaddy check
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/godaddy-check.yml"]
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: List domains
+        env:
+          K1: ${{ secrets.GODADDY_API_KEY }}
+          K2: ${{ secrets.GODADDY_KEY }}
+          S1: ${{ secrets.GODADDY_API_SECRET }}
+          S2: ${{ secrets.GODADDY_SECRET }}
+          C: ${{ secrets.GODADDY }}
+        run: |
+          KEY="${K1:-$K2}"; SECRET="${S1:-$S2}"
+          if [ -z "$KEY" ] && [ -n "$C" ]; then KEY="${C%%:*}"; SECRET="${C#*:}"; fi
+          echo "key found: $([ -n "$KEY" ] && echo yes || echo no), secret found: $([ -n "$SECRET" ] && echo yes || echo no)"
+          [ -n "$KEY" ] && [ -n "$SECRET" ] || exit 1
+          code=$(curl -s -o out.json -w "%{http_code}" -H "Authorization: sso-key $KEY:$SECRET" "https://api.godaddy.com/v1/domains?statuses=ACTIVE&limit=100")
+          echo "GoDaddy API status: $code"
+          if [ "$code" = "200" ]; then jq -r '.[] | "\(.domain)  (expires \(.expires[0:10]))"' out.json; else jq -r '.code + ": " + .message' out.json 2>/dev/null || true; exit 1; fi
