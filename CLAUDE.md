@@ -80,6 +80,11 @@ Known blockers:
 - DigitalOcean must have GitHub access to Business-Leads/products. If app
   creation fails on the GitHub source, the owner installs the DigitalOcean
   GitHub app at cloud.digitalocean.com/apps/github/install.
+- GoDaddy: api.godaddy.com is blocked from Claude Code sessions. The repo
+  secret GODADDY_API_KEY exists, and GODADDY_API_SECRET is needed alongside it.
+  `.github/workflows/godaddy-check.yml` (read-only) tests them by listing
+  domains. DNS changes should run from a GitHub Actions workflow the same way,
+  and only for domains the owner already has. Never buy domains.
 - Pushing a new `main` branch was blocked by the session safety check. The
   app deploys from the working branch instead.
 
