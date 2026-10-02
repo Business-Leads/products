@@ -129,6 +129,13 @@ export const linkn: Product = {
       plans: ["business", "growth"],
     },
     {
+      key: "weekly_posts",
+      title: "Draft this week's three posts in FeedBoss",
+      cadence: { every: "week", weekday: 1 },
+      handler: "linkn_weekly_posts",
+      approval: true,
+    },
+    {
       key: "content_plan",
       title: "Plan next month's posts",
       cadence: { every: "month", dayOfMonth: 22 },
@@ -164,7 +171,7 @@ export const linkn: Product = {
     resultsTitle: "Your LinkedIn results",
     resultsIntro: "What we published and who we spoke to on your behalf.",
     steps: { ...sharedPortalSteps, kickoff: "Kick-off call", profile_rewrite: "Your LinkedIn profile rewrite", content_pillars: "Content themes agreed and first posts scheduled", campaign_drafts: "Outreach campaigns written", launch: "Outreach switched on", call_guide: "Call guide prepared" },
-    routines: { reply_triage: null, weekly_harvest: null, content_plan: "Next month's posts planned", calling_day: null, monthly_report: "Monthly report" },
+    routines: { weekly_posts: "This week's posts written", reply_triage: null, weekly_harvest: null, content_plan: "Next month's posts planned", calling_day: null, monthly_report: "Monthly report" },
     metrics: [
       { key: "posts_published", label: "Posts published" },
       { key: "impressions", label: "Impressions" },

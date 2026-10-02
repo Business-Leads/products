@@ -483,4 +483,11 @@ describe("client account areas", () => {
     assert.equal(sent.first_name, "Jo");
     assert.equal((await query(`SELECT * FROM tasks WHERE title LIKE 'Call Jo%'`)).length, 0);
   });
+
+  it("reads FeedBoss's streamed answers", async () => {
+    const { parseSse } = await import("../src/integrations/feedboss.js");
+    const events = parseSse('event: post_ids\ndata: {"conversationId":"c1","postId":"p1"}\n\nevent: chat_delta\ndata: Done\n\n');
+    assert.equal(events[0]!.data.postId, "p1");
+    assert.equal(events[1]!.data, "Done");
+  });
 });

@@ -6,6 +6,7 @@ import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
 import { campaignStats } from "../integrations/mailwizz.js";
+import { generatePost, recentPosts } from "../integrations/feedboss.js";
 import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
 import { postUpdate, saveMetrics } from "./clients.js";
 import { portalUrl, setupLink } from "../portal/accounts.js";
@@ -201,8 +202,57 @@ const handlers: Record<string, Handler> = {
   },
 
   async linkn_weekly_harvest() {
-    requireAutomation("feedboss");
+    // Moving post engagers into the warm campaign happens in Sbl.so.
+    requireAutomation("sblso");
     return { type: "done" };
+  },
+
+  /**
+   * This week's three posts, drafted in the client's own voice in their
+   * FeedBoss workspace. Nothing is published: Felix checks and schedules them.
+   */
+  async linkn_weekly_posts(ctx) {
+    requireAutomation("feedboss");
+    const workspace: string | undefined = ctx.customer.data.feedboss_workspace;
+    if (!workspace) {
+      return {
+        type: "manual",
+        title: `Link ${customerLabel(ctx)}'s FeedBoss workspace`,
+        instructions: "Paste the id of this client's FeedBoss workspace (in FeedBoss: Workspace Settings). From then on their posts are drafted there every week.",
+        inputLabel: "FeedBoss workspace id",
+        saveAs: "feedboss_workspace",
+        rerun: true,
+      };
+    }
+    const briefs = await draftJson<{ posts: string[] }>({
+      system: `You plan LinkedIn posts for Linkn clients. ${ctx.product.voice}`,
+      prompt:
+        `Client details:\n${intakeSummary(ctx)}\n\nThis month's content plan:\n${ctx.customer.data.content_plan ?? "(none yet)"}\n\n` +
+        `Week starting ${ctx.delivery?.period ?? "this week"}. Write three short briefs (two or three sentences each) for this week's ` +
+        "posts: the point to make, the angle, and who it is for. At least one should answer an objection their buyers raise. " +
+        "Use only facts from the details and plan.",
+      schema: {
+        type: "object",
+        properties: { posts: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 } },
+        required: ["posts"],
+        additionalProperties: false,
+      },
+      maxTokens: 4000,
+    });
+    const ids: string[] = [];
+    for (const brief of briefs.posts.slice(0, 3)) ids.push(await generatePost(workspace, brief));
+    const drafts = (await recentPosts(workspace)).filter((p) => ids.includes(p.id));
+    if (ctx.delivery) {
+      await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [ctx.delivery.id, JSON.stringify({ feedboss_posts: ids })]);
+    }
+    return {
+      type: "manual",
+      title: `Check and schedule this week's posts for ${customerLabel(ctx)}`,
+      instructions:
+        `Three drafts are waiting in ${customerLabel(ctx)}'s FeedBoss workspace. Read them, edit anything that doesn't sound ` +
+        "like them, and schedule them in FeedBoss. Mark this done when they're scheduled.\n\n" +
+        (drafts.length ? drafts.map((d, i) => `Post ${i + 1}:\n${d.postContent}`).join("\n\n---\n\n") : briefs.posts.map((b, i) => `Post ${i + 1} brief: ${b}`).join("\n\n")),
+    };
   },
 
   async linkn_content_plan(ctx) {
@@ -228,6 +278,35 @@ const handlers: Record<string, Handler> = {
   },
 
   async linkn_monthly_report(ctx) {
+    // Figures from FeedBoss (posts published, reactions) and Sbl.so (outreach), where connected.
+    if (!ctx.input && ctx.customer.data.feedboss_workspace && getIntegration("feedboss")?.configured()) {
+      const since = Date.now() - 31 * 86_400_000;
+      const published = (await recentPosts(ctx.customer.data.feedboss_workspace)).filter(
+        (p) => p.status === "published" && new Date(p.createdAt).getTime() > since,
+      );
+      const reactions = published.reduce((n, p) => n + (p.metrics?.likes ?? 0), 0);
+      const comments = published.reduce((n, p) => n + (p.metrics?.comments ?? 0), 0);
+      const sbl = await query<{ event: string; n: number }>(
+        `SELECT event, count(*)::int AS n FROM sbl_events WHERE customer_id = $1 AND received_at > now() - interval '31 days' GROUP BY event`,
+        [ctx.customer.id],
+      );
+      const count = (e: string) => sbl.find((r) => r.event === e)?.n ?? 0;
+      if (ctx.delivery) {
+        await saveMetrics(ctx.customer.id, ctx.delivery.period, {
+          posts_published: published.length,
+          connection_requests: count("connection_request_sent"),
+          replies: count("prospect_replied"),
+        });
+      }
+      ctx = {
+        ...ctx,
+        input:
+          `Posts published: ${published.length} (reactions ${reactions}, comments ${comments}).\n` +
+          `Connection requests sent: ${count("connection_request_sent")}, accepted: ${count("connection_request_accepted")}, ` +
+          `replies: ${count("prospect_replied")}.\n` +
+          `Post titles:\n${published.map((p) => `- ${p.postContent.split("\n")[0]?.slice(0, 120)}`).join("\n")}`,
+      };
+    }
     if (!ctx.input) {
       return needData(
         ctx,

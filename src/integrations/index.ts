@@ -102,7 +102,8 @@ export const integrations: Integration[] = [
     purpose: "Linkn posts in the client's voice",
     envVars: ["FEEDBOSS_API_KEY"],
     configured: has("FEEDBOSS_API_KEY"),
-    automation: "manual",
+    automation: "full",
+    notes: "Weekly post drafts and monthly figures are automatic. Felix checks and schedules posts in FeedBoss.",
   },
   {
     id: "sblso",
