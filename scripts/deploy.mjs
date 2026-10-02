@@ -113,6 +113,8 @@ function applyValues(target, current) {
   return target;
 }
 
+// Deployments created from here on belong to this run (with a margin for clock differences).
+const startedAt = Date.now() - 30_000;
 let app;
 if (existing) {
   console.log(`Updating ${spec.name}…`);
@@ -145,19 +147,21 @@ async function printFailureLogs(appId) {
   }
 }
 
-// Wait for the deployment to go live.
+// Wait for the deployment this run started (or a newer one from a push) to go live.
 for (let i = 0; i < 150; i++) {
   await new Promise((r) => setTimeout(r, 10_000));
   app = (await doApi("GET", `/apps/${app.id}`)).app;
-  const phase = app.in_progress_deployment?.phase ?? app.active_deployment?.phase;
-  process.stdout.write(`  ${phase ?? "pending"}\r`);
-  // A running version is enough: later pushes keep starting new builds.
-  if (app.active_deployment?.phase === "ACTIVE" && app.live_url) break;
   const latest = (await doApi("GET", `/apps/${app.id}/deployments?per_page=1`)).deployments?.[0];
-  if (["ERROR", "CANCELED"].includes(latest?.phase) && !(app.active_deployment?.phase === "ACTIVE" && app.live_url)) {
+  const isNew = latest && new Date(latest.created_at).getTime() >= startedAt;
+  process.stdout.write(`  ${latest?.phase ?? "pending"}\r`);
+  if (isNew && latest.phase === "ACTIVE" && app.live_url) break;
+  if (isNew && ["ERROR", "CANCELED"].includes(latest.phase)) {
     await printFailureLogs(app.id);
     throw new Error(`Deployment ${latest.phase}; see the logs above.`);
   }
+  // Nothing changed, so no new deployment was started: the running version is current.
+  if (!isNew && !app.in_progress_deployment && !app.pending_deployment && i >= 3 && app.active_deployment?.phase === "ACTIVE") break;
+  if (i === 149) throw new Error("Timed out waiting for the new version to go live");
 }
 if (!app.live_url) throw new Error("Timed out waiting for the app to go live");
 console.log(`\nLive at ${app.live_url}`);
