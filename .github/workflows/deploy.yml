@@ -21,10 +21,10 @@ jobs:
         env:
           DO: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           ST: ${{ secrets.STRIPE_SECRET_KEY }}
-          AN: ${{ secrets.HQ_ANTHROPIC_API_KEY }}
+          AN: ${{ secrets.ANTHROPIC_API_KEY }}
           AP: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          for pair in "DIGITALOCEAN_ACCESS_TOKEN:$DO" "STRIPE_SECRET_KEY:$ST" "HQ_ANTHROPIC_API_KEY:$AN" "ADMIN_PASSWORD:$AP"; do
+          for pair in "DIGITALOCEAN_ACCESS_TOKEN:$DO" "STRIPE_SECRET_KEY:$ST" "ANTHROPIC_API_KEY:$AN" "ADMIN_PASSWORD:$AP"; do
             name="${pair%%:*}"; val="${pair#*:}"
             echo "$name: $([ -n "$val" ] && echo set || echo missing)"
           done
@@ -33,7 +33,7 @@ jobs:
         env:
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          HQ_ANTHROPIC_API_KEY: ${{ secrets.HQ_ANTHROPIC_API_KEY }}
+          HQ_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
