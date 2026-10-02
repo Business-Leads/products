@@ -1,0 +1,30 @@
+# Read-only: shows the current website DNS records (A @, CNAME www) and MX for
+# the given domains, so changes can be checked before they're made.
+name: GoDaddy records
+on:
+  workflow_dispatch:
+    inputs:
+      domains:
+        description: "Space-separated domains"
+        required: true
+permissions: {}
+jobs:
+  records:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Show records
+        env:
+          KEY: ${{ secrets.GODADDY_API_KEY }}
+          SECRET: ${{ secrets.GODADDY_API_SECRET }}
+          NETLIFY: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          DOMAINS: ${{ inputs.domains }}
+        run: |
+          echo "Netlify token: $([ -n "$NETLIFY" ] && echo set || echo missing)"
+          for d in $DOMAINS; do
+            echo "== $d"
+            for t in "A/@" "CNAME/www" "MX/@"; do
+              curl -s -H "Authorization: sso-key $KEY:$SECRET" "https://api.godaddy.com/v1/domains/$d/records/$t" \
+                | jq -r --arg t "$t" '.[]? | "  \($t): \(.data) (ttl \(.ttl))"'
+            done
+          done
