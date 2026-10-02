@@ -12,7 +12,7 @@ interface Target {
 
 function targets(): Target[] {
   const list: Target[] = [];
-  for (const p of products) for (const url of p.siteUrls) list.push({ target: p.slug, url, product: p.slug });
+  for (const p of products.filter((x) => x.launched !== false)) for (const url of p.siteUrls) list.push({ target: p.slug, url, product: p.slug });
   // Extra URLs to watch, e.g. custom domains once they're connected: "name|url,name|url"
   for (const pair of (process.env.EXTRA_HEALTH_URLS ?? "").split(",").filter(Boolean)) {
     const [target, url] = pair.split("|");

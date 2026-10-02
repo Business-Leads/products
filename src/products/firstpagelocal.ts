@@ -13,6 +13,7 @@ export const firstPageLocal: Product = {
   entity: `FirstPageLocal is a trading name of ${AIFT}`,
   siteUrls: ["https://firstpagelocal.netlify.app"],
   bookingUrl: BOOKING_URL,
+  launched: false, // on hold for now (owner's decision, Oct 2026)
   email: {
     from: fromAddress("firstpagelocal", "hello@firstpagelocal.com"),
     fromName: "FirstPageLocal",

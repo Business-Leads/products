@@ -15,6 +15,8 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import Stripe from "stripe";
 
 const { pool, query, one } = await import("../src/db/index.js");
+// FirstPageLocal is on hold in production; the tests still exercise its flows.
+(await import("../src/products/index.js")).requireProduct("firstpagelocal").launched = true;
 const { migrate } = await import("../src/db/migrate.js");
 const { createLead, processLeads } = await import("../src/engine/leads.js");
 const { decideTask } = await import("../src/engine/actions.js");

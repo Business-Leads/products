@@ -257,6 +257,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const body = html`
       <div class="spread"><div><h1>${product.name}</h1><div class="muted">${product.tagline}</div></div>
         <form method="post" action="/products/${product.slug}/pause">
+          ${product.launched === false ? html`<span class="chip warn">Not launched: all automation off</span>` : ""}
           ${paused ? html`<span class="chip bad">Paused</span> <button class="primary" name="paused" value="false">Resume</button>`
                    : html`<button name="paused" value="true" class="danger">Pause all automation</button>`}
         </form></div>

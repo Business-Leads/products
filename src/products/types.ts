@@ -73,6 +73,8 @@ export interface Product {
   entity: string;
   siteUrls: string[];
   bookingUrl: string;
+  /** Set to false to keep a product defined but switch off all its automation. */
+  launched?: boolean;
   /** Sold like Business Leads: after paying, the customer books an onboarding call first. */
   bookingAfterPurchase?: boolean;
   email: { from: string; fromName: string; replyTo?: string };

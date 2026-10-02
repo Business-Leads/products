@@ -1,4 +1,5 @@
 import { one, query } from "../db/index.js";
+import { getProduct } from "../products/index.js";
 
 export type Autonomy = "auto" | "approve";
 
@@ -25,5 +26,6 @@ export async function autonomyFor(product: string, kind: string, fallback: Auton
 
 /** Pausing a product stops all automated outbound email and routines for it. */
 export async function isProductPaused(product: string): Promise<boolean> {
+  if (getProduct(product)?.launched === false) return true;
   return (await getSetting<boolean>("paused:all", false)) || (await getSetting<boolean>(`paused:${product}`, false));
 }
