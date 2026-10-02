@@ -184,18 +184,26 @@ if (customDomain && ingress && process.env.GODADDY_API_KEY && process.env.GODADD
 if (process.env.STRIPE_SECRET_KEY) {
   const url = `${app.live_url}/webhooks/stripe`;
   const { data } = await stripe("GET", "/webhook_endpoints?limit=100");
-  if (!data.some((w) => w.url === url)) {
-    const events = ["checkout.session.completed", "customer.subscription.updated", "customer.subscription.deleted",
-      "invoice.payment_failed", "invoice.paid", "charge.dispute.created", "charge.dispute.updated", "charge.dispute.closed"];
-    const form = { url, description: "Products HQ" };
-    events.forEach((e, i) => (form[`enabled_events[${i}]`] = e));
-    const hook = await stripe("POST", "/webhook_endpoints", form);
+  const events = ["checkout.session.completed", "customer.subscription.updated", "customer.subscription.deleted",
+    "invoice.finalized", "invoice.payment_failed", "invoice.paid", "charge.dispute.created", "charge.dispute.updated",
+    "charge.dispute.closed"];
+  const eventForm = {};
+  events.forEach((e, i) => (eventForm[`enabled_events[${i}]`] = e));
+  const existing = data.find((w) => w.url === url);
+  if (!existing) {
+    const hook = await stripe("POST", "/webhook_endpoints", { url, description: "Products HQ", ...eventForm });
     console.log("Created Stripe webhook; setting its secret on the app…");
     values.STRIPE_WEBHOOK_SECRET = hook.secret;
     const current = (await doApi("GET", `/apps/${app.id}`)).app.spec;
     await doApi("PUT", `/apps/${app.id}`, { spec: applyValues(structuredClone(spec), current) });
   } else {
-    console.log("Stripe webhook already exists.");
+    // Keep the event list current as the app learns to handle more events.
+    if (events.some((e) => !existing.enabled_events.includes(e))) {
+      await stripe("POST", `/webhook_endpoints/${existing.id}`, eventForm);
+      console.log("Updated the Stripe webhook's events.");
+    } else {
+      console.log("Stripe webhook already exists.");
+    }
   }
 }
 

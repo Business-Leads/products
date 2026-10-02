@@ -4,6 +4,7 @@ import { html, raw, type Raw } from "./html.js";
 
 export interface NavCounts {
   inbox: number;
+  support?: number;
 }
 
 export function page(title: string, body: Raw, opts: { active?: string; counts?: NavCounts; flash?: string } = {}): string {
@@ -28,6 +29,8 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     ${link("/", "Overview")}
     ${link("/inbox", "Inbox", opts.counts?.inbox)}
     ${link("/customers", "Customers")}
+    ${link("/clients", "Client accounts")}
+    ${link("/support", "Support", opts.counts?.support)}
     ${link("/leads", "Leads")}
     ${link("/outreach", "Outreach")}
     <div class="section">Products</div>
@@ -35,7 +38,8 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     <div class="section">System</div>
     ${link("/activity", "Activity")}
     ${link("/system", "Automation")}
-    <form method="post" action="/logout" style="margin:14px 10px"><button class="small">Sign out</button></form>
+    <form method="post" action="/logout" style="margin:14px 10px 4px"><button class="small">Sign out</button></form>
+    <form method="post" action="/logout-everywhere" style="margin:0 10px"><button class="small">Sign out all devices</button></form>
   </nav>
   <main class="main">
     ${opts.flash ? html`<div class="flash">${opts.flash}</div>` : ""}

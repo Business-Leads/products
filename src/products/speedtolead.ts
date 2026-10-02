@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 export const speedToLead: Product = {
   slug: "speedtolead",
@@ -113,4 +113,18 @@ export const speedToLead: Product = {
   tools: ["awaz", "anthropic", "smtp", "stripe"],
   leadFollowUpDays: [2, 7],
   pauseAfterPastDueDays: 14,
+  portal: {
+    host: "account.speedtolead.co.uk",
+    accent: "#ff6a4d",
+    resultsTitle: "Your calls",
+    resultsIntro: "Calls answered and jobs booked for you.",
+    steps: { ...sharedPortalSteps, dpa: "Data processing agreement", script: "Your call script written", provision_agent: "Your call assistant and number set up", forwarding: "Call forwarding switched on", test_calls: "Test calls" },
+    routines: { call_review: "Weekly call review", usage_summary: "Monthly call summary" },
+    metrics: [
+      { key: "calls_answered", label: "Calls answered" },
+      { key: "jobs_booked", label: "Jobs booked" },
+      { key: "urgent_transfers", label: "Urgent calls transferred" },
+      { key: "call_backs", label: "Call backs requested" },
+    ],
+  },
 };

@@ -109,3 +109,30 @@ form.inline { display: inline; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   table { display: block; overflow-x: auto; }
 }
+
+/* Client account areas (one per product site) */
+.portal-top { background: var(--panel); border-bottom: 1px solid var(--line); }
+.portal-top .inner { max-width: 1040px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.portal-top .name { font-weight: 700; font-size: 18px; color: var(--ink); }
+.portal-top nav { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.portal-top nav a { padding: 6px 12px; border-radius: 9px; color: var(--ink); }
+.portal-top nav a.active, .portal-top nav a:hover { background: var(--chip); text-decoration: none; }
+.portal-main { max-width: 1040px; margin: 0 auto; padding: 28px 16px 60px; }
+.portal-narrow { max-width: 440px; margin: 56px auto; padding: 0 16px; }
+.portal-foot { max-width: 1040px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: 13px; }
+.next { border-left: 4px solid var(--accent); }
+.next .btn.primary { margin-top: 6px; }
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { position: relative; padding: 0 0 18px 30px; }
+.timeline li::before { content: ""; position: absolute; left: 6px; top: 22px; bottom: -2px; width: 2px; background: var(--line); }
+.timeline li:last-child::before { display: none; }
+.timeline .mark { position: absolute; left: 0; top: 3px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel); }
+.timeline li.done .mark { background: var(--ok); border-color: var(--ok); }
+.timeline li.current .mark { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
+.timeline li.upcoming { color: var(--muted); }
+.feed-item { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.feed-item:last-child { border-bottom: 0; }
+.delta.up { color: var(--ok); } .delta.down { color: var(--bad); }
+.readonly-banner { background: var(--violet); color: #fff; padding: 8px 16px; text-align: center; font-size: 13px; }
+.calendly-inline-widget { min-width: 280px; height: 700px; }
+.portal-main a:not(.btn), .portal-narrow a:not(.btn) { color: var(--accent); }

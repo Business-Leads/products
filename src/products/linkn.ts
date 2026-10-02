@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 // Hard rules carried over from the Linkn operating guide and skill:
 // every outward action on LinkedIn (launching a campaign, sending a reply,
@@ -158,4 +158,19 @@ export const linkn: Product = {
     "within two working days, and offer the booking link.",
   leadFollowUpDays: [3, 10],
   pauseAfterPastDueDays: 14,
+  portal: {
+    host: "account.linkn.co.uk",
+    accent: "#0a66c2",
+    resultsTitle: "Your LinkedIn results",
+    resultsIntro: "What we published and who we spoke to on your behalf.",
+    steps: { ...sharedPortalSteps, kickoff: "Kick-off call", profile_rewrite: "Your LinkedIn profile rewrite", content_pillars: "Content themes agreed and first posts scheduled", campaign_drafts: "Outreach campaigns written", launch: "Outreach switched on", call_guide: "Call guide prepared" },
+    routines: { reply_triage: null, weekly_harvest: null, content_plan: "Next month's posts planned", calling_day: null, monthly_report: "Monthly report" },
+    metrics: [
+      { key: "posts_published", label: "Posts published" },
+      { key: "impressions", label: "Impressions" },
+      { key: "connection_requests", label: "Connection requests" },
+      { key: "replies", label: "Replies" },
+      { key: "meetings", label: "Meetings booked" },
+    ],
+  },
 };

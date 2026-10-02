@@ -3,13 +3,14 @@ import { one, query } from "../db/index.js";
 import { handleStripeEvent } from "../engine/billing.js";
 import { createLead } from "../engine/leads.js";
 import type { CustomerRow } from "../engine/types.js";
-import { advanceOnboarding } from "../engine/workflow.js";
+import { saveIntake } from "../engine/clients.js";
+import { portalUrl } from "../portal/accounts.js";
 import { logEvent } from "../lib/events.js";
 import { createCheckout, stripeConfigured, verifyWebhook } from "../lib/stripe.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
 import { bookingLink, getPlan, getProduct, products } from "../products/index.js";
-import type { Field } from "../products/types.js";
+import { fieldInput } from "./fields.js";
 import { html } from "./html.js";
 import { publicPage } from "./layout.js";
 
@@ -42,20 +43,6 @@ function rateLimited(ip: string): boolean {
 }
 
 const LEAD_FIELDS = ["name", "email", "phone", "business", "website", "town", "message"] as const;
-
-function fieldInput(f: Field, value: string) {
-  const common = { name: f.key, id: f.key };
-  if (f.type === "textarea") {
-    return html`<textarea name="${common.name}" id="${common.id}" ${f.required ? "required" : ""}>${value}</textarea>`;
-  }
-  if (f.type === "select") {
-    return html`<select name="${f.key}" id="${f.key}" ${f.required ? "required" : ""}>
-      <option value="">Choose…</option>
-      ${(f.options ?? []).map((o) => html`<option ${o === value ? "selected" : ""}>${o}</option>`)}
-    </select>`;
-  }
-  return html`<input type="${f.type}" name="${f.key}" id="${f.key}" value="${value}" ${f.required ? "required" : ""}>`;
-}
 
 export async function publicRoutes(app: FastifyInstance) {
   app.get("/healthz", async () => {
@@ -155,34 +142,15 @@ export async function publicRoutes(app: FastifyInstance) {
     },
   );
 
+  // Older checkout links returned here; the client's account now lives on the product's own site.
   app.get<{ Querystring: { session_id?: string; product?: string } }>("/welcome", async (req, reply) => {
     const customer = req.query.session_id
       ? await one<CustomerRow>(`SELECT * FROM customers WHERE stripe_checkout_id = $1`, [req.query.session_id])
       : undefined;
     const product = customer ? getProduct(customer.product) : getProduct(req.query.product ?? "");
-    if (product?.bookingAfterPurchase) {
-      return reply.type("text/html").send(
-        publicPage(
-          `Welcome to ${product.name}`,
-          html`<div class="panel"><h1>Welcome to ${product.name}</h1>
-            <p>Thank you, your payment has gone through. The next step is a short onboarding call with Felix,
-              so everything is right from the start.</p>
-            <p><a class="btn primary" href="${bookingLink(product, customer?.name, customer?.email)}">Book your onboarding call</a></p>
-            ${customer
-              ? html`<p>Before the call, it helps to <a href="/start/${customer.intake_token}">tell us about your business</a> (about five minutes).</p>`
-              : html`<p>We've also emailed you the booking link and a short form about your business.</p>`}
-          </div>`,
-        ),
-      );
-    }
-    const body = customer && product
-      ? html`<div class="panel"><h1>Welcome to ${product.name}</h1>
-          <p>Thank you. The next step is a short form so we can set everything up for you.</p>
-          <p><a class="btn primary" href="/start/${customer.intake_token}">Tell us about your business</a></p>
-          <p class="muted small">We've also emailed you this link.</p></div>`
-      : html`<div class="panel"><h1>Thank you</h1><p>Your payment has gone through. We've emailed you a short
-          setup form; it can take a minute to arrive.</p></div>`;
-    return reply.type("text/html").send(publicPage("Welcome", body));
+    if (!product) return reply.code(404).send("Not found");
+    const qs = req.query.session_id ? `?session_id=${encodeURIComponent(req.query.session_id)}` : "";
+    return reply.redirect(`${portalUrl(product)}/welcome${qs}`, 303);
   });
 
   // --------------------------------------------------------------- intake
@@ -221,30 +189,13 @@ export async function publicRoutes(app: FastifyInstance) {
     const customer = await one<CustomerRow>(`SELECT * FROM customers WHERE intake_token = $1`, [req.params.token]);
     const product = customer && getProduct(customer.product);
     if (!customer || !product) return reply.code(404).send("This link isn't valid.");
-    const body = req.body ?? {};
-    const answers: Record<string, string> = {};
-    for (const f of product.intake) answers[f.key] = String(body[f.key] ?? "").trim().slice(0, 5000);
-    const missing = product.intake.filter((f) => f.required && !answers[f.key]);
+    const missing = await saveIntake(customer, req.body ?? {});
     if (missing.length) {
       return reply.code(400).type("text/html").send(
-        publicPage("Missing details", html`<div class="panel"><p>Please fill in: ${missing.map((m) => m.label).join(", ")}.</p>
+        publicPage("Missing details", html`<div class="panel"><p>Please fill in: ${missing.join(", ")}.</p>
           <p><a href="/start/${req.params.token}">Go back</a></p></div>`),
       );
     }
-    const first = !customer.data.intake_completed_at;
-    await query(
-      `UPDATE customers SET name = COALESCE(NULLIF($2,''), name), business = COALESCE(NULLIF($3,''), business),
-         data = data || jsonb_build_object('intake', $4::jsonb, 'intake_completed_at', to_jsonb(now())), updated_at = now()
-       WHERE id = $1`,
-      [customer.id, String(body.name ?? "").trim(), answers.business || answers.company || answers.organisation || "", JSON.stringify(answers)],
-    );
-    await logEvent({
-      type: first ? "intake.completed" : "intake.updated",
-      message: `${answers.business || answers.company || customer.email} ${first ? "completed" : "updated"} the intake form`,
-      product: product.slug,
-      customerId: customer.id,
-    });
-    await advanceOnboarding(customer.id);
     return reply.type("text/html").send(
       publicPage(
         "Thank you",

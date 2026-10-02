@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 export const goodQuestions: Product = {
   slug: "goodquestions",
@@ -76,4 +76,16 @@ export const goodQuestions: Product = {
     "to learn and offer a short call to scope it; do not quote prices.",
   leadFollowUpDays: [4, 12],
   pauseAfterPastDueDays: 30,
+  portal: {
+    host: "account.goodquestions.co.uk",
+    accent: "#1f9d55",
+    resultsTitle: "Your research",
+    resultsIntro: "Responses collected and what they show.",
+    steps: { ...sharedPortalSteps, question_design: "Questions agreed", compliance: "Compliance checks", scorecard: "Your scorecard built", sends: "Invitations scheduled" },
+    routines: { findings: "Weekly findings" },
+    metrics: [
+      { key: "completions", label: "Completed responses" },
+      { key: "average_score", label: "Average score" },
+    ],
+  },
 };

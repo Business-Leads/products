@@ -12,13 +12,16 @@ import { logEvent } from "../lib/events.js";
 import { autonomyFor, getSetting, setSetting } from "../lib/settings.js";
 import { ago, fmtDate, token } from "../lib/util.js";
 import { formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
+import { portalUrl } from "../portal/accounts.js";
+import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
 import { chip, empty, page } from "./layout.js";
 
 async function navCounts() {
   const r = await one(`SELECT count(*)::int AS n FROM tasks WHERE status = 'open'`);
-  return { inbox: r?.n ?? 0 };
+  const s = await one(`SELECT count(*)::int AS n FROM support_requests WHERE status = 'open'`);
+  return { inbox: r?.n ?? 0, support: s?.n ?? 0 };
 }
 
 async function send(reply: FastifyReply, req: FastifyRequest, title: string, body: Raw, active: string) {
@@ -307,7 +310,10 @@ export async function adminRoutes(app: FastifyInstance) {
 
       <div class="panel"><h2>Connect the website form</h2>
         <p class="small muted">Point the site's enquiry form at this address. Any extra fields are kept with the lead.</p>
-        <pre class="pre small">${formSnippet}</pre></div>`;
+        <pre class="pre small">${formSnippet}</pre>
+        <h3 style="margin-top:14px">Client log-in button</h3>
+        <p class="small muted">Link the site's "Log in" button here. Clients sign in with their email and password.</p>
+        <input readonly value="${portalUrl(product)}/login" onclick="this.select()"></div>`;
     return send(reply, req, product.name, body, `/products/${product.slug}`);
   });
 
@@ -392,7 +398,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const events = await query(`SELECT * FROM events WHERE customer_id = $1 ORDER BY at DESC LIMIT 30`, [c.id]);
     const tasks = await query(`SELECT * FROM tasks WHERE customer_id = $1 AND status = 'open' ORDER BY created_at`, [c.id]);
     const intake = c.data.intake ?? {};
-    const saved = Object.entries(c.data).filter(([k]) => !["intake", "intake_completed_at", "intake_reminders", "intake_reminded_at", "addOns"].includes(k));
+    const saved = Object.entries(c.data).filter(([k]) => !["intake", "intake_completed_at", "intake_reminders", "intake_reminded_at", "addOns", "metrics_history", "call_booked_at", "call_time", "cancel_requested_at", "cancel_reason", "cancel_at"].includes(k));
     const plan = getPlan(product, c.plan);
 
     const body = html`
@@ -409,7 +415,9 @@ export async function adminRoutes(app: FastifyInstance) {
           <table><tr><td class="muted">Name</td><td>${c.name}</td></tr>
             <tr><td class="muted">Email</td><td><a href="mailto:${c.email}">${c.email}</a></td></tr>
             <tr><td class="muted">Phone</td><td>${c.phone}</td></tr>
-            <tr><td class="muted">Intake form</td><td>${c.intake_token ? html`<a href="/start/${c.intake_token}">${config.baseUrl}/start/${c.intake_token}</a>` : ""}</td></tr>
+            <tr><td class="muted">Onboarding form</td><td>${c.data.intake_completed_at ? html`completed ${fmtDate(c.data.intake_completed_at)}` : html`<span class="chip warn">not yet</span>`}</td></tr>
+            ${product.bookingAfterPurchase ? html`<tr><td class="muted">Onboarding call</td><td>${c.data.call_booked_at ? html`booked ${fmtDate(c.data.call_booked_at)}` : html`<span class="chip warn">not booked yet</span>`}</td></tr>` : ""}
+            ${c.data.cancel_requested_at ? html`<tr><td class="muted">Cancelling</td><td><span class="chip bad">${c.data.cancel_at ? `ends ${fmtDate(c.data.cancel_at)}` : "requested"}</span>${c.data.cancel_reason ? html`<div class="small">${c.data.cancel_reason}</div>` : ""}</td></tr>` : ""}
             ${c.stripe_customer_id ? html`<tr><td class="muted">Stripe</td><td><a href="https://dashboard.stripe.com/customers/${c.stripe_customer_id}">${c.stripe_customer_id}</a></td></tr>` : ""}
           </table></div>
         <div class="panel"><h2>Onboarding</h2>
@@ -420,6 +428,7 @@ export async function adminRoutes(app: FastifyInstance) {
         </div>
       </div>
       ${tasks.length ? html`<h2>Waiting on you</h2>${await Promise.all(tasks.map(taskCard))}` : ""}
+      ${await clientPanels(c)}
       <div class="grid-2">
         <div class="panel"><h2>Intake answers</h2>
           ${Object.keys(intake).length ? html`<table>${product.intake.map((f) => html`<tr><td class="muted">${f.label}</td><td style="white-space:pre-wrap">${intake[f.key]}</td></tr>`)}</table>` : empty("Not filled in yet.")}
@@ -676,6 +685,8 @@ export async function adminRoutes(app: FastifyInstance) {
     await logEvent({ type: "system.paused", level: "warn", message: `All automation ${paused ? "paused" : "resumed"}` });
     return back(reply, "/system", paused ? "Everything is paused." : "Resumed.");
   });
+
+  await clientAdminRoutes(app, send);
 }
 
 function customersTable(rows: CustomerRow[], showProduct = false): Raw {

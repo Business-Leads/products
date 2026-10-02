@@ -30,7 +30,7 @@ const { importProspects, isSuppressed, normaliseCompanyType, parseCsv, runOutrea
 const { setSetting } = await import("../src/lib/settings.js");
 
 async function reset() {
-  await query(`TRUNCATE suppressions, prospects, inbound_emails, leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
+  await query(`TRUNCATE client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures, suppressions, prospects, inbound_emails, leads, customers, onboarding_steps, tasks, emails, deliveries, disputes, stripe_events,
     events, job_runs, health_checks, settings, sessions RESTART IDENTITY CASCADE`);
 }
 
@@ -175,9 +175,9 @@ describe("a FirstPageLocal customer from payment to first monthly report", () =>
 
     const welcome = await one(`SELECT * FROM emails WHERE kind = 'onboarding:welcome'`);
     assert.equal(welcome.status, "queued");
-    assert.match(welcome.body_text, new RegExp(`/start/${c.intake_token}`));
+    assert.match(welcome.body_text, /https:\/\/hq\.example\.com\/portal\/firstpagelocal\/password\/[\w-]{20,}/);
 
-    // Intake form
+    // Intake form (the older token link still works)
     const app = await buildServer();
     const form = await app.inject({ method: "GET", url: `/start/${c.intake_token}` });
     assert.equal(form.statusCode, 200);
@@ -397,21 +397,20 @@ describe("outreach", () => {
 });
 
 describe("Online Business Builder: pay, then book the onboarding call", () => {
-  it("leads the welcome email and page with the prefilled booking link", async () => {
+  it("leads the welcome email with the prefilled booking link and the account link", async () => {
     await handleStripeEvent(checkoutEvent("evt_obb", "onlinebusinessbuilder", "monthly"));
     const c = await one(`SELECT * FROM customers`);
     assert.equal(c.amount_pence, 9900);
     const welcome = await one(`SELECT * FROM emails WHERE kind = 'onboarding:welcome'`);
     assert.match(welcome.subject, /book your onboarding call/);
     assert.match(welcome.body_text, /calendly\.com\/felixclarke\/chat-with-felix-clarke\?name=Sam\+Owner&email=owner%40example\.co\.uk/);
-    assert.match(welcome.body_text, new RegExp(`/start/${c.intake_token}`));
+    assert.match(welcome.body_text, /\/portal\/onlinebusinessbuilder\/password\//);
 
+    // Old checkout return links go to the account area.
     const app = await buildServer();
     const page = await app.inject({ method: "GET", url: "/welcome?product=onlinebusinessbuilder&session_id=cs_evt_obb" });
-    assert.match(page.body, /Book your onboarding call/);
-    assert.match(page.body, /tell us about your business/);
-    const early = await app.inject({ method: "GET", url: "/welcome?product=onlinebusinessbuilder&session_id=cs_unknown" });
-    assert.match(early.body, /Book your onboarding call/);
+    assert.equal(page.statusCode, 303);
+    assert.equal(page.headers.location, "https://hq.example.com/portal/onlinebusinessbuilder/welcome?session_id=cs_evt_obb");
     await app.close();
   });
 });

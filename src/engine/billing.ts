@@ -2,10 +2,13 @@ import type Stripe from "stripe";
 import { one, query } from "../db/index.js";
 import { emailOperator, queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
+import { config } from "../config.js";
 import { getStripe, META_LEAD, META_PLAN, META_PRODUCT } from "../lib/stripe.js";
 import { createTask } from "../lib/tasks.js";
 import { fmtDate, token } from "../lib/util.js";
 import { formatPrice, getPlan, getProduct, requireProduct } from "../products/index.js";
+import { ensureClientUser } from "../portal/accounts.js";
+import { customerLabel, recordInvoice } from "./clients.js";
 import { markLeadWon } from "./leads.js";
 import type { CustomerRow } from "./types.js";
 import { advanceOnboarding, instantiateSteps } from "./workflow.js";
@@ -33,6 +36,9 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<void> {
       break;
     case "invoice.paid":
       relevant = await onInvoicePaid(event.data.object);
+      break;
+    case "invoice.finalized":
+      relevant = await onInvoiceFinalized(event.data.object);
       break;
     case "charge.dispute.created":
     case "charge.dispute.updated":
@@ -72,6 +78,8 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<bo
 
   const existing = await one(`SELECT id FROM customers WHERE stripe_checkout_id = $1`, [session.id]);
   if (existing) return true;
+  // Paid sessions only (a delayed payment method completes later).
+  if (session.payment_status && session.payment_status === "unpaid") return true;
 
   const addOnIds = (session.metadata?.hq_addons ?? "").split(",").filter(Boolean);
   const recurringAddOns = (product.addOns ?? [])
@@ -83,7 +91,8 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<bo
   const customer = await one<CustomerRow>(
     `INSERT INTO customers (product, plan, name, email, phone, intake_token, stripe_customer_id,
        stripe_subscription_id, stripe_checkout_id, amount_pence, interval, lead_id, data)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+     ON CONFLICT (stripe_checkout_id) DO NOTHING RETURNING *`,
     [
       product.slug,
       plan.id,
@@ -100,6 +109,10 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<bo
       { addOns: addOnIds },
     ],
   );
+  // The webhook and the client's return from checkout can race; only one creates the customer.
+  if (!customer) return true;
+  await ensureClientUser(customer);
+  await query(`UPDATE invoices SET customer_id = $1 WHERE subscription_id = $2 AND customer_id IS NULL`, [customer.id, customer.stripe_subscription_id]);
   await logEvent({
     type: "customer.created",
     message: `New ${product.name} customer: ${email} on ${plan.name}`,
@@ -109,7 +122,9 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session): Promise<bo
   await emailOperator(
     `New ${product.name} customer: ${customer!.name ?? email}`,
     `${customer!.name ?? ""} <${email}> signed up to ${product.name} ${plan.name} ` +
-      `(${formatPrice(customer!.amount_pence, plan.interval)}). Onboarding has started automatically.`,
+      `(${formatPrice(customer!.amount_pence, plan.interval)}). Onboarding has started automatically` +
+      (product.bookingAfterPurchase ? "; they've been asked to book their onboarding call with you." : ".") +
+      `\n\nIn HQ: ${config.baseUrl}/customers/${customer!.id}`,
     "new_customer",
   );
   await markLeadWon(customer!.lead_id, customer!.id, email, product.slug);
@@ -137,6 +152,12 @@ async function onSubscriptionChanged(sub: Stripe.Subscription, deleted: boolean)
       product: product.slug,
       customerId: customer.id,
     });
+    await emailOperator(
+      `${product.name}: ${customerLabel(customer)} has now left`,
+      `${customerLabel(customer)} <${customer.email}>'s ${product.name} subscription has ended and all work for them has stopped.` +
+        `${customer.data.cancel_reason ? `\n\nReason they gave: ${customer.data.cancel_reason}` : ""}\n\nIn HQ: ${config.baseUrl}/customers/${customer.id}`,
+      "cancellation",
+    );
     await queueEmail({
       product: product.slug,
       customerId: customer.id,
@@ -160,6 +181,23 @@ async function onSubscriptionChanged(sub: Stripe.Subscription, deleted: boolean)
     return true;
   }
 
+  // Cancelled (or un-cancelled) in the Stripe dashboard rather than from the client's account.
+  if (sub.cancel_at_period_end && !customer.data.cancel_requested_at) {
+    const endsAt = sub.cancel_at ? new Date(sub.cancel_at * 1000) : null;
+    await query(
+      `UPDATE customers SET data = data || jsonb_build_object('cancel_requested_at', to_jsonb(now()), 'cancel_at', $2::text), updated_at = now() WHERE id = $1`,
+      [customer.id, endsAt?.toISOString() ?? null],
+    );
+    await logEvent({ type: "customer.cancel_requested", level: "warn", message: `${customerLabel(customer)} is set to cancel${endsAt ? ` on ${fmtDate(endsAt)}` : ""}`, product: product.slug, customerId: customer.id });
+    await emailOperator(
+      `${product.name}: cancellation from ${customerLabel(customer)}`,
+      `${customerLabel(customer)} <${customer.email}> is set to cancel${endsAt ? ` on ${fmtDate(endsAt)}` : ""} (changed in Stripe).`,
+      "cancellation",
+    );
+  } else if (!sub.cancel_at_period_end && customer.data.cancel_requested_at && !deleted) {
+    await query(`UPDATE customers SET data = data - 'cancel_requested_at' - 'cancel_reason' - 'cancel_at', updated_at = now() WHERE id = $1`, [customer.id]);
+  }
+
   if (sub.status === "active" || sub.status === "trialing") await restoreCustomer(customer);
   return true;
 }
@@ -180,9 +218,25 @@ async function restoreCustomer(customer: CustomerRow): Promise<void> {
   await advanceOnboarding(customer.id);
 }
 
+/** Our invoices carry the subscription's metadata; anything else on the shared account is ignored. */
+async function storeInvoice(invoice: Stripe.Invoice): Promise<CustomerRow | undefined | false> {
+  const subscriptionId = invoiceSubscriptionId(invoice);
+  const customer = await customerBySubscription(subscriptionId);
+  const ours = Boolean(customer) || Boolean(invoice.parent?.subscription_details?.metadata?.[META_PRODUCT]);
+  if (!ours) return false;
+  await recordInvoice(invoice, subscriptionId, customer?.id ?? null);
+  return customer;
+}
+
+async function onInvoiceFinalized(invoice: Stripe.Invoice): Promise<boolean> {
+  return (await storeInvoice(invoice)) !== false;
+}
+
 async function onPaymentFailed(invoice: Stripe.Invoice): Promise<boolean> {
-  const customer = await customerBySubscription(invoiceSubscriptionId(invoice));
-  if (!customer) return false;
+  const stored = await storeInvoice(invoice);
+  if (stored === false) return false;
+  const customer = stored;
+  if (!customer) return true;
   const product = requireProduct(customer.product);
   await query(
     `UPDATE customers SET status = CASE WHEN status IN ('active','onboarding') THEN 'past_due' ELSE status END,
@@ -215,8 +269,9 @@ async function onPaymentFailed(invoice: Stripe.Invoice): Promise<boolean> {
 }
 
 async function onInvoicePaid(invoice: Stripe.Invoice): Promise<boolean> {
-  const customer = await customerBySubscription(invoiceSubscriptionId(invoice));
-  if (!customer) return false;
+  const customer = await storeInvoice(invoice);
+  if (customer === false) return false;
+  if (!customer) return true;
   await restoreCustomer(customer);
   return true;
 }
@@ -299,4 +354,18 @@ export async function pauseOverdueCustomers(): Promise<number> {
     paused++;
   }
   return paused;
+}
+
+/**
+ * Called when a client lands back from checkout: confirms the payment with
+ * Stripe directly, so their account is ready even if the webhook is late.
+ */
+export async function syncCheckoutSession(sessionId: string): Promise<CustomerRow | undefined> {
+  const known = await one<CustomerRow>(`SELECT * FROM customers WHERE stripe_checkout_id = $1`, [sessionId]);
+  if (known) return known;
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return undefined;
+  const session = await getStripe().checkout.sessions.retrieve(sessionId);
+  if (session.status !== "complete") return undefined;
+  await onCheckoutCompleted(session);
+  return one<CustomerRow>(`SELECT * FROM customers WHERE stripe_checkout_id = $1`, [sessionId]);
 }

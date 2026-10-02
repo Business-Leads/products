@@ -8,8 +8,17 @@ import { advanceOnboarding, runRoutines } from "../engine/workflow.js";
 import { queueEmail, sendDueEmails } from "../lib/email.js";
 import { createTask } from "../lib/tasks.js";
 import { requireProduct } from "../products/index.js";
+import { findUser, portalUrl, setupLink } from "../portal/accounts.js";
+import type { CustomerRow } from "../engine/types.js";
 import { sendDigest } from "./digest.js";
 import { checkSites } from "./health.js";
+
+/** The onboarding form in the client's account (via password setup if they haven't made one). */
+async function detailsLink(c: CustomerRow): Promise<string> {
+  const product = requireProduct(c.product);
+  const user = await findUser(c.product, c.email);
+  return user?.password_hash ? `${portalUrl(product)}/details` : setupLink(c);
+}
 
 export type Schedule = { everyMinutes: number } | { dailyAt: string }; // "HH:MM" UK time
 
@@ -62,7 +71,7 @@ async function intakeReminders(): Promise<number> {
       subject: `A quick reminder: your ${product.name} setup form`,
       body:
         `Hello,\n\nWe're ready to set up ${product.name} for you as soon as we have a few details:\n\n` +
-        `${config.baseUrl}/start/${c.intake_token}\n\nIt takes about five minutes. Reply if you'd rather ` +
+        `${await detailsLink(c)}\n\nIt takes about five minutes. Reply if you'd rather ` +
         `do it over the phone.\n\nFelix`,
     });
     await query(

@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { config } from "../config.js";
 import type { Plan, Product } from "../products/index.js";
+import { portalUrl } from "../portal/accounts.js";
 import { NotConfiguredError } from "./util.js";
 
 let client: Stripe | null = null;
@@ -85,7 +86,8 @@ export function buildCheckoutParams(
       metadata,
       ...(plan.trialDays ? { trial_period_days: plan.trialDays } : {}),
     },
-    success_url: `${config.baseUrl}/welcome?product=${product.slug}&session_id={CHECKOUT_SESSION_ID}`,
+    // The client comes back to their new account on the product's own site.
+    success_url: `${portalUrl(product)}/welcome?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: product.siteUrls[0] ?? config.baseUrl,
   };
 }

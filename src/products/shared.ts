@@ -25,3 +25,10 @@ export const goLiveStep: StepDef = {
   kind: "auto",
   handler: "go_live",
 };
+
+/** Client-facing labels for the shared steps. */
+export const sharedPortalSteps: Record<string, string | null> = {
+  welcome: "Welcome and account set up",
+  intake: "Your business details",
+  go_live: "Live",
+};

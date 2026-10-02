@@ -29,6 +29,13 @@ export const config = {
     fromEmail: str("OPERATOR_FROM", "hello@onlinebusinessbuilder.co.uk"),
   },
 
+  portal: {
+    // Products whose account area is served on its own domain (portal.host in
+    // the product registry), as a comma-separated list of slugs, or "all".
+    // The others are served at BASE_URL/portal/<slug> until their DNS is set up.
+    domains: str("PORTAL_DOMAINS"),
+  },
+
   stripe: {
     secretKey: str("STRIPE_SECRET_KEY"),
     webhookSecret: str("STRIPE_WEBHOOK_SECRET"),

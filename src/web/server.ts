@@ -4,6 +4,8 @@ import Fastify from "fastify";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isProduction } from "../config.js";
+import { portalRoutes, rewritePortalUrl } from "../portal/routes.js";
 import { adminRoutes } from "./admin.js";
 import { authRoutes } from "./auth.js";
 import { publicRoutes } from "./public.js";
@@ -11,7 +13,24 @@ import { publicRoutes } from "./public.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export async function buildServer() {
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" }, trustProxy: true, bodyLimit: 1_000_000 });
+  const app = Fastify({
+    logger: { level: process.env.LOG_LEVEL ?? "info" },
+    trustProxy: true,
+    bodyLimit: 1_000_000,
+    // Each product's account domain (e.g. account.linkn.co.uk) serves that product's client area.
+    rewriteUrl: (req) => {
+      const forwarded = req.headers["x-forwarded-host"];
+      return rewritePortalUrl((Array.isArray(forwarded) ? forwarded[0] : forwarded) ?? req.headers.host, req.url ?? "/");
+    },
+  });
+
+  app.addHook("onSend", async (_req, reply, payload) => {
+    reply.header("X-Content-Type-Options", "nosniff");
+    reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+    reply.header("X-Frame-Options", "DENY");
+    if (isProduction) reply.header("Strict-Transport-Security", "max-age=31536000");
+    return payload;
+  });
 
   // Keep the raw bytes for the Stripe webhook (needed to verify its signature);
   // parse JSON normally everywhere else.
@@ -31,6 +50,7 @@ export async function buildServer() {
 
   await app.register(publicRoutes);
   await app.register(authRoutes);
+  await app.register(portalRoutes);
   await app.register(adminRoutes);
   return app;
 }

@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { AIFT, BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 export const firstPageLocal: Product = {
   slug: "firstpagelocal",
@@ -75,4 +75,16 @@ export const firstPageLocal: Product = {
   tools: ["localfalcon", "anthropic", "smtp", "stripe"],
   leadFollowUpDays: [3, 10],
   pauseAfterPastDueDays: 14,
+  portal: {
+    host: "account.firstpagelocal.co.uk",
+    accent: "#c77700",
+    resultsTitle: "Your visibility",
+    resultsIntro: "How you show up on Google Maps and in AI answers.",
+    steps: { ...sharedPortalSteps, provision_scans: "Your local searches set up", baseline_report: "Your first report" },
+    routines: { monthly_report: "Monthly report" },
+    metrics: [
+      { key: "maps_average_position", label: "Average Maps position" },
+      { key: "ai_mentions", label: "AI recommendations" },
+    ],
+  },
 };

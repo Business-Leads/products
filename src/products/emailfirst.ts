@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 export const emailFirst: Product = {
   slug: "emailfirst",
@@ -82,4 +82,17 @@ export const emailFirst: Product = {
     "until the pitch has passed the check and they choose to go ahead.",
   leadFollowUpDays: [2, 6],
   pauseAfterPastDueDays: 7,
+  portal: {
+    host: "account.emailfirst.co.uk",
+    accent: "#6e56cf",
+    resultsTitle: "Your campaign results",
+    resultsIntro: "Emails sent to your audience and the people who responded.",
+    steps: { ...sharedPortalSteps, copy: "Your emails and landing page written", customer_approves_copy: "You approve the copy", provision_sending: "Sending set up" },
+    routines: { weekly_summary: "Weekly results" },
+    metrics: [
+      { key: "emails_sent", label: "Emails sent" },
+      { key: "human_clicks", label: "Verified clicks" },
+      { key: "replies", label: "Replies" },
+    ],
+  },
 };

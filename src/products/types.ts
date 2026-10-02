@@ -95,4 +95,26 @@ export interface Product {
   leadFollowUpDays: number[];
   /** Pause service this many days after a failed payment. */
   pauseAfterPastDueDays: number;
+  /** The client's account area on the product's own site. */
+  portal: PortalDef;
+}
+
+/**
+ * What a client sees in their account. Clients never see which tools are used
+ * behind the scenes, so every onboarding step and routine is listed here with
+ * a client-facing label, or null to keep it internal.
+ */
+export interface PortalDef {
+  /** e.g. account.linkn.co.uk, pointed at this app. */
+  host: string;
+  /** Brand colour for buttons and highlights. */
+  accent: string;
+  /** Heading for the results section. */
+  resultsTitle: string;
+  /** One line under the heading explaining what the results show. */
+  resultsIntro: string;
+  steps: Record<string, string | null>;
+  routines: Record<string, string | null>;
+  /** Headline figures shown on the dashboard, filled from reports. */
+  metrics: { key: string; label: string }[];
 }

@@ -3,6 +3,7 @@ import { logEvent } from "../lib/events.js";
 import type { Task } from "../lib/tasks.js";
 import type { DeliveryRow, StepRow } from "./types.js";
 import { requireProduct } from "../products/index.js";
+import { extractMetrics } from "./clients.js";
 import { advanceOnboarding, completeStep, executeStep, loadCustomer, runDelivery, saveCustomerData } from "./workflow.js";
 
 export type Decision = "approve" | "reject" | "done" | "dismiss";
@@ -125,7 +126,12 @@ async function rerun(p: Record<string, any>, input?: string): Promise<void> {
       JSON.stringify({ input: input ?? "" }),
     ]);
     const delivery = await one<DeliveryRow>(`SELECT * FROM deliveries WHERE id = $1`, [p.deliveryId]);
-    if (delivery) await runDelivery(delivery, input);
+    if (delivery) {
+      await runDelivery(delivery, input);
+      // The pasted figures also feed the headline numbers on the client's dashboard.
+      const customer = await loadCustomer(delivery.customer_id);
+      if (customer && input) await extractMetrics(customer, delivery.period, input);
+    }
     return;
   }
   if (p.stepId) {

@@ -1,5 +1,5 @@
 import type { Product } from "./types.js";
-import { BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps } from "./shared.js";
+import { BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, sharedPortalSteps } from "./shared.js";
 
 // Sold like Business Leads: the customer pays first, then books an onboarding
 // call with Felix. The welcome page and welcome email both lead with the
@@ -105,4 +105,19 @@ export const onlineBusinessBuilder: Product = {
     "month with no setup fee, and straight after signing up they book an onboarding call with Felix.",
   leadFollowUpDays: [2, 7],
   pauseAfterPastDueDays: 14,
+  portal: {
+    host: "account.onlinebusinessbuilder.co.uk",
+    accent: "#2d6cdf",
+    resultsTitle: "Your website and Google profile",
+    resultsIntro: "Your site, your Google profile and how local customers are finding you.",
+    steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Access to your Google Business Profile", website_design: "Your website being designed", design_approved: "Design approved and website launched" },
+    routines: { weekly_post: "Weekly Google post", reviews: "Google reviews answered", monthly_report: "Monthly report" },
+    metrics: [
+      { key: "profile_views", label: "Google profile views" },
+      { key: "calls", label: "Calls from Google" },
+      { key: "direction_requests", label: "Direction requests" },
+      { key: "website_visits", label: "Website visits" },
+      { key: "new_reviews", label: "New reviews" },
+    ],
+  },
 };

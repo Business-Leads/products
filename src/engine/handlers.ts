@@ -4,6 +4,7 @@ import { draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
 import { bookingLink, getPlan } from "../products/index.js";
 import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
+import { portalUrl, setupLink } from "../portal/accounts.js";
 import type { Handler, HandlerContext, Outcome } from "./types.js";
 
 // Step and routine handlers, referenced by name from the product registry.
@@ -78,7 +79,9 @@ const handlers: Record<string, Handler> = {
   // ---------------------------------------------------------------- shared
 
   async send_welcome(ctx) {
-    const link = `${config.baseUrl}/start/${ctx.customer.intake_token}`;
+    // The account link lets them create a password; everything else happens in their account.
+    const link = await setupLink(ctx.customer);
+    const account = portalUrl(ctx.product);
     if (ctx.product.bookingAfterPurchase) {
       return {
         type: "email",
@@ -88,8 +91,10 @@ const handlers: Record<string, Handler> = {
           `Hello ${firstName(ctx)},\n\nThank you for signing up to ${ctx.product.name}. The next step is a short ` +
           `onboarding call with me, so we get everything right from the start. Pick a time that suits you:\n\n` +
           `${bookingLink(ctx.product, ctx.customer.name, ctx.customer.email)}\n\n` +
-          `Before the call, it helps if you fill in this short form about your business (about five minutes):\n\n` +
-          `${link}\n\nIf anything is unclear, just reply to this email.\n\nFelix`,
+          `Your account is where you'll follow progress, see reports and download invoices. If you haven't ` +
+          `set your password yet, do it here:\n\n${link}\n\nBefore the call, it helps if you fill in the short ` +
+          `form about your business in your account (about five minutes).\n\n` +
+          `You can sign in any time at ${account}\n\nIf anything is unclear, just reply to this email.\n\nFelix`,
       };
     }
     return {
@@ -98,10 +103,11 @@ const handlers: Record<string, Handler> = {
       subject: `Welcome to ${ctx.product.name}: one form to get started`,
       body:
         `Hello ${firstName(ctx)},\n\n` +
-        `Thank you for signing up to ${ctx.product.name}. The next step is a short form so we can set ` +
-        `everything up for you:\n\n${link}\n\n` +
-        `It takes about five minutes. As soon as it's in, we'll get to work and keep you posted.\n\n` +
-        `If anything is unclear, just reply to this email.\n\nFelix`,
+        `Thank you for signing up to ${ctx.product.name}. Your account is where you'll follow progress, see ` +
+        `reports and download invoices. If you haven't set your password yet, do it here:\n\n${link}\n\n` +
+        `The next step is a short form in your account so we can set everything up for you. It takes about ` +
+        `five minutes. As soon as it's in, we'll get to work and keep you posted.\n\n` +
+        `You can sign in any time at ${account}\n\nIf anything is unclear, just reply to this email.\n\nFelix`,
     };
   },
 
@@ -122,8 +128,8 @@ const handlers: Record<string, Handler> = {
       subject: `${ctx.product.name} is live`,
       body:
         `Hello ${firstName(ctx)},\n\nEverything is set up and ${ctx.product.name} is now live for ` +
-        `${customerLabel(ctx)}. You don't need to do anything else. We'll be in touch with your first ` +
-        `results, and you can reply to this email at any time.\n\nFelix`,
+        `${customerLabel(ctx)}. You don't need to do anything else. Your results and reports will appear in ` +
+        `your account as they come in:\n\n${portalUrl(ctx.product)}\n\nYou can reply to this email at any time.\n\nFelix`,
     };
   },
 

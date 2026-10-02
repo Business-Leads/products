@@ -42,6 +42,20 @@ approves and checks quality through the Inbox.
 - `src/jobs/index.ts` + `engine/scheduler.ts`: in-process scheduler with
   Postgres advisory locks.
 - The web layer uses tagged-template HTML (`web/html.ts` escapes by default).
+- Client accounts (`src/portal/`): each product has a password-protected client
+  area, branded as that product, at `portal.host` (e.g. account.linkn.co.uk) once
+  its slug is in PORTAL_DOMAINS (DNS CNAME to the app plus a DigitalOcean domain),
+  otherwise at BASE_URL/portal/<slug>. `server.ts` rewrites those hosts to
+  `/portal/<slug>/…`. Flow: Stripe checkout returns to `/welcome` (creates the
+  password), then `/book` (if bookingAfterPurchase), then `/details`, then the
+  dashboard (progress, figures, reports, updates), plus billing (invoices from
+  webhooks, upgrade, cancel at period end), support and account pages.
+  `engine/clients.ts` holds the actions; every one emails the operator.
+- Clients must never see supplier names: every step and routine needs a
+  client label (or null) in the product's `portal` block; a test enforces it.
+- HQ: `/clients` (all client logins), `/support`, and per-customer panels
+  (view their dashboard read-only, password links, disable login, figures,
+  post updates that the client can approve to complete a step).
 
 ## Testing
 Postgres 16 is available in the cloud container:
@@ -57,8 +71,9 @@ npm run typecheck
 Don't `pkill -f` a pattern that matches your own shell command; it kills the
 shell.
 
-## Budget (owner's hard limit: about $40/month in total)
-- DigitalOcean: smallest app (apps-s-1vcpu-0.5gb, ~$5) plus dev database (~$7). Don't upsize.
+## Budget
+The owner lifted the earlier $40/month limit, but keep costs sensible.
+- DigitalOcean: smallest app (apps-s-1vcpu-0.5gb) plus a small managed Postgres cluster. Don't upsize without reason.
 - Claude: the dashboard defaults to claude-opus-5-5 with a hard cap,
   CLAUDE_MONTHLY_BUDGET_USD=20. Over budget, drafting falls back to templates
   and manual tasks.
