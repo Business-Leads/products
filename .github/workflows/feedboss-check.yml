@@ -1,0 +1,20 @@
+# Read-only: checks the FeedBoss key works by listing a workspace's recent posts (count and statuses only).
+name: FeedBoss check
+on:
+  workflow_dispatch:
+    inputs:
+      workspace:
+        description: "FeedBoss workspace id"
+        required: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check
+        env:
+          KEY: ${{ secrets.FEEDBOSS_API_KEY }}
+          WS: ${{ inputs.workspace }}
+        run: |
+          code=$(curl -s -o r.json -w "%{http_code}" -H "x-api-key: $KEY" "https://server.feedboss.ai/api/v1/ai-conversation/recent-posts/$WS")
+          echo "HTTP $code"
+          jq -c '{success, message, total: .data.total, statuses: ([.data.posts[]?.status] | group_by(.) | map({(.[0]): length}) | add)}' r.json || head -c 300 r.json
