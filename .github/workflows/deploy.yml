@@ -1,0 +1,40 @@
+# Deploys Products HQ to DigitalOcean App Platform and sets up the Stripe
+# webhook, using repository secrets. Run by hand (Actions > Deploy > Run).
+# Keys are never printed; a generated dashboard password is shown once.
+name: Deploy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check secrets
+        env:
+          DO: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          ST: ${{ secrets.STRIPE_SECRET_KEY }}
+          AN: ${{ secrets.HQ_ANTHROPIC_API_KEY }}
+          AP: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          for pair in "DIGITALOCEAN_ACCESS_TOKEN:$DO" "STRIPE_SECRET_KEY:$ST" "HQ_ANTHROPIC_API_KEY:$AN" "ADMIN_PASSWORD:$AP"; do
+            name="${pair%%:*}"; val="${pair#*:}"
+            echo "$name: $([ -n "$val" ] && echo set || echo missing)"
+          done
+          [ -n "$DO" ] || { echo "DIGITALOCEAN_ACCESS_TOKEN is required"; exit 1; }
+      - name: Deploy
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          HQ_ANTHROPIC_API_KEY: ${{ secrets.HQ_ANTHROPIC_API_KEY }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+          MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+        run: node scripts/deploy.mjs
