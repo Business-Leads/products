@@ -11,6 +11,8 @@ function int(name: string, fallback: number): number {
 }
 
 export const config = {
+  // The name shown on the dashboard and on operator emails.
+  brand: str("BRAND_NAME", "Online Business Builder"),
   env: str("NODE_ENV", "development"),
   port: int("PORT", 8080),
   // Public base URL of this app, used in links sent to customers (checkout

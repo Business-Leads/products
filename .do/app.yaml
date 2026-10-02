@@ -4,6 +4,9 @@
 # Deployed by scripts/deploy.sh, which fills in the secrets from the environment.
 name: products-hq
 region: lon
+domains:
+  - domain: hq.onlinebusinessbuilder.co.uk
+    type: PRIMARY
 services:
   - name: web
     dockerfile_path: Dockerfile

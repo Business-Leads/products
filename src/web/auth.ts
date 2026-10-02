@@ -31,9 +31,9 @@ export async function authRoutes(app: FastifyInstance) {
     const noPassword = !config.admin.password;
     return reply.type("text/html").send(
       publicPage(
-        "Sign in · Products HQ",
+        `Sign in · ${config.brand}`,
         html`<div class="panel" style="max-width:380px;margin:80px auto">
-          <h1>Products HQ</h1>
+          <h1>${config.brand}</h1>
           ${noPassword ? html`<p class="flash">Set ADMIN_PASSWORD in the app settings to enable sign-in.</p>` : ""}
           ${req.query.error ? html`<p class="flash">That password isn't right.</p>` : ""}
           <form method="post" action="/login">

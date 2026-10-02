@@ -55,7 +55,7 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
   let autonomy = e.autonomy ?? "auto";
   if (e.product && e.autonomyKey) autonomy = await autonomyFor(e.product, e.autonomyKey, autonomy);
 
-  const from = product ? `${product.email.fromName} <${product.email.from}>` : `Products HQ <${config.admin.alertEmail}>`;
+  const from = product ? `${product.email.fromName} <${product.email.from}>` : `${config.brand} <${config.admin.alertEmail}>`;
   const status = autonomy === "approve" ? "draft" : "queued";
   const row = await one<{ id: string }>(
     `INSERT INTO emails (product, customer_id, lead_id, kind, to_address, from_address, reply_to, subject, body_text, status, send_after, prospect_id)

@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 import { products } from "../products/index.js";
 import { html, raw, type Raw } from "./html.js";
 
@@ -15,7 +16,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} · Products HQ</title>
+<title>${title} · ${config.brand}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Urbanist:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/static/app.css">
@@ -23,7 +24,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
 <body>
 <div class="shell">
   <nav class="nav">
-    <div class="brand">Products HQ</div>
+    <div class="brand">${config.brand}</div>
     ${link("/", "Overview")}
     ${link("/inbox", "Inbox", opts.counts?.inbox)}
     ${link("/customers", "Customers")}

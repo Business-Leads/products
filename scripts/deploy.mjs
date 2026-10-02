@@ -96,6 +96,24 @@ for (let i = 0; i < 90; i++) {
 if (!app.live_url) throw new Error("Timed out waiting for the app to go live");
 console.log(`\nLive at ${app.live_url}`);
 
+// Point the dashboard's own subdomain at the app (GoDaddy), if keys are given.
+const customDomain = spec.domains?.[0]?.domain;
+const ingress = app.default_ingress?.replace(/^https?:\/\//, "").replace(/\/$/, "");
+if (customDomain && ingress && process.env.GODADDY_API_KEY && process.env.GODADDY_API_SECRET) {
+  const parts = customDomain.split(".");
+  const name = parts[0];
+  const zone = parts.slice(1).join(".");
+  const res = await fetch(`https://api.godaddy.com/v1/domains/${zone}/records/CNAME/${name}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `sso-key ${process.env.GODADDY_API_KEY}:${process.env.GODADDY_API_SECRET}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([{ data: ingress, ttl: 600 }]),
+  });
+  console.log(`DNS: ${customDomain} -> ${ingress} (${res.status})`);
+}
+
 // Stripe webhook, created once; its signing secret is only shown at creation.
 if (process.env.STRIPE_SECRET_KEY) {
   const url = `${app.live_url}/webhooks/stripe`;

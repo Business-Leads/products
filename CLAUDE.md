@@ -1,4 +1,8 @@
-# Products HQ: notes for Claude sessions
+# Online Business Builder (operations dashboard): notes for Claude sessions
+
+The whole project is branded **Online Business Builder**. The dashboard lives at
+hq.onlinebusinessbuilder.co.uk. "products-hq" survives only as the internal
+DigitalOcean app name; don't rename it, because the deploy script finds the app by that name.
 
 The owner's plan usage is limited. Read this file and README.md, then work
 directly. Don't re-research the products: what's known is encoded in

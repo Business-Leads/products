@@ -1,4 +1,4 @@
-# Products HQ
+# Online Business Builder: operations dashboard
 
 The central dashboard that markets, onboards and runs the five products, on
 its own, around the clock. A person checks quality and approves what they

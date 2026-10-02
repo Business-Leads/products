@@ -99,7 +99,7 @@ export async function buildDigest(): Promise<{ subject: string; body: string }> 
   lines.push(`Dashboard: ${config.baseUrl}`);
 
   const subject =
-    `Products HQ daily: ${urgent.length ? `${urgent.length} urgent, ` : ""}${openTasks.length} waiting, ` +
+    `${config.brand} daily: ${urgent.length ? `${urgent.length} urgent, ` : ""}${openTasks.length} waiting, ` +
     `${formatPrice(mrr)} MRR`;
   return { subject, body: lines.join("\n") };
 }
