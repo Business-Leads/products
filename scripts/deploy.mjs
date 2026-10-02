@@ -85,7 +85,7 @@ if (process.env.GMAIL_APP_PASSWORD) {
 }
 // Tool keys passed straight through to the app.
 for (const k of ["NETLIFY_AUTH_TOKEN", "GODADDY_API_KEY", "GODADDY_API_SECRET", "MAILWIZZ_API_URL", "MAILWIZZ_API_KEY",
-  "AWAZ_API_KEY", "FEEDBOSS_API_KEY", "SCOREAPP_API_KEY", "SBL_API_KEY", "SBL_COMPANY_ID"]) {
+  "AWAZ_API_KEY", "FEEDBOSS_API_KEY", "SCOREAPP_API_KEY", "SBL_API_KEY", "SBL_COMPANY_ID", "SBL_WEBHOOK_SECRET"]) {
   if (process.env[k]) values[k] = process.env[k];
 }
 if (!process.env.RESEND_API_KEY && process.env.MAIL_ADDRESS && process.env.MAIL_APP_PASSWORD) {

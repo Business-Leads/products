@@ -47,6 +47,7 @@ jobs:
           SCOREAPP_API_KEY: ${{ secrets.SCOREAPP_API_KEY }}
           SBL_API_KEY: ${{ secrets.SBL_API_KEY }}
           SBL_COMPANY_ID: ${{ secrets.SBL_COMPANY_ID }}
+          SBL_WEBHOOK_SECRET: ${{ secrets.SBL_WEBHOOK_SECRET }}
           GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
           GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
         run: node scripts/deploy.mjs
