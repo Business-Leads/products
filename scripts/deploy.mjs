@@ -83,12 +83,13 @@ if (existing) {
 }
 
 // Wait for the deployment to go live.
-for (let i = 0; i < 90; i++) {
+for (let i = 0; i < 150; i++) {
   await new Promise((r) => setTimeout(r, 10_000));
   app = (await doApi("GET", `/apps/${app.id}`)).app;
   const phase = app.in_progress_deployment?.phase ?? app.active_deployment?.phase;
   process.stdout.write(`  ${phase ?? "pending"}\r`);
-  if (!app.in_progress_deployment && app.active_deployment?.phase === "ACTIVE" && app.live_url) break;
+  // A running version is enough: later pushes keep starting new builds.
+  if (app.active_deployment?.phase === "ACTIVE" && app.live_url) break;
   if (["ERROR", "CANCELED"].includes(app.in_progress_deployment?.phase)) {
     throw new Error(`Deployment ${app.in_progress_deployment.phase}. See the app's build logs in DigitalOcean.`);
   }
