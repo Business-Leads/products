@@ -39,12 +39,30 @@ export const goodQuestions: Product = {
       title: "Agree the questions with the sponsor",
       kind: "manual",
       instructions: "Design the 15 questions and bands with the sponsor and get written sign-off.",
+      guide: {
+        why: "The questions are agreed with the sponsor, so it needs your conversation.",
+        minutes: 60,
+        steps: [
+          "Meet the sponsor and agree the topic and audience.",
+          "Draft fifteen questions across five areas, each with three answers.",
+          "Get the sponsor's written OK by email, then mark this done.",
+        ],
+      },
     },
     {
       key: "compliance",
       title: "Compliance sign-off (legitimate interests, privacy, retention)",
       kind: "manual",
       instructions: "Complete the legitimate interests assessment and privacy wording for this campaign.",
+      guide: {
+        why: "A short legal check is needed before contacting people for research.",
+        minutes: 30,
+        steps: [
+          "Write down why contacting this audience is reasonable (legitimate interests) in a few sentences.",
+          "Check the invitation email has who we are, why we're writing, and an opt-out.",
+          "Agree how long answers are kept (for example 12 months), then mark this done.",
+        ],
+      },
     },
     {
       key: "scorecard",
@@ -52,12 +70,30 @@ export const goodQuestions: Product = {
       kind: "auto",
       handler: "gq_build_scorecard",
       instructions: "Clone the scorecard template in ScoreApp, apply the agreed questions and branding, and test it end to end.",
+      guide: {
+        why: "The sponsor's assessment page is set up by hand for now.",
+        minutes: 45,
+        steps: [
+          "Copy the AI readiness assessment page and change the questions to the agreed ones.",
+          "Check it on a phone and a computer.",
+          "Mark this done.",
+        ],
+      },
     },
     {
       key: "sends",
       title: "Schedule the invitation sends",
       kind: "manual",
       instructions: "Create the invitation campaigns in Mailpulse with rest periods between lists.",
+      guide: {
+        why: "Invitation emails go out from Mailpulse, which is set up by hand for now.",
+        minutes: 20,
+        steps: [
+          "In Mailpulse, create the invitation campaign to the agreed list.",
+          "Leave at least three days between sends to the same list.",
+          "Mark this done.",
+        ],
+      },
     },
     goLiveStep,
   ],

@@ -62,11 +62,23 @@ export const linkn: Product = {
       key: "kickoff",
       title: "45-minute kickoff call booked and held",
       kind: "manual",
+      handler: "linkn_kickoff",
       instructions:
         "Hold the kickoff call. Agree the ICP and exclusions with the approver. During the call the client " +
         "signs in to their own LinkedIn inside Sbl.so (as a sender) and inside FeedBoss. Never collect " +
         "passwords. Record the Sbl.so channel id and FeedBoss workspace id on the customer, and check the " +
         "FeedBoss voice profile matches the client.",
+      guide: {
+        why: "It's a live call with the client, and only they can sign in to their own LinkedIn.",
+        minutes: 45,
+        steps: [
+          "The client books the call from their welcome email. It appears in your calendar.",
+          "On the call, agree who they want to reach (job titles, sectors, areas) and who to avoid.",
+          "In FeedBoss, create a workspace named after the client and ask them to connect their LinkedIn to it while you are on the call.",
+          "For Business and Growth plans, ask them to connect their LinkedIn as a sender in Sbl.so too.",
+          "Type your notes below and save. Their content themes are drafted and sent to them straight away.",
+        ],
+      },
     },
     {
       key: "profile_rewrite",
@@ -76,8 +88,9 @@ export const linkn: Product = {
     },
     {
       key: "content_pillars",
-      title: "Agree 3–4 content pillars and schedule the first 4 posts",
-      kind: "manual",
+      title: "Client approves their content themes",
+      kind: "customer",
+      handler: "linkn_pillars",
       instructions:
         "Check the voice profile with the client, ask them to upload case studies and FAQs to the FeedBoss " +
         "knowledge base, agree 3–4 pillars, then schedule the first four posts. Outreach starts only once " +
@@ -91,6 +104,17 @@ export const linkn: Product = {
       instructions:
         "Create 'LNK <slug> / cold-icp / <yyyy-mm>' and 'LNK <slug> / warm-engagers' in Sbl.so, bind the " +
         "client's sender, and get the approver's sign-off on the wording.",
+      guide: {
+        why: "Sbl.so doesn't let other systems create campaigns, so this is done in Sbl.so.",
+        minutes: 20,
+        steps: [
+          "In Sbl.so, create a campaign called \"LNK <client> / cold\" using the audience agreed on the call.",
+          "Create a second campaign called \"LNK <client> / warm\" for people who engage with their posts.",
+          "Choose the client's LinkedIn as the sender in both.",
+          "Check the message wording reads like them.",
+          "Open the client's page in HQ, paste both campaign ids under Sbl.so campaigns, then mark this done.",
+        ],
+      },
     },
     {
       key: "launch",
@@ -99,6 +123,15 @@ export const linkn: Product = {
       plans: ["business", "growth"],
       instructions:
         "Send a one-recipient proof, then launch to at most 25 leads. Watch for 48 hours before widening.",
+      guide: {
+        why: "Starting outreach from someone's LinkedIn is a judgement call you should make.",
+        minutes: 10,
+        steps: [
+          "In Sbl.so, send the cold campaign to one person (yourself) and check it.",
+          "Start it with no more than 25 people.",
+          "Look again in two days. If the replies look right, let it run at full volume, then mark this done.",
+        ],
+      },
     },
     {
       key: "call_guide",
@@ -108,6 +141,16 @@ export const linkn: Product = {
       instructions:
         "Write the seven-part call guide in the client's voice and get sign-off. Confirm the data-processing " +
         "agreement with the calling team and TPS/CTPS screening. First calling day 3–4 weeks after outreach starts.",
+      guide: {
+        why: "Telephone follow-up needs a written guide you are happy to put your name to.",
+        minutes: 60,
+        steps: [
+          "Write a one-page call guide in the client's voice: who we are, why we're calling, three questions, how to book a meeting.",
+          "Send it to the client to agree.",
+          "Check the calling list against the TPS and CTPS (do-not-call lists).",
+          "Mark this done. The first calling day is three to four weeks after outreach starts.",
+        ],
+      },
     },
     goLiveStep,
   ],
@@ -134,6 +177,16 @@ export const linkn: Product = {
       cadence: { every: "week", weekday: 1 },
       handler: "linkn_weekly_posts",
       approval: true,
+      guide: {
+        why: "Linkn posts always get your check before they go out.",
+        minutes: 10,
+        steps: [
+          "Read the three drafts below (they are also in the client's FeedBoss workspace).",
+          "Edit anything that doesn't sound like them, in FeedBoss.",
+          "Schedule them in FeedBoss for Tuesday, Wednesday and Thursday mornings.",
+          "Mark this done.",
+        ],
+      },
     },
     {
       key: "content_plan",

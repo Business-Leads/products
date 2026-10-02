@@ -51,6 +51,16 @@ export const onlineBusinessBuilder: Product = {
         "The customer was sent the booking link straight after paying. Hold the onboarding call: confirm " +
         "services, area and the look they want, and agree how to get manager access to their Google " +
         "Business Profile (or create one).",
+      guide: {
+        why: "It's your call with the client.",
+        minutes: 30,
+        steps: [
+          "The client books the call straight after paying. It appears in your calendar.",
+          "On the call, confirm their services, the area they cover, the look they want and anything to avoid.",
+          "Ask them to add you as a manager on their Google Business Profile, or tell them you'll create one.",
+          "Type your notes below and save. Their website is written and sent to them for approval straight away.",
+        ],
+      },
     },
     {
       key: "gbp_access",
@@ -59,6 +69,15 @@ export const onlineBusinessBuilder: Product = {
       instructions:
         "Request or accept manager access to the customer's Google Business Profile (or create and verify a new " +
         "profile). Record the profile name on the customer. Start weekly posting once access is in place.",
+      guide: {
+        why: "Google only lets the business owner give access to their profile.",
+        minutes: 10,
+        steps: [
+          "Look for the Google email inviting you to manage their profile and accept it (or go to business.google.com).",
+          "If they have no profile, create one at business.google.com and request verification.",
+          "Mark this done. Weekly Google posts start by themselves.",
+        ],
+      },
     },
     {
       key: "website_design",
@@ -89,6 +108,16 @@ export const onlineBusinessBuilder: Product = {
       cadence: { every: "week", weekday: 2 },
       handler: "obb_weekly_post",
       approval: true,
+      guide: {
+        why: "Google doesn't let other systems post to Business Profiles yet.",
+        minutes: 5,
+        steps: [
+          "Read the post below.",
+          "Open the client's profile at business.google.com and choose Add update.",
+          "Paste the post, add a photo if you have one, and publish.",
+          "Mark this done.",
+        ],
+      },
     },
     {
       key: "reviews",
@@ -97,6 +126,15 @@ export const onlineBusinessBuilder: Product = {
       handler: "obb_reviews",
       approval: true,
       instructions: "Open the customer's Google Business Profile and reply to any new reviews in their voice.",
+      guide: {
+        why: "Google doesn't let other systems answer reviews yet.",
+        minutes: 10,
+        steps: [
+          "Open the client's profile at business.google.com and go to Reviews.",
+          "Reply to each new review: thank them by name, keep it short, and never argue.",
+          "Mark this done.",
+        ],
+      },
     },
     {
       key: "monthly_report",

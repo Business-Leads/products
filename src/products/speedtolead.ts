@@ -58,8 +58,8 @@ export const speedToLead: Product = {
     ...welcomeSteps,
     {
       key: "dpa",
-      title: "Send data processing agreement",
-      kind: "auto",
+      title: "Client accepts the data processing terms",
+      kind: "customer",
       handler: "stl_send_dpa",
     },
     {
@@ -77,6 +77,17 @@ export const speedToLead: Product = {
         "In Awaz: create an assistant from the approved script, attach a UK number, set call transfer to " +
         "the urgent mobile, SMS and email notifications, the booking calendar, and the recording retention " +
         "period. Record the assistant id and the forwarding number on the customer.",
+      guide: {
+        why: "Awaz doesn't let other systems create assistants, so this is done in Awaz.",
+        minutes: 20,
+        steps: [
+          "In Awaz, go to Agents and create a new agent named after the business.",
+          "Open the client's page in HQ, copy the approved call script (Notes and drafts, \"script\"), and paste it into the agent's Prompt.",
+          "Buy a UK number for it (Settings, Phones, Buy Phone) and attach it to the agent.",
+          "Under Actions, add Transfer Call (to the urgent number in their answers) and End Call.",
+          "Type the agent id and the phone number below, separated by a comma, and save.",
+        ],
+      },
     },
     {
       key: "forwarding",
@@ -91,6 +102,17 @@ export const speedToLead: Product = {
       instructions:
         "Ring the business number and let it go unanswered to confirm forwarding. Make three test calls with " +
         "the owner: a normal booking, an out-of-area enquiry and an urgent call. Adjust the script if needed.",
+      guide: {
+        why: "Someone needs to ring the number and hear the assistant answer.",
+        minutes: 15,
+        steps: [
+          "Ring the client's business number and let it go unanswered. It should forward to the assistant.",
+          "Make a normal booking call.",
+          "Make an out-of-area call: it should politely say they don't cover that area.",
+          "Make an urgent call: it should transfer to the urgent number.",
+          "If anything sounds wrong, adjust the agent's prompt in Awaz, then mark this done.",
+        ],
+      },
     },
     goLiveStep,
   ],

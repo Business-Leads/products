@@ -62,6 +62,16 @@ export const emailFirst: Product = {
         "In the Mailpulse/MailWizz customer area: create the client's list and custom fields, upload the three " +
         "approved emails as templates, create the campaigns with the sender name and reply-to from the intake, " +
         "and add the client to the daily sending matrix and Hot Prospects report.",
+      guide: {
+        why: "Lists and campaigns in Mailpulse are set up by hand for now.",
+        minutes: 30,
+        steps: [
+          "In Mailpulse, create a list for the client.",
+          "Add the three approved emails as templates (they're in the client's emails in HQ).",
+          "Create the campaigns with the sender name and reply-to address from their answers.",
+          "Type the campaign ids below, separated by commas, and save. Weekly results then come in by themselves.",
+        ],
+      },
     },
     goLiveStep,
   ],

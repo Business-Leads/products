@@ -80,6 +80,19 @@ function needData(ctx: HandlerContext, what: string, instructions: string): Outc
   };
 }
 
+/**
+ * Put something in the client's account for them to approve (once), then wait.
+ * Approving completes the step; asking for changes raises a to-do for Felix.
+ */
+async function askClientToApprove(ctx: HandlerContext, u: { title: string; body: string; link?: string }): Promise<Outcome> {
+  const key = `asked_${ctx.step?.key}`;
+  if (!ctx.customer.data[key]) {
+    await postUpdate(ctx.customer, { ...u, approvalStep: ctx.step?.key });
+    await query(`UPDATE customers SET data = data || jsonb_build_object($2::text, true) WHERE id = $1`, [ctx.customer.id, key]);
+  }
+  return { type: "waiting", note: "Waiting for the client to approve in their account" };
+}
+
 const handlers: Record<string, Handler> = {
   // ---------------------------------------------------------------- shared
 
@@ -194,6 +207,16 @@ const handlers: Record<string, Handler> = {
         "Present them in an email asking the client to make the changes themselves and reply with any edits.",
     );
     return { type: "email", approval: true, ...draft };
+  },
+
+  async linkn_kickoff(ctx) {
+    return {
+      type: "manual",
+      title: `Kickoff call with ${customerLabel(ctx)}`,
+      instructions: "Hold the kickoff call, then type your notes below.",
+      inputLabel: "Notes from the call (who to reach, who to avoid, anything about their voice)",
+      saveAs: "call_notes",
+    };
   },
 
   async linkn_reply_triage(ctx) {
@@ -327,13 +350,53 @@ const handlers: Record<string, Handler> = {
   // --------------------------------------------------------- Speed to Lead
 
   async stl_send_dpa(ctx) {
-    return {
-      type: "manual",
-      title: `Send data processing agreement to ${customerLabel(ctx)}`,
-      instructions:
-        "Send the Speed to Lead data processing agreement for signature, with the recording retention " +
-        `period they chose (${ctx.customer.data.intake?.retention ?? "see intake"}). Mark done once signed.`,
-    };
+    return askClientToApprove(ctx, {
+      title: "Please accept our data processing terms",
+      body:
+        "Because our assistant answers calls from your customers, the law asks us to agree how we look after their " +
+        `details. The terms are short and plain. Call recordings are kept for ${ctx.customer.data.intake?.retention ?? "the period you chose"}.` +
+        "\n\nPress Approve to accept them, or Ask for changes if you have questions.",
+      link: "https://speedtolead.co.uk/dpa/",
+    });
+  },
+
+  /** Linkn content themes: drafted from the client's answers, approved by the client in their account. */
+  async linkn_pillars(ctx) {
+    if (!ctx.customer.data.content_pillars) {
+      const plan = await draftJson<{ pillars: { name: string; why: string; example: string }[] }>({
+        system: `You plan LinkedIn content for Linkn clients. ${ctx.product.voice}`,
+        prompt:
+          `Client details:\n${intakeSummary(ctx)}\n\n${ctx.customer.data.call_notes ? `Kickoff call notes:\n${ctx.customer.data.call_notes}\n\n` : ""}` +
+          "Propose three or four content themes (pillars) for their LinkedIn posts. For each: a short name, one sentence on why " +
+          "it matters to their buyers, and one example post idea. Use only facts from the details.",
+        schema: {
+          type: "object",
+          properties: {
+            pillars: {
+              type: "array",
+              minItems: 3,
+              maxItems: 4,
+              items: {
+                type: "object",
+                properties: { name: { type: "string" }, why: { type: "string" }, example: { type: "string" } },
+                required: ["name", "why", "example"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["pillars"],
+          additionalProperties: false,
+        },
+        maxTokens: 4000,
+      });
+      const text = plan.pillars.map((p, i) => `${i + 1}. ${p.name}\n   ${p.why}\n   For example: ${p.example}`).join("\n\n");
+      await query(`UPDATE customers SET data = data || jsonb_build_object('content_pillars', $2::text, 'content_plan', $2::text) WHERE id = $1`, [ctx.customer.id, text]);
+      ctx = { ...ctx, customer: { ...ctx.customer, data: { ...ctx.customer.data, content_pillars: text } } };
+    }
+    return askClientToApprove(ctx, {
+      title: "Your LinkedIn content themes",
+      body: `These are the themes your posts will cover:\n\n${ctx.customer.data.content_pillars}\n\nPress Approve and your first posts will be written in your voice. Or ask for changes.`,
+    });
   },
 
   async stl_draft_script(ctx) {
@@ -360,9 +423,23 @@ const handlers: Record<string, Handler> = {
   },
 
   async stl_provision_agent(ctx) {
-    requireAutomation("awaz");
-    return { type: "done", note: `Assistant created for ${customerLabel(ctx)}` };
+    if (ctx.input) {
+      const [agent, number] = ctx.input.split(/[,;\s]+/).filter(Boolean);
+      await query(
+        `UPDATE customers SET data = data || jsonb_build_object('awaz_agent_ids', $2::jsonb, 'forwarding_number', $3::text) WHERE id = $1`,
+        [ctx.customer.id, JSON.stringify(agent ? [agent] : []), number ?? null],
+      );
+      return { type: "done", note: `Assistant ${agent ?? ""} on ${number ?? "(number not given)"}` };
+    }
+    return {
+      type: "manual",
+      title: `Set up the phone assistant for ${customerLabel(ctx)} in Awaz`,
+      instructions: "Create the assistant in Awaz from the approved script, then type its id and phone number below.",
+      inputLabel: "Assistant id, phone number (for example 6625bd4a8716, +441234567890)",
+      rerun: true,
+    };
   },
+
 
   async stl_forwarding_instructions(ctx) {
     const number = ctx.customer.data.forwarding_number;
@@ -423,11 +500,13 @@ const handlers: Record<string, Handler> = {
   },
 
   async ef_customer_copy_approval(ctx) {
-    return {
-      type: "manual",
-      title: `Confirm ${customerLabel(ctx)} approved their emails`,
-      instructions: "When the client replies approving the copy (or with changes you've made), mark this done.",
-    };
+    const copy = (
+      await query(`SELECT body_text FROM emails WHERE customer_id = $1 AND kind = 'onboarding:copy' AND status = 'sent' ORDER BY created_at DESC LIMIT 1`, [ctx.customer.id])
+    )[0]?.body_text;
+    return askClientToApprove(ctx, {
+      title: "Your emails and landing page are ready to approve",
+      body: `${copy ?? "We've emailed you your three emails and landing page copy."}\n\nIf you're happy, press Approve and we'll set up sending. If not, press Ask for changes and tell us what to change.`,
+    });
   },
 
   async ef_provision_sending(ctx) {
