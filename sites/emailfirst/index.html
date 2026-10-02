@@ -493,7 +493,7 @@ body.ft-page { background: var(--surface); }
       <li><a href="#about">About</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#questions">Questions</a></li>
-      <li><a href="https://account.emailfirst.co.uk/login">Log in</a></li>
+      <li><a href="https://hq.onlinebusinessbuilder.co.uk/portal/emailfirst/login">Log in</a></li>
     </ul>
     <div class="ft-nav__actions">
       <a class="ft-btn ft-btn--primary" href="#pitch-check">Check my pitch</a>
@@ -906,7 +906,7 @@ body.ft-page { background: var(--surface); }
       <nav class="ft-footer__cols" aria-label="Footer">
         <div class="ft-footer__col"><h3 class="column-head">Service</h3><ul><li><a href="#how">How it works</a></li><li><a href="#sample">Sample report</a></li><li><a href="#real-people">Real people</a></li><li><a href="#about">About</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#questions">Questions</a></li></ul></div>
         <div class="ft-footer__col"><h3 class="column-head">Get started</h3><ul><li><a href="#pitch-check">Check my pitch free</a></li><li><a href="/help">Get help</a></li></ul></div>
-        <div class="ft-footer__col"><h3 class="column-head">Legal</h3><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a><a href="https://account.emailfirst.co.uk/login">Client log in</a></li></ul></div>
+        <div class="ft-footer__col"><h3 class="column-head">Legal</h3><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a><a href="https://hq.onlinebusinessbuilder.co.uk/portal/emailfirst/login">Client log in</a></li></ul></div>
       </nav>
     </div>
     <div class="ft-footer__bottom">
@@ -961,7 +961,7 @@ body.ft-page { background: var(--surface); }
     data.addons = chosen().map(function (b) { return b.dataset.addon; }).join(',');
     data._source = 'Pitch check form';
     var btn = form.querySelector('button'); btn.disabled = true; btn.textContent = 'Sending…';
-    fetch('https://account.emailfirst.co.uk/api/leads/emailfirst', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+    fetch('https://hq.onlinebusinessbuilder.co.uk/api/leads/emailfirst', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
       .then(function (r) { if (!r.ok) throw new Error(r.status); form.innerHTML = '<h3 class="card-title">Thank you</h3><p class="copy">We have your pitch. You will get our check by email shortly, usually within the hour on a weekday.</p>'; })
       .catch(function () { status.dataset.kind = 'error'; status.textContent = 'Sorry, that did not send. Please try again in a moment.'; btn.disabled = false; btn.textContent = 'Check my pitch'; });
   });

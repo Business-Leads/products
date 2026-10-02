@@ -14,8 +14,6 @@ domains:
     type: ALIAS
   - domain: account.goodquestions.co.uk
     type: ALIAS
-  - domain: account.emailfirst.co.uk
-    type: ALIAS
   - domain: account.onlinebusinessbuilder.co.uk
     type: ALIAS
 services:
@@ -108,7 +106,7 @@ services:
         value: "20"
       - key: PORTAL_DOMAINS
         scope: RUN_TIME
-        value: "linkn,speedtolead,goodquestions,emailfirst,onlinebusinessbuilder"
+        value: "linkn,speedtolead,goodquestions,onlinebusinessbuilder"
 databases:
   # A small managed cluster (created by scripts/deploy.mjs if missing). The
   # cheaper "dev database" doesn't let the app create tables on Postgres 15+.
