@@ -1,0 +1,41 @@
+# Copies the live files of each product site from Netlify into sites/<name>/
+# and commits them to this branch, so changes to the sites are tracked here.
+# Reads from Netlify only; nothing on the sites changes.
+name: Pull sites from Netlify
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download site files
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          set -e
+          pull() {
+            name="$1"; id="$2"; host="$3"
+            echo "== $name"
+            curl -sf -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$id/files" > files.json
+            rm -rf "sites/$name"; mkdir -p "sites/$name"
+            jq -r '.[].path' files.json | while read -r path; do
+              mkdir -p "sites/$name$(dirname "$path")"
+              curl -sfL "https://$host$path" -o "sites/$name$path" || echo "  could not fetch $path"
+            done
+            echo "  $(jq length files.json) files"
+          }
+          pull linkn 76010523-af1e-4be8-bdc2-342f3c3519e0 linkn-co-uk.netlify.app
+          pull speedtolead 0f42c0e0-b617-4f3f-9563-826df7079f46 speedtolead-1rg1.netlify.app
+          pull goodquestions 50b517f9-76d3-451b-ba51-f764bbc53a06 good-questions.netlify.app
+          pull onlinebusinessbuilder 002190b8-b963-4446-a83e-b9b6d5a5af8b onlinebusinessbuilder.netlify.app
+          pull emailfirst 02fa6241-324b-4ffc-bf46-5fce0cee02f0 emailfirst.netlify.app
+          rm -f files.json
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add sites
+          git diff --cached --quiet && echo "No changes" || (git commit -m "Pull product sites from Netlify" && git push)
