@@ -1,3 +1,5 @@
+import type { Guide } from "../engine/types.js";
+
 export type Interval = "month" | "week";
 
 export interface Plan {
@@ -46,6 +48,8 @@ export interface StepDef {
   instructions?: string;
   /** Only run for these plans. */
   plans?: string[];
+  /** For manual steps: why it needs a person, and the steps to follow. */
+  guide?: Guide;
 }
 
 export type Cadence =
@@ -62,6 +66,8 @@ export interface RoutineDef {
   approval: boolean;
   plans?: string[];
   instructions?: string;
+  /** If this routine falls back to a person: why, and the steps to follow. */
+  guide?: Guide;
 }
 
 export interface Product {

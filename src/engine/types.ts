@@ -73,6 +73,16 @@ export type Outcome =
    * the handler runs again with that text, otherwise completing the task
    * completes the step.
    */
-  | { type: "manual"; title: string; instructions: string; inputLabel?: string; saveAs?: string; rerun?: boolean };
+  | { type: "manual"; title: string; instructions: string; inputLabel?: string; saveAs?: string; rerun?: boolean; guide?: Guide };
+
+/** How a person does a job the system can't: shown as a card in the to-do list. */
+export interface Guide {
+  /** One plain sentence on why this can't be done automatically. */
+  why: string;
+  /** Rough time it takes, in minutes. */
+  minutes: number;
+  /** Numbered steps, each one short and specific. */
+  steps: string[];
+}
 
 export type Handler = (ctx: HandlerContext) => Promise<Outcome>;

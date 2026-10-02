@@ -98,8 +98,16 @@ async function taskCard(t: any): Promise<Raw> {
         <button name="decision" value="reject" class="danger">Not right</button>
       </div></form>`;
   } else if (t.kind === "manual") {
+    const g = p.guide as { why: string; minutes: number; steps: string[] } | undefined;
     form = html`<form method="post" action="/tasks/${t.id}">
-      <div class="pre">${t.body}</div>
+      ${g
+        ? html`<div class="guide">
+            <p class="why"><strong>Why this needs you:</strong> ${g.why}</p>
+            <p class="time">About ${g.minutes} minutes</p>
+            <ol class="steps">${g.steps.map((x) => html`<li>${x}</li>`)}</ol>
+          </div>
+          <details><summary class="small">More detail</summary><div class="pre small">${t.body}</div></details>`
+        : html`<div class="pre">${t.body}</div>`}
       ${p.inputLabel ? html`<label for="input${t.id}">${p.inputLabel}</label><textarea name="input" id="input${t.id}" required></textarea>` : ""}
       <div class="row" style="margin-top:10px">
         <button class="primary" name="decision" value="done">I've done this</button>
@@ -443,6 +451,22 @@ export async function adminRoutes(app: FastifyInstance) {
           ${c.status === "active" ? html`<button class="small" name="status" value="paused">Pause their service</button>` : ""}
           ${c.status !== "cancelled" ? html`<button class="small danger" name="status" value="cancelled" onclick="return confirm('Mark this customer as having left? This stops all work for them. If they pay by card, also cancel their subscription in Stripe.')">Mark as left</button>` : ""}
         </form></div>
+      <div class="panel"><h2>Onboarding checklist</h2>
+        <p class="small muted">Every step for this customer, including the ones done automatically, so you can check nothing was missed.</p>
+        <table class="checklist"><tr><th></th><th>Step</th><th>Who</th><th>Status</th><th>When</th><th>What happened</th><th></th></tr>
+        ${steps.map((s) => {
+          const who = s.kind === "auto" ? (s.task_id && s.status === "waiting" ? "You (not automated yet)" : "Automatic")
+            : s.kind === "manual" ? "You" : s.kind === "customer" ? "Client" : "Your OK";
+          const mark = s.status === "done" ? "✓" : s.status === "skipped" ? "–" : s.status === "failed" ? "!" : "○";
+          return html`<tr class="cl-${s.status}"><td class="mark" aria-hidden="true">${mark}</td>
+            <td>${s.title}</td><td>${who}</td><td>${chip(s.status)}</td>
+            <td class="small">${s.completed_at ? fmtDate(s.completed_at, true) : s.started_at ? `started ${ago(s.started_at)}` : ""}</td>
+            <td class="small">${s.last_error ? html`<span style="color:var(--bad)">${s.last_error}</span>` : s.note ?? (s.status === "waiting" && s.task_id ? html`<a href="/inbox#t${s.task_id}">On your to-do list</a>` : "")}</td>
+            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}
+              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step? It won\'t be done for this customer.')"><button class="small">Skip</button></form>` : ""}</td></tr>`;
+        })}</table>
+        <p class="small" style="margin-top:10px"><strong>${steps.filter((s) => s.status === "done" || s.status === "skipped").length} of ${steps.length}</strong> steps complete.</p>
+      </div>
       <div class="grid-2">
         <div class="panel"><h2>Contact details</h2>
           <table><tr><td class="muted">Name</td><td>${c.name}</td></tr>
@@ -453,12 +477,6 @@ export async function adminRoutes(app: FastifyInstance) {
             ${c.data.cancel_requested_at ? html`<tr><td class="muted">Cancelling</td><td><span class="chip bad">${c.data.cancel_at ? `ends ${fmtDate(c.data.cancel_at)}` : "requested"}</span>${c.data.cancel_reason ? html`<div class="small">${c.data.cancel_reason}</div>` : ""}</td></tr>` : ""}
             ${c.stripe_customer_id ? html`<tr><td class="muted">Stripe</td><td><a href="https://dashboard.stripe.com/customers/${c.stripe_customer_id}">${c.stripe_customer_id}</a></td></tr>` : ""}
           </table></div>
-        <div class="panel"><h2>Setting them up</h2>
-          <table>${steps.map((s) => html`<tr><td>${s.title}${s.last_error ? html`<div class="small" style="color:var(--bad)">${s.last_error}</div>` : ""}</td>
-            <td>${chip(s.status)}</td>
-            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}
-              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step? It won\'t be done for this customer.')"><button class="small">Skip</button></form>` : ""}</td></tr>`)}</table>
-        </div>
       </div>
       ${tasks.length ? html`<h2>Waiting for you</h2>${await Promise.all(tasks.map(taskCard))}` : ""}
       ${await clientPanels(c)}

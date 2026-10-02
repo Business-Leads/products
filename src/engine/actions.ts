@@ -69,13 +69,13 @@ export async function decideTask(taskId: string, decision: Decision, form: Decis
           [p.emailId, form.subject?.trim() || email.subject, editedBody?.trim() ? editedBody.trimEnd() + footer : email.body_text],
         );
       }
-      await carryOn(p, { subject: form.subject, body: editedBody });
+      await carryOn(p, { subject: form.subject, body: editedBody }, "Approved by you and sent");
       return;
     }
     case "approve_review": {
       const customerId = await customerIdFor(p);
       if (customerId && p.saveAs) await saveCustomerData(customerId, p.saveAs, form.body || task.body);
-      await carryOn(p);
+      await carryOn(p, undefined, "Approved by you");
       return;
     }
     case "complete_manual": {
@@ -84,7 +84,7 @@ export async function decideTask(taskId: string, decision: Decision, form: Decis
       if (p.rerun) {
         await rerun(p, form.input);
       } else {
-        await carryOn(p);
+        await carryOn(p, undefined, form.input ? `Done by you: ${form.input.slice(0, 140)}` : "Done by you");
       }
       return;
     }
@@ -107,9 +107,9 @@ async function customerIdFor(p: Record<string, any>): Promise<string | undefined
   return undefined;
 }
 
-async function carryOn(p: Record<string, any>, edited?: { subject?: string; body?: string }): Promise<void> {
+async function carryOn(p: Record<string, any>, edited?: { subject?: string; body?: string }, note?: string): Promise<void> {
   if (p.stepId) {
-    await completeStep(p.stepId);
+    await completeStep(p.stepId, note);
   } else if (p.deliveryId) {
     const extra = edited?.body ? { body: edited.body, subject: edited.subject || undefined } : {};
     await query(

@@ -63,6 +63,7 @@ export async function completeStep(stepId: string, note?: string): Promise<void>
   const step = await one<StepRow>(`SELECT * FROM onboarding_steps WHERE id = $1`, [stepId]);
   if (!step) return;
   await setStep(stepId, { status: "done" });
+  if (note) await query(`UPDATE onboarding_steps SET note = $2 WHERE id = $1`, [stepId, note]);
   const customer = await loadCustomer(step.customer_id);
   await logEvent({
     type: "onboarding.step_done",
@@ -108,7 +109,7 @@ export async function executeStep(customer: CustomerRow, product: Product, step:
   try {
     outcome = def?.handler
       ? await getHandler(def.handler)(ctx)
-      : { type: "manual", title: `${step.title} (${customerLabel(customer)})`, instructions: def?.instructions ?? step.title };
+      : { type: "manual", title: `${step.title} (${customerLabel(customer)})`, instructions: def?.instructions ?? step.title, guide: def?.guide };
   } catch (err) {
     if (!(err instanceof NotConfiguredError)) {
       await failStep(step, customer, product, err);
@@ -209,7 +210,10 @@ export async function applyOutcome(outcome: Outcome, ctx: HandlerContext): Promi
   const label = step?.title ?? routine?.title ?? "Work";
 
   const finish = async (note?: string) => {
-    if (step) await setStep(step.id, { status: "done" });
+    if (step) {
+      await setStep(step.id, { status: "done" });
+      await query(`UPDATE onboarding_steps SET note = $2 WHERE id = $1`, [step.id, note ?? (outcome.type === "email" ? `Emailed: ${outcome.subject}` : null)]);
+    }
     if (delivery) {
       await query(`UPDATE deliveries SET status = 'delivered', delivered_at = now(), last_error = NULL WHERE id = $1`, [
         delivery.id,
@@ -283,7 +287,13 @@ export async function applyOutcome(outcome: Outcome, ctx: HandlerContext): Promi
         product: product.slug,
         customerId: customer.id,
         action: "complete_manual",
-        payload: { ...ref, inputLabel: outcome.inputLabel, saveAs: outcome.saveAs, rerun: outcome.rerun ?? false },
+        payload: {
+          ...ref,
+          inputLabel: outcome.inputLabel,
+          saveAs: outcome.saveAs,
+          rerun: outcome.rerun ?? false,
+          guide: outcome.guide ?? (step ? product.onboarding.find((d) => d.key === step.key)?.guide : routine?.guide),
+        },
         dedupeKey: `manual:${step ? `step:${step.id}` : `delivery:${delivery!.id}`}:${outcome.title}`,
       });
       return wait(task.id);
