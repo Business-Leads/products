@@ -1,0 +1,23 @@
+# Read-only: checks whether domain names are free to register in GoDaddy and
+# what they cost. Nothing is bought.
+name: Domain check
+on:
+  workflow_dispatch:
+    inputs:
+      domains:
+        description: "Space-separated domain names"
+        required: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check
+        env:
+          KEY: ${{ secrets.GODADDY_API_KEY }}
+          SECRET: ${{ secrets.GODADDY_API_SECRET }}
+          DOMAINS: ${{ inputs.domains }}
+        run: |
+          for d in $DOMAINS; do
+            r=$(curl -s -H "Authorization: sso-key $KEY:$SECRET" "https://api.godaddy.com/v1/domains/available?domain=$d&checkType=FULL")
+            echo "$d -> $(echo "$r" | jq -c '{available, price: ((.price // 0) / 1000000), currency, period}')"
+          done
