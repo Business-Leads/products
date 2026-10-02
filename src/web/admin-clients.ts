@@ -60,6 +60,12 @@ export async function clientPanels(c: CustomerRow): Promise<Raw> {
         </form>
       </div>
     </div>
+    ${product.slug === "speedtolead" ? html`<div class="panel"><h2>Awaz assistant</h2>
+      <p class="small muted">The id of this client's assistant in Awaz. Their calls are then counted on their dashboard.</p>
+      <form method="post" action="/customers/${c.id}/awaz" class="row">
+        <label for="awaz-ids" class="sr-only">Assistant ids</label>
+        <input name="agents" id="awaz-ids" value="${(c.data.awaz_agent_ids ?? []).join(", ")}" placeholder="assistant id" style="flex:1">
+        <button class="small">Save</button></form></div>` : ""}
     ${product.slug === "linkn" ? html`<div class="panel"><h2>Sbl.so campaigns</h2>
       <p class="small muted">Campaign ids for this client. Events Sbl.so sends for these campaigns (replies, accepted connections) are counted on their dashboard, and replies come to your inbox.</p>
       <form method="post" action="/customers/${c.id}/sbl" class="row">
@@ -187,6 +193,16 @@ export async function clientAdminRoutes(app: FastifyInstance, send: (reply: Fast
     }
     await saveMetrics(c.id, period, values);
     return back(reply, `/customers/${c.id}`, `Figures for ${periodLabel(period)} saved.`);
+  });
+
+  app.post<{ Params: { id: string }; Body: { agents?: string } }>("/customers/:id/awaz", async (req, reply) => {
+    const ids = String(req.body?.agents ?? "").split(/[\s,]+/).map((x) => x.trim()).filter(Boolean).slice(0, 10);
+    await query(`UPDATE customers SET data = data || jsonb_build_object('awaz_agent_ids', $2::jsonb), updated_at = now() WHERE id = $1 AND product = 'speedtolead'`, [
+      req.params.id,
+      JSON.stringify(ids),
+    ]);
+    await query(`UPDATE awaz_events SET customer_id = $1 WHERE customer_id IS NULL AND agent_id = ANY($2::text[])`, [req.params.id, ids]);
+    return back(reply, `/customers/${req.params.id}`, "Saved. Their calls will show on their dashboard.");
   });
 
   app.post<{ Params: { id: string }; Body: { campaigns?: string } }>("/customers/:id/sbl", async (req, reply) => {

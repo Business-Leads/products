@@ -55,7 +55,7 @@ after(async () => {
 });
 beforeEach(async () => {
   requests.length = 0;
-  await query(`TRUNCATE sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures, suppressions, prospects, inbound_emails, leads, customers, onboarding_steps, tasks, emails,
+  await query(`TRUNCATE awaz_events, sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures, suppressions, prospects, inbound_emails, leads, customers, onboarding_steps, tasks, emails,
     deliveries, disputes, stripe_events, events, job_runs, health_checks, settings, sessions RESTART IDENTITY CASCADE`);
 });
 

@@ -5,6 +5,7 @@ import { createLead } from "../engine/leads.js";
 import type { CustomerRow } from "../engine/types.js";
 import { saveIntake } from "../engine/clients.js";
 import { handleSblEvent, sblTokenMatches } from "../engine/sbl.js";
+import { awazTokenMatches, handleAwazEvent } from "../engine/awaz.js";
 import { handleAssessment, type AssessmentInput } from "../engine/assessment.js";
 import { portalUrl } from "../portal/accounts.js";
 import { logEvent } from "../lib/events.js";
@@ -223,6 +224,14 @@ export async function publicRoutes(app: FastifyInstance) {
     if (!body || typeof body !== "object") return reply.code(400).send({ ok: false, error: "Expected JSON" });
     const result = await handleSblEvent(body as Record<string, unknown>);
     return { ok: true, ...result };
+  });
+
+  // Awaz (Speed to Lead's phone assistant) pushes call events here; the token in the path is the secret.
+  app.post<{ Params: { token: string }; Body: Record<string, unknown> }>("/webhooks/awaz/:token", async (req, reply) => {
+    if (!awazTokenMatches(req.params.token)) return reply.code(404).send({ ok: false });
+    const body = req.body;
+    if (!body || typeof body !== "object") return reply.code(400).send({ ok: false, error: "Expected JSON" });
+    return { ok: true, ...(await handleAwazEvent(body as Record<string, unknown>)) };
   });
 
   app.post("/webhooks/stripe", async (req, reply) => {

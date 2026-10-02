@@ -102,6 +102,8 @@ if (!existing && !values.ADMIN_PASSWORD) values.ADMIN_PASSWORD = generatedPasswo
 // Secret part of the Sbl.so webhook address, made once and kept (HQ shows the full address).
 const hasSblToken = (existing?.spec?.services?.[0]?.envs ?? []).some((e) => e.key === "SBL_WEBHOOK_TOKEN" && e.value);
 if (!hasSblToken) values.SBL_WEBHOOK_TOKEN = randomBytes(24).toString("base64url");
+const hasAwazToken = (existing?.spec?.services?.[0]?.envs ?? []).some((e) => e.key === "AWAZ_WEBHOOK_TOKEN" && e.value);
+if (!hasAwazToken) values.AWAZ_WEBHOOK_TOKEN = randomBytes(24).toString("base64url");
 
 function applyValues(target, current) {
   const currentEnvs = new Map((current?.services?.[0]?.envs ?? []).map((e) => [e.key, e]));

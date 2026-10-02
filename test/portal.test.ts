@@ -7,6 +7,7 @@ process.env.ADMIN_PASSWORD = "pw";
 process.env.BASE_URL = "https://hq.example.com";
 process.env.PORTAL_DOMAINS = "linkn";
 process.env.SBL_WEBHOOK_TOKEN = "sbl-secret-token";
+process.env.AWAZ_WEBHOOK_TOKEN = "awaz-token";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -24,7 +25,7 @@ const { buildServer } = await import("../src/web/server.js");
 type App = Awaited<ReturnType<typeof buildServer>>;
 
 async function reset() {
-  await query(`TRUNCATE sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures,
+  await query(`TRUNCATE awaz_events, sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures,
     leads, customers, onboarding_steps, tasks, emails, deliveries, stripe_events, events, settings, sessions RESTART IDENTITY CASCADE`);
 }
 
@@ -445,5 +446,22 @@ describe("client account areas", () => {
     assert.match(seen[0]!, /campaigns\/camp1\/stats k$/);
     const after = await one(`SELECT data FROM customers WHERE id = $1`, [c.id]);
     assert.deepEqual(after.data.metrics_history.at(-1).values, { emails_sent: 3000, human_clicks: 42 });
+  });
+
+  it("counts Awaz calls on the Speed to Lead client's dashboard", async () => {
+    await handleStripeEvent(checkoutEvent("evt_stl", "speedtolead", "solo"));
+    const c = await one(`SELECT * FROM customers`);
+    const admin = await adminCookie(app);
+    await app.inject({ method: "POST", url: `/customers/${c.id}/awaz`, ...form({ agents: "agent_9" }, admin) });
+    assert.equal((await app.inject({ method: "POST", url: "/webhooks/awaz/wrong", payload: { event: "call_ended" } })).statusCode, 404);
+    const post = (payload: object) => app.inject({ method: "POST", url: "/webhooks/awaz/awaz-token", payload });
+    await post({ event: "call_ended", agent_id: "agent_9", summary: "Boiler repair booked for Tuesday" });
+    const r = await post({ event: "call_ended", agent_id: "agent_9", summary: "Caller asked for a call back" });
+    assert.equal(r.json().matched, true);
+    const after = await one(`SELECT data FROM customers WHERE id = $1`, [c.id]);
+    const v = after.data.metrics_history.at(-1).values;
+    assert.equal(v.calls_answered, 2);
+    assert.equal(v.jobs_booked, 1);
+    assert.equal(v.call_backs, 1);
   });
 });

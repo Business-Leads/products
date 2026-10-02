@@ -337,6 +337,11 @@ export async function adminRoutes(app: FastifyInstance) {
           ${config.sbl.webhookToken
             ? html`<p class="small muted">In Sbl.so: Webhooks → Add webhook. Paste this, tick all six events, keep "All campaigns". Keep it private.</p>
               <input readonly aria-label="Sbl.so webhook address" value="${config.baseUrl}/webhooks/sbl/${config.sbl.webhookToken}" onclick="this.select()">`
+            : html`<p class="small muted">Appears after the next deploy.</p>`}` : ""}
+        ${product.slug === "speedtolead" ? html`<h3 style="margin-top:14px">Awaz webhook address</h3>
+          ${process.env.AWAZ_WEBHOOK_TOKEN
+            ? html`<p class="small muted">In Awaz, paste this as the webhook address for calls. Keep it private.</p>
+              <input readonly aria-label="Awaz webhook address" value="${config.baseUrl}/webhooks/awaz/${process.env.AWAZ_WEBHOOK_TOKEN}" onclick="this.select()">`
             : html`<p class="small muted">Appears after the next deploy.</p>`}` : ""}</div>`;
     return send(reply, req, product.name, body, `/products/${product.slug}`);
   });
