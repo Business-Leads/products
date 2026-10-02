@@ -36,7 +36,7 @@ function back(reply: FastifyReply, to: string, flash?: string) {
 
 /** A big coloured button on the home page leading to one area. */
 function tile(href: string, area: Area, name: string, what: string, count: string, urgent = false): Raw {
-  return html`<a class="tile area-${area} ${urgent ? "urgent" : ""}" href="${href}">${icon(area)}<span class="name">${name}</span>
+  return html`<a class="tile area-${area} ${urgent ? "urgent" : ""}" href="${href}"><span class="ti lg" aria-hidden="true">${icon(area)}</span><span class="name">${name}</span>
     <span class="what">${what}</span><span class="count">${count}</span></a>`;
 }
 

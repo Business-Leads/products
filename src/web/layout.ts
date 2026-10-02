@@ -58,7 +58,7 @@ function areaFor(active: string | undefined): Area {
 export function page(title: string, body: Raw, opts: { active?: string; counts?: NavCounts; flash?: string } = {}): string {
   const link = (href: string, label: string, area: Area, badge?: number, badgeLabel?: string) => {
     const current = opts.active === href;
-    return html`<a href="${href}" class="area-${area} ${current ? "active" : ""}" ${current ? raw('aria-current="page"') : ""}>${icon(area)}<span class="label">${label}</span>${
+    return html`<a href="${href}" class="area-${area} ${current ? "active" : ""}" ${current ? raw('aria-current="page"') : ""}><span class="ti">${icon(area)}</span><span class="label">${label}</span>${
       badge ? html`<span class="chip" aria-label="${badge} ${badgeLabel ?? "waiting"}">${badge}</span>` : ""
     }</a>`;
   };
@@ -88,7 +88,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
 <a class="skip" href="#content">Skip to the page</a>
 <div class="shell">
   <nav class="nav" aria-label="Main menu">
-    <div class="brand">${config.brand}<span>Your control room</span></div>
+    <div class="brand"><span class="mark" aria-hidden="true">OBB</span><span class="words">${config.brand}<small>Your control room</small></span></div>
     ${link("/", "Home", "home")}
     ${link("/inbox", "To-do list", "todo", opts.counts?.inbox, "things waiting for you")}
     ${link("/support", "Messages", "messages", opts.counts?.support, "unanswered messages")}
@@ -107,9 +107,12 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
   </nav>
   <main class="main" id="content" tabindex="-1">
     <div class="area-band">
-      <p class="where">${icon(area)} ${AREA_NAMES[area]}</p>
-      <h1>${raw(h1?.[1] ?? title)}</h1>
-      ${introBox ? html`<div class="intro-text">${raw(introBox[1]!)}</div>` : ""}
+      <span class="ti big" aria-hidden="true">${icon(area)}</span>
+      <div class="band-text">
+        <p class="where">${AREA_NAMES[area]}</p>
+        <h1>${raw(h1?.[1] ?? title)}</h1>
+        ${introBox ? html`<div class="intro-text">${raw(introBox[1]!)}</div>` : ""}
+      </div>
     </div>
     ${opts.flash ? html`<div class="flash" role="status">${opts.flash}</div>` : ""}
     ${raw(content)}
