@@ -85,7 +85,7 @@ export function buildCheckoutParams(
       metadata,
       ...(plan.trialDays ? { trial_period_days: plan.trialDays } : {}),
     },
-    success_url: `${config.baseUrl}/welcome?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${config.baseUrl}/welcome?product=${product.slug}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: product.siteUrls[0] ?? config.baseUrl,
   };
 }

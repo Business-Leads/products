@@ -6,8 +6,10 @@ directly. Don't re-research the products: what's known is encoded in
 
 ## What this is
 One Node 22 / TypeScript app (Fastify + Postgres, no frontend build) that
-markets, onboards and runs five products: FirstPageLocal, Linkn, Speed to
-Lead, EmailFirst and Good Questions. It is meant to run autonomously on
+markets, onboards and runs six products: FirstPageLocal, Linkn, Speed to
+Lead, EmailFirst, Good Questions and Online Business Builder
+(onlinebusinessbuilder.netlify.app, £99/month; customers pay first and then
+book an onboarding call with Felix, via `bookingAfterPurchase`). It is meant to run autonomously on
 DigitalOcean App Platform (`.do/app.yaml`). The operator (Felix) only
 approves and checks quality through the Inbox.
 
@@ -59,7 +61,13 @@ shell.
 - Never buy domains or anything else.
 
 ## Deploying
-Keys live in the Claude Code environment settings, not the repo:
+Preferred route: GitHub Actions → "Deploy" workflow (`.github/workflows/deploy.yml`),
+which reads repository secrets (DIGITALOCEAN_ACCESS_TOKEN, STRIPE_SECRET_KEY,
+ANTHROPIC_API_KEY, optional ADMIN_PASSWORD and MAIL_*). Trigger it with the GitHub
+MCP `actions_run_trigger` and read the logs with `get_job_logs`. Claude Code sessions
+can't reach DigitalOcean or Stripe directly.
+
+Alternatively, keys can live in the Claude Code environment settings:
 DIGITALOCEAN_ACCESS_TOKEN, STRIPE_SECRET_KEY, HQ_ANTHROPIC_API_KEY (named so it
 doesn't switch Claude Code's own billing), and optionally GODADDY_API_KEY and
 GODADDY_API_SECRET, MAIL_ADDRESS and MAIL_APP_PASSWORD (Google Workspace).

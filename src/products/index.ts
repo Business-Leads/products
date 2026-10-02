@@ -2,12 +2,21 @@ import { emailFirst } from "./emailfirst.js";
 import { firstPageLocal } from "./firstpagelocal.js";
 import { goodQuestions } from "./goodquestions.js";
 import { linkn } from "./linkn.js";
+import { onlineBusinessBuilder } from "./onlinebusinessbuilder.js";
 import { speedToLead } from "./speedtolead.js";
 import type { Plan, Product } from "./types.js";
 
 export type { Product, Plan } from "./types.js";
 
-export const products: Product[] = [firstPageLocal, linkn, speedToLead, emailFirst, goodQuestions];
+export const products: Product[] = [firstPageLocal, linkn, speedToLead, emailFirst, goodQuestions, onlineBusinessBuilder];
+
+/** Calendly link with the customer's name and email filled in. */
+export function bookingLink(product: Product, name?: string | null, email?: string | null): string {
+  const url = new URL(product.bookingUrl);
+  if (name) url.searchParams.set("name", name);
+  if (email) url.searchParams.set("email", email);
+  return url.toString();
+}
 
 const bySlug = new Map(products.map((p) => [p.slug, p]));
 

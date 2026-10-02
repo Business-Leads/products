@@ -73,6 +73,8 @@ export interface Product {
   entity: string;
   siteUrls: string[];
   bookingUrl: string;
+  /** Sold like Business Leads: after paying, the customer books an onboarding call first. */
+  bookingAfterPurchase?: boolean;
   email: { from: string; fromName: string; replyTo?: string };
   /** Tone guidance for anything Claude drafts in this product's name. */
   voice: string;

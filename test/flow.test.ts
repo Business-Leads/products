@@ -394,6 +394,26 @@ describe("outreach", () => {
   });
 });
 
+describe("Online Business Builder: pay, then book the onboarding call", () => {
+  it("leads the welcome email and page with the prefilled booking link", async () => {
+    await handleStripeEvent(checkoutEvent("evt_obb", "onlinebusinessbuilder", "monthly"));
+    const c = await one(`SELECT * FROM customers`);
+    assert.equal(c.amount_pence, 9900);
+    const welcome = await one(`SELECT * FROM emails WHERE kind = 'onboarding:welcome'`);
+    assert.match(welcome.subject, /book your onboarding call/);
+    assert.match(welcome.body_text, /calendly\.com\/felixclarke\/chat-with-felix-clarke\?name=Sam\+Owner&email=owner%40example\.co\.uk/);
+    assert.match(welcome.body_text, new RegExp(`/start/${c.intake_token}`));
+
+    const app = await buildServer();
+    const page = await app.inject({ method: "GET", url: "/welcome?product=onlinebusinessbuilder&session_id=cs_evt_obb" });
+    assert.match(page.body, /Book your onboarding call/);
+    assert.match(page.body, /tell us about your business/);
+    const early = await app.inject({ method: "GET", url: "/welcome?product=onlinebusinessbuilder&session_id=cs_unknown" });
+    assert.match(early.body, /Book your onboarding call/);
+    await app.close();
+  });
+});
+
 describe("admin", () => {
   it("requires sign-in", async () => {
     const app = await buildServer();

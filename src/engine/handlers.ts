@@ -1,7 +1,7 @@
 import { config } from "../config.js";
 import { getIntegration } from "../integrations/index.js";
 import { draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
-import { getPlan } from "../products/index.js";
+import { bookingLink, getPlan } from "../products/index.js";
 import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import type { Handler, HandlerContext, Outcome } from "./types.js";
@@ -79,6 +79,19 @@ const handlers: Record<string, Handler> = {
 
   async send_welcome(ctx) {
     const link = `${config.baseUrl}/start/${ctx.customer.intake_token}`;
+    if (ctx.product.bookingAfterPurchase) {
+      return {
+        type: "email",
+        approval: false,
+        subject: `Welcome to ${ctx.product.name}: book your onboarding call`,
+        body:
+          `Hello ${firstName(ctx)},\n\nThank you for signing up to ${ctx.product.name}. The next step is a short ` +
+          `onboarding call with me, so we get everything right from the start. Pick a time that suits you:\n\n` +
+          `${bookingLink(ctx.product, ctx.customer.name, ctx.customer.email)}\n\n` +
+          `Before the call, it helps if you fill in this short form about your business (about five minutes):\n\n` +
+          `${link}\n\nIf anything is unclear, just reply to this email.\n\nFelix`,
+      };
+    }
     return {
       type: "email",
       approval: false,
@@ -343,6 +356,58 @@ const handlers: Record<string, Handler> = {
     }
     const draft = await draftCustomerEmail(ctx, "Write a short weekly results summary email. Use only the figures given.", ctx.input);
     return { type: "email", approval: false, ...draft };
+  },
+
+  // ------------------------------------------------ Online Business Builder
+
+  async obb_weekly_post(ctx) {
+    const last = await previousDelivery(ctx);
+    const post = await draftJson<{ body: string }>({
+      system:
+        `You write Google Business Profile posts for local businesses. ${ctx.product.voice} ` +
+        "Under 120 words, one clear call to action (call, book or visit). No prices, offers or claims that " +
+        "aren't in the business details.",
+      prompt:
+        `Business details:\n${intakeSummary(ctx)}\n\nLast week's post (don't repeat its angle):\n${last?.post ?? "(none)"}\n\n` +
+        "Write this week's post.",
+      schema: { type: "object", properties: { body: { type: "string" } }, required: ["body"], additionalProperties: false },
+      maxTokens: 4000,
+    });
+    if (ctx.delivery) {
+      await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [ctx.delivery.id, JSON.stringify({ post: post.body })]);
+    }
+    return {
+      type: "manual",
+      title: `Publish this week's Google post for ${customerLabel(ctx)}`,
+      instructions: `Check it, then publish it on their Google Business Profile:\n\n${post.body}`,
+    };
+  },
+
+  async obb_reviews(ctx) {
+    return {
+      type: "manual",
+      title: `Answer new Google reviews for ${customerLabel(ctx)}`,
+      instructions: "Open their Google Business Profile and reply to any new reviews, thanking people by name and keeping replies short.",
+    };
+  },
+
+  async obb_monthly_report(ctx) {
+    if (!ctx.input) {
+      return needData(
+        ctx,
+        "This month's ranking figures",
+        "Paste this month's figures: Maps positions for their main searches, profile views, calls and direction " +
+          "requests from Google Business Profile, website visits, and new reviews.",
+      );
+    }
+    const last = await previousDelivery(ctx);
+    const draft = await draftCustomerEmail(
+      ctx,
+      "Write this month's progress report as an email: how they're showing on Google and Maps, what we did " +
+        "(posts, reviews answered, site updates), what changed since last month, and what's next. Use only the figures given.",
+      `This month:\n${ctx.input}\n\nLast month's report:\n${last?.body ?? "(none)"}`,
+    );
+    return { type: "email", approval: true, ...draft };
   },
 
   // -------------------------------------------------------- Good Questions

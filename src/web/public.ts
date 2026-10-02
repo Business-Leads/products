@@ -8,7 +8,7 @@ import { logEvent } from "../lib/events.js";
 import { createCheckout, stripeConfigured, verifyWebhook } from "../lib/stripe.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
-import { getPlan, getProduct, products } from "../products/index.js";
+import { bookingLink, getPlan, getProduct, products } from "../products/index.js";
 import type { Field } from "../products/types.js";
 import { html } from "./html.js";
 import { publicPage } from "./layout.js";
@@ -155,11 +155,26 @@ export async function publicRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get<{ Querystring: { session_id?: string } }>("/welcome", async (req, reply) => {
+  app.get<{ Querystring: { session_id?: string; product?: string } }>("/welcome", async (req, reply) => {
     const customer = req.query.session_id
       ? await one<CustomerRow>(`SELECT * FROM customers WHERE stripe_checkout_id = $1`, [req.query.session_id])
       : undefined;
-    const product = customer ? getProduct(customer.product) : undefined;
+    const product = customer ? getProduct(customer.product) : getProduct(req.query.product ?? "");
+    if (product?.bookingAfterPurchase) {
+      return reply.type("text/html").send(
+        publicPage(
+          `Welcome to ${product.name}`,
+          html`<div class="panel"><h1>Welcome to ${product.name}</h1>
+            <p>Thank you, your payment has gone through. The next step is a short onboarding call with Felix,
+              so everything is right from the start.</p>
+            <p><a class="btn primary" href="${bookingLink(product, customer?.name, customer?.email)}">Book your onboarding call</a></p>
+            ${customer
+              ? html`<p>Before the call, it helps to <a href="/start/${customer.intake_token}">tell us about your business</a> (about five minutes).</p>`
+              : html`<p>We've also emailed you the booking link and a short form about your business.</p>`}
+          </div>`,
+        ),
+      );
+    }
     const body = customer && product
       ? html`<div class="panel"><h1>Welcome to ${product.name}</h1>
           <p>Thank you. The next step is a short form so we can set everything up for you.</p>
