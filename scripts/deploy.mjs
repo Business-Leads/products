@@ -44,7 +44,7 @@ const spec = parse(await readFile(new URL("../.do/app.yaml", import.meta.url), "
 // Make sure the managed database cluster exists and is online before the app needs it.
 for (const db of spec.databases ?? []) {
   if (!db.production || !db.cluster_name) continue;
-  const { databases = [] } = await doApi("GET", "/databases");
+  const databases = (await doApi("GET", "/databases")).databases ?? [];
   let cluster = databases.find((d) => d.name === db.cluster_name);
   if (!cluster) {
     console.log(`Creating database cluster ${db.cluster_name} (smallest size)…`);
@@ -81,7 +81,7 @@ if (process.env.MAIL_ADDRESS && process.env.MAIL_APP_PASSWORD) {
   values.REPLY_TO = process.env.MAIL_ADDRESS;
 }
 
-const { apps = [] } = await doApi("GET", "/apps?per_page=100");
+const apps = (await doApi("GET", "/apps?per_page=100")).apps ?? [];
 const existing = apps.find((a) => a.spec?.name === spec.name);
 if (!existing && !values.ADMIN_PASSWORD) values.ADMIN_PASSWORD = generatedPassword = randomBytes(12).toString("base64url");
 
@@ -109,7 +109,7 @@ if (existing) {
 
 /** Print the end of DigitalOcean's logs for a failed deployment, so the cause is visible. */
 async function printFailureLogs(appId) {
-  const { deployments = [] } = await doApi("GET", `/apps/${appId}/deployments?per_page=1`);
+  const deployments = (await doApi("GET", `/apps/${appId}/deployments?per_page=1`)).deployments ?? [];
   const dep = deployments[0];
   if (!dep) return;
   console.log(`\nLatest deployment ${dep.id}: ${dep.phase}`);
