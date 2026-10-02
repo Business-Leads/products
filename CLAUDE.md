@@ -118,6 +118,11 @@ Known blockers:
 ## Working with the owner
 - The owner has visual difficulties: keep HQ large, high-contrast and plain
   (hq.css: cream background, Atkinson Hyperlegible 20px, colour per area).
+  The owner loves the cute style: the logo (static/logo.svg) and every HQ and
+  product icon (layout.ts ICONS / PRODUCT_ICONS) are white shapes with smiley
+  faces on gradient tiles. Keep new icons in that style.
+- Stripe checkout must never show Business Leads: `checkoutBranding()` in
+  lib/stripe.ts sets each product's name, icon (static/products/*.png) and colours.
 - Ask one simple question at a time; no long explanations.
 - Do everything yourself; only make something a manual job when it truly
   can't be automated, and then give it a `guide` (why, minutes, numbered
