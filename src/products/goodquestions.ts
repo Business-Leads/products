@@ -11,7 +11,7 @@ export const goodQuestions: Product = {
     "opt-ins join the Good Questions Panel. Clients buy sponsored assessments, bespoke research or a " +
     "scorecard on their own account. Priced per engagement.",
   entity: `Good Questions is a trading name of ${AIFT}`,
-  siteUrls: ["https://good-questions.netlify.app"],
+  siteUrls: ["https://goodquestions.co.uk", "https://www.goodquestions.co.uk", "https://good-questions.netlify.app"],
   bookingUrl: BOOKING_URL,
   email: { from: fromAddress("goodquestions", "felix@goodquestions.co.uk"), fromName: "Felix at Good Questions" },
   voice: `${HOUSE_VOICE} Thoughtful and research-led; never salesy.`,

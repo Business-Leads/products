@@ -14,7 +14,7 @@ export const onlineBusinessBuilder: Product = {
     "search, with hosting and updates included, plus a Google Business Profile run for them (posts every " +
     "week, reviews answered) and a monthly ranking report. £99 a month, no setup fee.",
   entity: "Online Business Builder, onlinebusinessbuilder.co.uk",
-  siteUrls: ["https://onlinebusinessbuilder.netlify.app"],
+  siteUrls: ["https://onlinebusinessbuilder.co.uk", "https://www.onlinebusinessbuilder.co.uk", "https://onlinebusinessbuilder.netlify.app"],
   bookingUrl: BOOKING_URL,
   bookingAfterPurchase: true,
   email: { from: fromAddress("onlinebusinessbuilder", "hello@onlinebusinessbuilder.co.uk"), fromName: "Online Business Builder" },

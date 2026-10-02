@@ -7,6 +7,17 @@ region: lon
 domains:
   - domain: hq.onlinebusinessbuilder.co.uk
     type: PRIMARY
+  # Client account areas, one per product site (see src/portal/).
+  - domain: account.linkn.co.uk
+    type: ALIAS
+  - domain: account.speedtolead.co.uk
+    type: ALIAS
+  - domain: account.goodquestions.co.uk
+    type: ALIAS
+  - domain: account.emailfirst.co.uk
+    type: ALIAS
+  - domain: account.onlinebusinessbuilder.co.uk
+    type: ALIAS
 services:
   - name: web
     dockerfile_path: Dockerfile
@@ -95,6 +106,9 @@ services:
       - key: CLAUDE_MONTHLY_BUDGET_USD
         scope: RUN_TIME
         value: "20"
+      - key: PORTAL_DOMAINS
+        scope: RUN_TIME
+        value: "linkn,speedtolead,goodquestions,emailfirst,onlinebusinessbuilder"
 databases:
   # A small managed cluster (created by scripts/deploy.mjs if missing). The
   # cheaper "dev database" doesn't let the app create tables on Postgres 15+.

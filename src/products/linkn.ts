@@ -17,7 +17,7 @@ export const linkn: Product = {
     "(FeedBoss), outreach to the people they want to meet starting with those who engaged with their " +
     "posts (Sbl.so), replies handled, and on Growth a monthly telephone follow-up day.",
   entity: `Linkn is a trading name of ${AIFT}`,
-  siteUrls: ["https://linkn-co-uk.netlify.app"],
+  siteUrls: ["https://linkn.co.uk", "https://www.linkn.co.uk", "https://linkn-co-uk.netlify.app"],
   bookingUrl: BOOKING_URL,
   email: { from: fromAddress("linkn", "felix@linkn.co.uk"), fromName: "Felix at Linkn" },
   voice: `${HOUSE_VOICE} Collegiate and personal; Felix runs the service himself.`,

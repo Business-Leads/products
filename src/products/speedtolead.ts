@@ -11,7 +11,7 @@ export const speedToLead: Product = {
     "the area, books a slot the owner has made available, and texts and emails the owner. Urgent calls " +
     "go straight to the owner's mobile. The customer keeps their number and forwards only missed calls.",
   entity: `Speed to Lead is a trading name of ${AIFT}`,
-  siteUrls: ["https://speedtolead-1rg1.netlify.app"],
+  siteUrls: ["https://speedtolead.co.uk", "https://www.speedtolead.co.uk", "https://speedtolead-1rg1.netlify.app"],
   bookingUrl: BOOKING_URL,
   email: { from: fromAddress("speedtolead", "hello@speedtolead.co.uk"), fromName: "Speed to Lead" },
   voice: `${HOUSE_VOICE} Speak to a busy tradesperson; be practical and brief.`,
