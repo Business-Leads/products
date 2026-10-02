@@ -78,7 +78,7 @@ export const goodQuestions: Product = {
   pauseAfterPastDueDays: 30,
   portal: {
     host: "account.goodquestions.co.uk",
-    accent: "#1f9d55",
+    accent: "#D42A19",
     resultsTitle: "Your research",
     resultsIntro: "Responses collected and what they show.",
     steps: { ...sharedPortalSteps, question_design: "Questions agreed", compliance: "Compliance checks", scorecard: "Your scorecard built", sends: "Invitations scheduled" },

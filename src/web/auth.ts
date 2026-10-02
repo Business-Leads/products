@@ -43,17 +43,18 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.type("text/html").send(
       publicPage(
         `Sign in · ${config.brand}`,
-        html`<div class="panel" style="max-width:380px;margin:80px auto">
-          <h1>${config.brand}</h1>
-          ${noPassword ? html`<p class="flash">Set ADMIN_PASSWORD in the app settings to enable sign-in.</p>` : ""}
+        html`<div class="panel" style="max-width:420px;margin:72px auto">
+          <h1>Welcome back</h1>
+          <p class="muted">Sign in to ${config.brand}.</p>
+          ${noPassword ? html`<p class="flash" role="alert">Sign-in isn't switched on yet. Add an ADMIN_PASSWORD secret in GitHub and redeploy.</p>` : ""}
           ${req.query.error === "locked"
-            ? html`<p class="flash">Too many attempts. Sign-in is locked for 15 minutes.</p>`
-            : req.query.error ? html`<p class="flash">That password isn't right.</p>` : ""}
+            ? html`<p class="flash" role="alert">Too many wrong tries, so sign-in is paused for 15 minutes. This keeps your dashboard safe.</p>`
+            : req.query.error ? html`<p class="flash" role="alert">That password isn't right. Please try again.</p>` : ""}
           <form method="post" action="/login">
             <input type="hidden" name="next" value="${req.query.next ?? "/"}">
-            <label for="password">Password</label>
-            <input type="password" name="password" id="password" autofocus required>
-            <p style="margin-top:16px"><button class="primary">Sign in</button></p>
+            <label for="password">Your password</label>
+            <input type="password" name="password" id="password" autocomplete="current-password" autofocus required>
+            <p style="margin-top:18px"><button class="primary">Sign in</button></p>
           </form>
         </div>`,
       ),

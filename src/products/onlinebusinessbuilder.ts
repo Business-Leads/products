@@ -107,7 +107,7 @@ export const onlineBusinessBuilder: Product = {
   pauseAfterPastDueDays: 14,
   portal: {
     host: "account.onlinebusinessbuilder.co.uk",
-    accent: "#2d6cdf",
+    accent: "#D42A19",
     resultsTitle: "Your website and Google profile",
     resultsIntro: "Your site, your Google profile and how local customers are finding you.",
     steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Access to your Google Business Profile", website_design: "Your website being designed", design_approved: "Design approved and website launched" },

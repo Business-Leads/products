@@ -77,7 +77,7 @@ export const firstPageLocal: Product = {
   pauseAfterPastDueDays: 14,
   portal: {
     host: "account.firstpagelocal.co.uk",
-    accent: "#c77700",
+    accent: "#D42A19",
     resultsTitle: "Your visibility",
     resultsIntro: "How you show up on Google Maps and in AI answers.",
     steps: { ...sharedPortalSteps, provision_scans: "Your local searches set up", baseline_report: "Your first report" },

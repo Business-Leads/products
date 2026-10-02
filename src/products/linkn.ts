@@ -160,7 +160,7 @@ export const linkn: Product = {
   pauseAfterPastDueDays: 14,
   portal: {
     host: "account.linkn.co.uk",
-    accent: "#0a66c2",
+    accent: "#D42A19",
     resultsTitle: "Your LinkedIn results",
     resultsIntro: "What we published and who we spoke to on your behalf.",
     steps: { ...sharedPortalSteps, kickoff: "Kick-off call", profile_rewrite: "Your LinkedIn profile rewrite", content_pillars: "Content themes agreed and first posts scheduled", campaign_drafts: "Outreach campaigns written", launch: "Outreach switched on", call_guide: "Call guide prepared" },

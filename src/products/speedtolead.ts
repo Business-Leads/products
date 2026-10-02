@@ -115,7 +115,7 @@ export const speedToLead: Product = {
   pauseAfterPastDueDays: 14,
   portal: {
     host: "account.speedtolead.co.uk",
-    accent: "#ff6a4d",
+    accent: "#D42A19",
     resultsTitle: "Your calls",
     resultsIntro: "Calls answered and jobs booked for you.",
     steps: { ...sharedPortalSteps, dpa: "Data processing agreement", script: "Your call script written", provision_agent: "Your call assistant and number set up", forwarding: "Call forwarding switched on", test_calls: "Test calls" },

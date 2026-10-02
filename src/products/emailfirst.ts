@@ -84,7 +84,7 @@ export const emailFirst: Product = {
   pauseAfterPastDueDays: 7,
   portal: {
     host: "account.emailfirst.co.uk",
-    accent: "#6e56cf",
+    accent: "#D42A19",
     resultsTitle: "Your campaign results",
     resultsIntro: "Emails sent to your audience and the people who responded.",
     steps: { ...sharedPortalSteps, copy: "Your emails and landing page written", customer_approves_copy: "You approve the copy", provision_sending: "Sending set up" },

@@ -326,7 +326,7 @@ describe("client account areas", () => {
     assert.match(view.body, /read only/);
     assert.match(view.body, />42</);
     const page = await app.inject({ method: "GET", url: `/customers/${c.id}`, headers: { cookie: admin } });
-    assert.match(page.body, /View their dashboard/);
+    assert.match(page.body, /See their dashboard/);
     // Client pages aren't reachable without the HQ password.
     const anon = await app.inject({ method: "GET", url: "/clients" });
     assert.equal(anon.statusCode, 302);

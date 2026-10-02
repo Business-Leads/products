@@ -9,7 +9,7 @@ import { endAllSessions, ensureClientUser, portalUrl, resetLink, setupLink, user
 import { accountPage, dashboardBody, periodLabel, type View } from "../portal/views.js";
 import { formatPrice, getProduct, products, requireProduct } from "../products/index.js";
 import { html, type Raw } from "./html.js";
-import { chip, empty } from "./layout.js";
+import { chip, empty, intro } from "./layout.js";
 
 // HQ pages for managing client logins and support, and the client panels on
 // each customer page. Registered inside adminRoutes, so all of it needs the
@@ -45,9 +45,9 @@ export async function clientPanels(c: CustomerRow): Promise<Raw> {
           <tr><td class="muted">Account area</td><td><a href="${portalUrl(product)}/login" target="_blank" rel="noopener">${portalUrl(product)}</a></td></tr>
         </table>
         <div class="row" style="margin-top:12px">
-          <a class="btn primary" href="/customers/${c.id}/dashboard">View their dashboard</a>
-          <form method="post" action="/customers/${c.id}/login/invite" class="inline"><button class="small">${user?.password_hash ? "Email a password reset link" : "Email a link to set a password"}</button></form>
-          ${user ? html`<form method="post" action="/customers/${c.id}/login/${user.disabled ? "enable" : "disable"}" class="inline"><button class="small ${user.disabled ? "" : "danger"}">${user.disabled ? "Enable login" : "Disable login"}</button></form>
+          <a class="btn primary" href="/customers/${c.id}/dashboard">See their dashboard</a>
+          <form method="post" action="/customers/${c.id}/login/invite" class="inline"><button class="small">${user?.password_hash ? "Email them a new password link" : "Email them a link to set a password"}</button></form>
+          ${user ? html`<form method="post" action="/customers/${c.id}/login/${user.disabled ? "enable" : "disable"}" class="inline"><button class="small ${user.disabled ? "" : "danger"}">${user.disabled ? "Switch login back on" : "Switch login off"}</button></form>
             <form method="post" action="/customers/${c.id}/login/signout" class="inline"><button class="small">Sign them out everywhere</button></form>` : ""}
         </div>
       </div>
@@ -106,21 +106,23 @@ export async function clientAdminRoutes(app: FastifyInstance, send: (reply: Fast
       [req.query.product || null, req.query.q || null],
     );
     const body = html`
-      <h1>Client accounts</h1>
-      <p class="muted">Every client login on every product site. Open a client to view their dashboard exactly as they see it, send a password link, or disable their login.</p>
+      <h1>Client logins</h1>
+      ${intro("Every client's login, across all the product websites. Click a name to see their dashboard exactly as they see it, send them a new password link, or switch their login off.")}
       <form class="row" style="margin-bottom:14px">
-        <select name="product" style="width:auto"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
-        <input name="q" value="${req.query.q ?? ""}" placeholder="Email or business" style="width:auto">
-        <button class="small">Filter</button></form>
+        <label for="cl-product" class="sr-only">Product</label>
+        <select name="product" id="cl-product" style="width:auto"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
+        <label for="cl-q" class="sr-only">Search</label>
+        <input name="q" id="cl-q" value="${req.query.q ?? ""}" placeholder="Search by email or business" style="width:auto">
+        <button>Search</button></form>
       <div class="panel">${rows.length
-        ? html`<table><tr><th>Client</th><th>Product</th><th>Subscription</th><th>Login</th><th>Last signed in</th></tr>
+        ? html`<table><tr><th>Client</th><th>Product</th><th>Status</th><th>Login</th><th>Last signed in</th></tr>
           ${rows.map((r) => html`<tr>
             <td>${r.customer_id ? html`<a href="/customers/${r.customer_id}">${r.business || r.name || r.email}</a>` : r.email}<div class="small muted">${r.email}</div></td>
             <td>${getProduct(r.product)?.name ?? r.product}</td>
             <td>${r.status ? chip(r.status) : ""}</td>
-            <td>${r.disabled ? html`<span class="chip bad">disabled</span>` : r.password_hash ? html`<span class="chip ok">active</span>` : html`<span class="chip warn">password not set</span>`}</td>
+            <td>${r.disabled ? html`<span class="chip bad">Switched off</span>` : r.password_hash ? html`<span class="chip ok">Working</span>` : html`<span class="chip warn">No password yet</span>`}</td>
             <td>${r.last_login_at ? ago(r.last_login_at) : "never"}</td></tr>`)}</table>`
-        : empty("No client accounts yet. One is created for every new customer.")}</div>`;
+        : empty("No client logins yet. Every new customer gets one automatically.")}</div>`;
     return send(reply, req, "Client accounts", body, "/clients");
   });
 
@@ -224,7 +226,8 @@ export async function clientAdminRoutes(app: FastifyInstance, send: (reply: Fast
       [req.query.all === "1"],
     );
     const body = html`
-      <div class="spread"><h1>Support</h1><a href="/support${req.query.all === "1" ? "" : "?all=1"}">${req.query.all === "1" ? "Show open only" : "Show all"}</a></div>
+      <div class="spread"><h1>Messages from clients</h1><a href="/support${req.query.all === "1" ? "" : "?all=1"}">${req.query.all === "1" ? "Show only ones that need a reply" : "Show all, including answered"}</a></div>
+      ${intro("When a client uses \"Contact us\" in their account, it lands here and you get an email. Type your reply below: it's emailed to them from that product, and it also shows in their account.")}
       ${rows.length
         ? rows.map((r) => html`<div class="panel" id="r${r.id}">
             <div class="spread"><h3>${r.subject}</h3>${chip(r.status)}</div>
@@ -233,24 +236,25 @@ export async function clientAdminRoutes(app: FastifyInstance, send: (reply: Fast
             ${r.reply
               ? html`<div class="small"><strong>Replied ${fmtDate(r.replied_at, true)}:</strong><div class="pre">${r.reply}</div></div>`
               : html`<form method="post" action="/support/${r.id}/reply">
-                  <textarea name="reply" placeholder="Your reply. It's emailed from ${getProduct(r.product)?.name ?? "the product"} and shown in their account." required></textarea>
+                  <label for="reply${r.id}">Your reply</label>
+                  <textarea name="reply" id="reply${r.id}" placeholder="Write as you would in an email. It goes from ${getProduct(r.product)?.name ?? "the product"}." required></textarea>
                   <p class="row"><button class="primary">Send reply</button></p></form>
-                <form method="post" action="/support/${r.id}/close" class="inline"><button class="small">Close without replying</button></form>`}
+                <form method="post" action="/support/${r.id}/close" class="inline"><button class="small">No reply needed</button></form>`}
           </div>`)
-        : empty(req.query.all === "1" ? "No support requests yet." : "Nothing open. New requests are emailed to you and appear here.")}`;
+        : empty(req.query.all === "1" ? "No messages yet." : "You're all caught up. New messages are emailed to you and appear here.")}`;
     return send(reply, req, "Support", body, "/support");
   });
 
   app.post<{ Params: { id: string }; Body: { reply?: string } }>("/support/:id/reply", async (req, reply) => {
     const text = String(req.body?.reply ?? "").trim();
-    if (!text) return back(reply, "/support", "Write a reply first.");
+    if (!text) return back(reply, "/support", "Your reply was empty. Write something first.");
     await replyToSupport(req.params.id, text);
-    return back(reply, "/support", "Reply sent.");
+    return back(reply, "/support", "Reply sent. They'll get it by email and see it in their account.");
   });
 
   app.post<{ Params: { id: string } }>("/support/:id/close", async (req, reply) => {
     const r = await one(`UPDATE support_requests SET status = 'closed' WHERE id = $1 RETURNING *`, [req.params.id]);
     if (r?.task_id) await query(`UPDATE tasks SET status = 'dismissed', resolution = 'Closed', resolved_at = now() WHERE id = $1 AND status = 'open'`, [r.task_id]);
-    return back(reply, "/support", "Closed.");
+    return back(reply, "/support", "Marked as not needing a reply.");
   });
 }

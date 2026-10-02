@@ -16,7 +16,7 @@ import { portalUrl } from "../portal/accounts.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
-import { chip, empty, page } from "./layout.js";
+import { chip, empty, intro, page, statusLabel } from "./layout.js";
 
 async function navCounts() {
   const r = await one(`SELECT count(*)::int AS n FROM tasks WHERE status = 'open'`);
@@ -32,6 +32,12 @@ async function send(reply: FastifyReply, req: FastifyRequest, title: string, bod
 function back(reply: FastifyReply, to: string, flash?: string) {
   const sep = to.includes("?") ? "&" : "?";
   return reply.redirect(flash ? `${to}${sep}flash=${encodeURIComponent(flash)}` : to, 303);
+}
+
+/** "Good morning" and so on, in UK time. */
+function greeting(): string {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "numeric", hour12: false }).format(new Date()));
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 function productName(slug: string | null | undefined): string {
@@ -65,48 +71,50 @@ async function taskCard(t: any): Promise<Raw> {
     const footerAt = bodyText.indexOf("\n\n--\n");
     const inbound = p.inboundId ? await one(`SELECT * FROM inbound_emails WHERE id = $1`, [p.inboundId]) : undefined;
     form = html`<form method="post" action="/tasks/${t.id}">
-      ${inbound ? html`<div class="small muted">Their message${inbound.summary ? html` · ${inbound.summary}` : ""}</div>
+      ${inbound ? html`<div class="small muted">What they wrote${inbound.summary ? html` · ${inbound.summary}` : ""}</div>
         <div class="pre small" style="margin-bottom:10px">${inbound.body_text}</div>` : ""}
       <div class="small muted">To ${email?.to_address} · from ${email?.from_address}</div>
-      <label>Subject</label><input name="subject" value="${email?.subject ?? ""}">
-      <label>Email</label><textarea name="body" style="min-height:220px">${footerAt >= 0 ? bodyText.slice(0, footerAt) : bodyText}</textarea>
+      <label for="subj${t.id}">Subject</label><input name="subject" id="subj${t.id}" value="${email?.subject ?? ""}">
+      <label for="body${t.id}">The email <span class="muted">(you can edit it before sending)</span></label><textarea name="body" id="body${t.id}" style="min-height:220px">${footerAt >= 0 ? bodyText.slice(0, footerAt) : bodyText}</textarea>
       <div class="row" style="margin-top:10px">
-        <button class="primary" name="decision" value="approve">Approve and send</button>
-        <input name="note" placeholder="Reason, if rejecting" style="max-width:260px">
-        <button name="decision" value="reject" class="danger">Reject</button>
+        <button class="primary" name="decision" value="approve">Looks good, send it</button>
+        <input name="note" aria-label="Why not? (optional)" placeholder="Why not? (optional)" style="max-width:260px">
+        <button name="decision" value="reject" class="danger">Don't send</button>
       </div></form>`;
   } else if (t.action === "approve_review") {
     form = html`<form method="post" action="/tasks/${t.id}">
-      <textarea name="body" style="min-height:260px">${t.body}</textarea>
+      <label for="body${t.id}" class="sr-only">Draft</label>
+      <textarea name="body" id="body${t.id}" style="min-height:260px">${t.body}</textarea>
+      <div class="help">You can edit this before approving.</div>
       <div class="row" style="margin-top:10px">
-        <button class="primary" name="decision" value="approve">Approve</button>
-        <input name="note" placeholder="Reason, if rejecting" style="max-width:260px">
-        <button name="decision" value="reject" class="danger">Reject</button>
+        <button class="primary" name="decision" value="approve">Looks good, approve it</button>
+        <input name="note" aria-label="What's wrong with it? (optional)" placeholder="What's wrong with it? (optional)" style="max-width:260px">
+        <button name="decision" value="reject" class="danger">Not right</button>
       </div></form>`;
   } else if (t.kind === "manual") {
     form = html`<form method="post" action="/tasks/${t.id}">
       <div class="pre">${t.body}</div>
-      ${p.inputLabel ? html`<label>${p.inputLabel}</label><textarea name="input" required></textarea>` : ""}
+      ${p.inputLabel ? html`<label for="input${t.id}">${p.inputLabel}</label><textarea name="input" id="input${t.id}" required></textarea>` : ""}
       <div class="row" style="margin-top:10px">
-        <button class="primary" name="decision" value="done">Mark done</button>
-        <button name="decision" value="dismiss">Dismiss</button>
+        <button class="primary" name="decision" value="done">I've done this</button>
+        <button name="decision" value="dismiss">Not needed</button>
       </div></form>`;
   } else {
     form = html`<form method="post" action="/tasks/${t.id}">
       <div class="pre">${t.body}</div>
       <div class="row" style="margin-top:10px">
-        <button class="primary" name="decision" value="done">Resolved</button>
-        <button name="decision" value="dismiss">Dismiss</button>
+        <button class="primary" name="decision" value="done">Sorted</button>
+        <button name="decision" value="dismiss">Not needed</button>
       </div></form>`;
   }
   const who = t.customer_id
-    ? html` · <a href="/customers/${t.customer_id}">customer</a>`
+    ? html` · <a href="/customers/${t.customer_id}">open customer</a>`
     : t.lead_id
-      ? html` · <a href="/leads/${t.lead_id}">lead</a>`
+      ? html` · <a href="/leads/${t.lead_id}">open enquiry</a>`
       : "";
   return html`<div class="panel task ${t.kind} p${t.priority}">
     <div class="spread"><h3>${t.title}</h3>
-      <span class="row">${chip(t.kind)}${t.priority === 1 ? html`<span class="chip bad">urgent</span>` : ""}</span></div>
+      <span class="row">${chip(t.kind)}${t.priority === 1 ? html`<span class="chip bad">Urgent</span>` : ""}</span></div>
     <div class="small muted" style="margin-bottom:8px">${productName(t.product)}${who} · ${ago(t.created_at)}${
       t.due_at ? html` · due ${fmtDate(t.due_at)}` : ""
     }</div>
@@ -143,49 +151,52 @@ export async function adminRoutes(app: FastifyInstance) {
     const disconnected = integrations.filter((i) => !i.configured());
 
     const body = html`
-      <div class="spread"><h1>Overview</h1><span class="muted small">${fmtDate(new Date(), true)}</span></div>
-      ${warnings.length ? html`<div class="flash">Setup needed: ${warnings.join("; ")}.</div>` : ""}
+      <div class="spread"><h1>${greeting()}</h1><span class="muted small">${fmtDate(new Date(), true)}</span></div>
+      ${intro(openTotal
+        ? `Here's how everything is doing. Most of it runs by itself. There ${openTotal === 1 ? "is 1 thing" : `are ${openTotal} things`} waiting for you in your to-do list.`
+        : "Here's how everything is doing. Most of it runs by itself, and nothing needs you right now.")}
+      ${warnings.length ? html`<div class="flash">One thing to set up: ${warnings.join("; ")}.</div>` : ""}
       <div class="grid">
-        <div class="stat"><div class="label">Monthly recurring revenue</div><div class="value">${formatPrice(totalMrr)}</div></div>
+        <div class="stat"><div class="label">Coming in each month</div><div class="value">${formatPrice(totalMrr)}</div></div>
         <div class="stat"><div class="label">Live customers</div><div class="value">${counts.reduce((s, r) => s + r.live, 0)}</div>
-          <div class="sub">${counts.reduce((s, r) => s + r.onboarding, 0)} onboarding</div></div>
-        <div class="stat"><div class="label">Enquiries, last 7 days</div><div class="value">${leads.reduce((s, r) => s + r.n, 0)}</div></div>
-        <div class="stat"><div class="label">Waiting on you</div><div class="value">${openTotal}</div>
-          <div class="sub"><a href="/inbox">Open inbox</a></div></div>
-        <div class="stat"><div class="label">Sites up</div><div class="value">${allSites.filter((s) => s.ok).length}/${allSites.length}</div></div>
+          <div class="sub">plus ${counts.reduce((s, r) => s + r.onboarding, 0)} being set up</div></div>
+        <div class="stat"><div class="label">New enquiries this week</div><div class="value">${leads.reduce((s, r) => s + r.n, 0)}</div></div>
+        <div class="stat"><div class="label">Waiting for you</div><div class="value">${openTotal}</div>
+          <div class="sub"><a href="/inbox">Open your to-do list</a></div></div>
+        <div class="stat"><div class="label">Websites working</div><div class="value">${allSites.filter((s) => s.ok).length}/${allSites.length}</div></div>
       </div>
 
-      <div class="panel"><h2>Products</h2>
-        <table><tr><th>Product</th><th class="num">Live</th><th class="num">Onboarding</th><th class="num">MRR</th>
-          <th class="num">Enquiries (7d)</th><th class="num">Tasks</th><th>Site</th></tr>
+      <div class="panel"><h2>Your products</h2>
+        <table><tr><th>Product</th><th class="num">Live</th><th class="num">Being set up</th><th class="num">Each month</th>
+          <th class="num">Enquiries this week</th><th class="num">To-dos</th><th>Website</th></tr>
         ${products.map((p) => {
           const s = sites.get(p.slug) ?? [];
           return html`<tr><td><a href="/products/${p.slug}">${p.name}</a>
-              ${by(counts, p.slug, "trouble") ? html` <span class="chip warn">${by(counts, p.slug, "trouble")} payment issue</span>` : ""}</td>
+              ${by(counts, p.slug, "trouble") ? html` <span class="chip warn">${by(counts, p.slug, "trouble")} late payment</span>` : ""}</td>
             <td class="num">${by(counts, p.slug, "live")}</td><td class="num">${by(counts, p.slug, "onboarding")}</td>
             <td class="num">${formatPrice(mrr.get(p.slug) ?? 0)}</td><td class="num">${by(leads, p.slug)}</td>
             <td class="num">${by(tasks, p.slug)}</td>
-            <td>${s.length ? s.map((x) => html`<span class="dot ${x.ok ? "ok" : "bad"}"></span>`) : html`<span class="muted small">not checked yet</span>`}</td></tr>`;
+            <td>${s.length ? s.map((x) => html`<span class="dot ${x.ok ? "ok" : "bad"}"></span><span class="sr-only">${x.ok ? "working" : "not responding"}</span>`) : html`<span class="muted small">Not checked yet</span>`}</td></tr>`;
         })}
         </table>
       </div>
 
       <div class="grid-2">
-        <div class="panel"><div class="spread"><h2>Top of the inbox</h2><a href="/inbox" class="small">All ${openTotal}</a></div>
+        <div class="panel"><div class="spread"><h2>Next on your to-do list</h2><a href="/inbox" class="small">See all ${openTotal}</a></div>
           ${urgent.length ? html`<table>${urgent.map(
             (t) => html`<tr><td>${t.priority === 1 ? html`<span class="dot bad"></span>` : ""}<a href="/inbox#t${t.id}">${t.title}</a>
               <div class="small muted">${productName(t.product)} · ${ago(t.created_at)}</div></td><td>${chip(t.kind)}</td></tr>`,
-          )}</table>` : empty("Nothing needs you right now.")}
+          )}</table>` : empty("Nothing needs you right now. Everything is running by itself.")}
         </div>
-        <div class="panel"><div class="spread"><h2>Recent activity</h2><a href="/activity" class="small">All</a></div>
+        <div class="panel"><div class="spread"><h2>What's just happened</h2><a href="/activity" class="small">See everything</a></div>
           ${events.length ? html`<table>${events.map(
             (e) => html`<tr><td><span class="dot ${e.level === "error" ? "bad" : e.level === "warn" ? "warn" : "ok"}"></span>${e.message}
               <div class="small muted">${productName(e.product)} · ${ago(e.at)}</div></td></tr>`,
-          )}</table>` : empty("No activity yet.")}
+          )}</table>` : empty("Nothing has happened yet. It'll fill up as customers arrive.")}
         </div>
       </div>
-      ${disconnected.length ? html`<div class="panel"><h2>Not connected yet</h2><p class="small muted">Work that needs these
-        becomes a manual task in the inbox until they're connected.</p>
+      ${disconnected.length ? html`<div class="panel"><h2>Not connected yet</h2><p class="small muted">Until these are
+        connected, the work they would do comes to your to-do list instead, with instructions.</p>
         <div class="row">${disconnected.map((i) => html`<span class="chip warn">${i.name}</span>`)}</div>
         <p class="small"><a href="/system">See what each one needs</a></p></div>` : ""}`;
     return send(reply, req, "Overview", body, "/");
@@ -202,14 +213,13 @@ export async function adminRoutes(app: FastifyInstance) {
     const cards = [];
     for (const t of tasks) cards.push(html`<a id="t${t.id}"></a>${await taskCard(t)}`);
     const body = html`
-      <div class="spread"><h1>Inbox</h1>
-        <form class="row" method="get"><select name="product" onchange="this.form.submit()">
+      <div class="spread"><h1>Your to-do list</h1>
+        <form class="row" method="get"><label for="f-product" class="sr-only">Show to-dos for</label><select name="product" id="f-product" onchange="this.form.submit()" style="width:auto">
           <option value="">All products</option>
           ${products.map((p) => html`<option value="${p.slug}" ${filter === p.slug ? "selected" : ""}>${p.name}</option>`)}
         </select></form></div>
-      <p class="muted">Everything that needs a person: approvals, manual steps and alerts. Approving carries the
-        work on automatically.</p>
-      ${cards.length ? cards : html`<div class="panel">${empty("Inbox zero. Everything is running by itself.")}</div>`}`;
+      ${intro("These are the only things that need you. When you approve something or mark it done, the rest carries on by itself. The most urgent are at the top.")}
+      ${cards.length ? cards : html`<div class="panel">${empty("You're all caught up. Everything is running by itself.")}</div>`}`;
     return send(reply, req, "Inbox", body, "/inbox");
   });
 
@@ -219,7 +229,7 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!["approve", "reject", "done", "dismiss"].includes(decision)) return reply.code(400).send("Bad decision");
     await decideTask(req.params.id, decision, { subject: b.subject, body: b.body, input: b.input, note: b.note });
     const ref = req.headers.referer;
-    return back(reply, ref && new URL(ref).pathname.startsWith("/") ? new URL(ref).pathname + new URL(ref).search.replace(/[?&]flash=[^&]*/, "") : "/inbox", "Done.");
+    return back(reply, ref && new URL(ref).pathname.startsWith("/") ? new URL(ref).pathname + new URL(ref).search.replace(/[?&]flash=[^&]*/, "") : "/inbox", "Thanks, that's done.");
   });
 
   // Products --------------------------------------------------------------
@@ -247,8 +257,8 @@ export async function adminRoutes(app: FastifyInstance) {
     const sites = (await siteStatus()).get(product.slug) ?? [];
     const tools = integrations.filter((i) => product.tools.includes(i.id));
     const autonomySelect = (name: string, value: string) =>
-      html`<select name="${name}"><option value="approve" ${value === "approve" ? "selected" : ""}>Needs my approval</option>
-        <option value="auto" ${value === "auto" ? "selected" : ""}>Fully automatic</option></select>`;
+      html`<select name="${name}" id="a-${name}"><option value="approve" ${value === "approve" ? "selected" : ""}>Ask me first</option>
+        <option value="auto" ${value === "auto" ? "selected" : ""}>Just do it</option></select>`;
     const formSnippet = `<form method="post" action="${config.baseUrl}/api/leads/${product.slug}">
   <input name="name" required> <input name="email" type="email" required>
   <input name="business"> <textarea name="message"></textarea>
@@ -260,64 +270,66 @@ export async function adminRoutes(app: FastifyInstance) {
     const body = html`
       <div class="spread"><div><h1>${product.name}</h1><div class="muted">${product.tagline}</div></div>
         <form method="post" action="/products/${product.slug}/pause">
-          ${product.launched === false ? html`<span class="chip warn">Not launched: all automation off</span>` : ""}
-          ${paused ? html`<span class="chip bad">Paused</span> <button class="primary" name="paused" value="false">Resume</button>`
-                   : html`<button name="paused" value="true" class="danger">Pause all automation</button>`}
+          ${product.launched === false ? html`<span class="chip warn">Not launched yet, so nothing runs for it</span>` : ""}
+          ${paused ? html`<span class="chip bad">Paused</span> <button class="primary" name="paused" value="false">Switch back on</button>`
+                   : html`<button name="paused" value="true" class="danger" onclick="return confirm('Pause everything for ${product.name}? No emails or work will go out until you switch it back on.')">Pause this product</button>`}
         </form></div>
       <p>${product.description}</p>
 
       <div class="grid-2">
-        <div class="panel"><h2>Plans and sign-up links</h2>
+        <div class="panel"><h2>Prices and sign-up links</h2>
+          <p class="small muted">Each link takes a customer straight to payment. Use them for the buttons on the website.</p>
           <table>${product.plans.map((p) => html`<tr><td><strong>${p.name}</strong><div class="small muted">${p.summary}</div></td>
             <td class="num">${product.quoted ? "Quoted" : formatPrice(p.amountPence, p.interval)}${p.setupFeePence ? html`<div class="small muted">+ ${formatPrice(p.setupFeePence)} setup</div>` : ""}</td></tr>
-            ${product.quoted ? "" : html`<tr><td colspan="2"><input readonly value="${config.baseUrl}/buy/${product.slug}/${p.id}" onclick="this.select()"></td></tr>`}`)}</table>
+            ${product.quoted ? "" : html`<tr><td colspan="2"><input readonly aria-label="Sign-up link for ${p.name}" value="${config.baseUrl}/buy/${product.slug}/${p.id}" onclick="this.select()"></td></tr>`}`)}</table>
           ${product.addOns?.length ? html`<p class="small muted">Add-ons: ${product.addOns.map((a) => `${a.name} (${formatPrice(a.amountPence)}${a.recurring ? " recurring" : " one-off"}, ?addons=${a.id})`).join("; ")}</p>` : ""}
         </div>
-        <div class="panel"><h2>Autonomy</h2>
+        <div class="panel"><h2>How much runs by itself</h2>
+          <p class="small muted">For each kind of work, choose whether it goes out on its own or waits in your to-do list for a quick check.</p>
           <form method="post" action="/products/${product.slug}/autonomy">
-            <label>Replies to new enquiries and follow-ups</label>${autonomySelect("lead_replies", leadAutonomy)}
-            <label>Cold outreach emails (<a href="/outreach">settings</a>)</label>${autonomySelect("outreach", outreachAutonomy)}
-            ${product.routines.map((r, i) => html`<label>${r.title}</label>${autonomySelect(`routine:${r.key}`, routineAutonomy[i]!)}`)}
-            <p class="help">Start with approval on and switch to fully automatic once you're happy with the drafts.</p>
-            <button class="primary">Save</button>
+            <label for="a-lead_replies">Replies to new enquiries, and follow-ups</label>${autonomySelect("lead_replies", leadAutonomy)}
+            <label for="a-outreach">Cold emails (<a href="/outreach">settings</a>)</label>${autonomySelect("outreach", outreachAutonomy)}
+            ${product.routines.map((r, i) => html`<label for="a-routine:${r.key}">${r.title}</label>${autonomySelect(`routine:${r.key}`, routineAutonomy[i]!)}`)}
+            <p class="help">Tip: start with "Ask me first". Once you're happy with what it writes, switch to "Just do it".</p>
+            <button class="primary">Save my choices</button>
           </form>
         </div>
       </div>
 
       <div class="grid-2">
-        <div class="panel"><h2>Onboarding</h2>
+        <div class="panel"><h2>Steps for each new customer</h2>
           <table>${product.onboarding.map((s) => {
             const n = pipeline.find((p) => p.key === s.key)?.n ?? 0;
             return html`<tr><td>${s.title}${s.plans ? html` <span class="chip">${s.plans.join(", ")}</span>` : ""}</td>
-              <td>${chip(s.kind)}</td><td class="num">${n ? html`<strong>${n}</strong> here` : ""}</td></tr>`;
+              <td>${chip(s.kind)}</td><td class="num">${n ? html`<strong>${n}</strong> ${n === 1 ? "customer" : "customers"} here` : ""}</td></tr>`;
           })}</table>
         </div>
-        <div class="panel"><h2>Tools and site</h2>
+        <div class="panel"><h2>Connections and website</h2>
           <table>${tools.map((i) => html`<tr><td>${i.name}</td><td>${i.configured()
-            ? i.automation === "full" ? html`<span class="chip ok">connected</span>` : html`<span class="chip warn">key set, manual</span>`
-            : html`<span class="chip bad">not connected</span>`}</td></tr>`)}
-          ${sites.map((s) => html`<tr><td><a href="${s.url}">${s.url}</a></td><td><span class="chip ${s.ok ? "ok" : "bad"}">${s.ok ? "up" : "down"}</span> <span class="small muted">${ago(s.at)}</span></td></tr>`)}
+            ? i.automation === "full" ? html`<span class="chip ok">Connected</span>` : html`<span class="chip warn">Key added, not automatic yet</span>`
+            : html`<span class="chip bad">Not connected</span>`}</td></tr>`)}
+          ${sites.map((s) => html`<tr><td><a href="${s.url}">${s.url}</a></td><td><span class="chip ${s.ok ? "ok" : "bad"}">${s.ok ? "Working" : "Not responding"}</span> <span class="small muted">checked ${ago(s.at)}</span></td></tr>`)}
           </table>
         </div>
       </div>
 
       <div class="panel"><div class="spread"><h2>Customers</h2>
-        <a class="btn" href="/customers/new?product=${product.slug}">Add customer manually</a></div>
-        ${customers.length ? customersTable(customers) : empty("No customers yet.")}</div>
+        <a class="btn" href="/customers/new?product=${product.slug}">Add a customer by hand</a></div>
+        ${customers.length ? customersTable(customers) : empty("No customers yet. They'll appear here as soon as someone signs up.")}</div>
 
-      <div class="panel"><div class="spread"><h2>Recent enquiries</h2><a class="small" href="/leads?product=${product.slug}">All</a></div>
+      <div class="panel"><div class="spread"><h2>Recent enquiries</h2><a class="small" href="/leads?product=${product.slug}">See all</a></div>
         ${leads.length ? leadsTable(leads) : empty("No enquiries yet.")}</div>
 
-      <div class="panel"><h2>Connect the website form</h2>
-        <p class="small muted">Point the site's enquiry form at this address. Any extra fields are kept with the lead.</p>
+      <div class="panel"><h2>Linking up the website</h2>
+        <p class="small muted">For whoever edits the website. The enquiry form should send to this address. Any extra questions on the form are kept with the enquiry.</p>
         <pre class="pre small">${formSnippet}</pre>
         <h3 style="margin-top:14px">Client log-in button</h3>
         <p class="small muted">Link the site's "Log in" button here. Clients sign in with their email and password.</p>
-        <input readonly value="${portalUrl(product)}/login" onclick="this.select()">
+        <input readonly aria-label="Client log-in link" value="${portalUrl(product)}/login" onclick="this.select()">
         ${product.slug === "linkn" ? html`<h3 style="margin-top:14px">Sbl.so webhook address</h3>
           ${config.sbl.webhookToken
             ? html`<p class="small muted">In Sbl.so: Webhooks → Add webhook. Paste this, tick all six events, keep "All campaigns". Keep it private.</p>
-              <input readonly value="${config.baseUrl}/webhooks/sbl/${config.sbl.webhookToken}" onclick="this.select()">`
+              <input readonly aria-label="Sbl.so webhook address" value="${config.baseUrl}/webhooks/sbl/${config.sbl.webhookToken}" onclick="this.select()">`
             : html`<p class="small muted">Appears after the next deploy.</p>`}` : ""}</div>`;
     return send(reply, req, product.name, body, `/products/${product.slug}`);
   });
@@ -327,7 +339,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const paused = req.body?.paused === "true";
     await setSetting(`paused:${product.slug}`, paused);
     await logEvent({ type: "product.paused", level: "warn", message: `${product.name} automation ${paused ? "paused" : "resumed"}`, product: product.slug });
-    return back(reply, `/products/${product.slug}`, paused ? "Paused." : "Resumed.");
+    return back(reply, `/products/${product.slug}`, paused ? `${product.name} is paused. Nothing will go out until you switch it back on.` : `${product.name} is back on. Everything is running again.`);
   });
 
   app.post<{ Params: { slug: string }; Body: Record<string, string> }>("/products/:slug/autonomy", async (req, reply) => {
@@ -338,7 +350,7 @@ export async function adminRoutes(app: FastifyInstance) {
       if (v === "auto" || v === "approve") await setSetting(`autonomy:${product.slug}:${k}`, v);
     }
     await logEvent({ type: "product.autonomy", message: `${product.name} autonomy settings updated`, product: product.slug });
-    return back(reply, `/products/${product.slug}`, "Saved.");
+    return back(reply, `/products/${product.slug}`, "Saved your choices.");
   });
 
   // Customers -------------------------------------------------------------
@@ -351,33 +363,37 @@ export async function adminRoutes(app: FastifyInstance) {
     const statuses = ["onboarding", "active", "past_due", "paused", "cancelled"];
     const body = html`<div class="spread"><h1>Customers</h1>
       <form class="row" method="get">
-        <select name="product"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
-        <select name="status"><option value="">Any status</option>${statuses.map((s) => html`<option ${req.query.status === s ? "selected" : ""}>${s}</option>`)}</select>
-        <button>Filter</button></form></div>
-      <div class="panel">${rows.length ? customersTable(rows, true) : empty("No customers match.")}</div>`;
+        <label for="c-product" class="sr-only">Product</label>
+        <select name="product" id="c-product" style="width:auto"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
+        <label for="c-status" class="sr-only">Status</label>
+        <select name="status" id="c-status" style="width:auto"><option value="">Any status</option>${statuses.map((s) => html`<option value="${s}" ${req.query.status === s ? "selected" : ""}>${statusLabel(s)}</option>`)}</select>
+        <button>Show</button></form></div>
+      ${intro("Everyone who's signed up, newest first. Click a name to see everything about them, including their dashboard as they see it.")}
+      <div class="panel">${rows.length ? customersTable(rows, true) : empty(req.query.product || req.query.status ? "No customers match those choices." : "No customers yet. They'll appear here as soon as someone signs up.")}</div>`;
     return send(reply, req, "Customers", body, "/customers");
   });
 
   app.get<{ Querystring: { product?: string } }>("/customers/new", async (req, reply) => {
     const product = getProduct(req.query.product ?? "") ?? products[0]!;
-    const body = html`<h1>Add a customer manually</h1>
-      <div class="panel"><p class="muted">For quoted work (Good Questions) or anyone who signed up outside the website.
-        Onboarding starts straight away, beginning with the welcome email and intake form.</p>
+    const body = html`<h1>Add a customer by hand</h1>
+      ${intro("Use this for quoted work (like Good Questions) or anyone who signed up without using the website. As soon as you save, they get a welcome email and a link to set up their account, and setup starts by itself.")}
+      <div class="panel" style="max-width:640px">
       <form method="post" action="/customers/new">
-        <label>Product</label><select name="product">${products.map((p) => html`<option value="${p.slug}" ${p.slug === product.slug ? "selected" : ""}>${p.name}</option>`)}</select>
-        <label>Plan id</label><input name="plan" value="${product.plans[0]?.id}" required>
-        <div class="help">Plans: ${products.map((p) => `${p.name}: ${p.plans.map((x) => x.id).join(", ")}`).join(" · ")}</div>
-        <label>Name</label><input name="name" required>
-        <label>Business</label><input name="business">
-        <label>Email</label><input name="email" type="email" required>
-        <label>Monthly value in pounds (optional)</label><input name="amount" inputmode="decimal">
-        <p style="margin-top:16px"><button class="primary">Create and start onboarding</button></p>
+        <label for="n-choice">Product and plan</label>
+        <select name="choice" id="n-choice" required>${products.map((p) => html`<optgroup label="${p.name}">${p.plans.map((pl) => html`<option value="${p.slug}|${pl.id}" ${p.slug === product.slug && pl.id === product.plans[0]?.id ? "selected" : ""}>${p.name}: ${pl.name}${p.quoted ? "" : ` (${formatPrice(pl.amountPence, pl.interval)})`}</option>`)}</optgroup>`)}</select>
+        <label for="n-name">Their name</label><input name="name" id="n-name" autocomplete="off" required>
+        <label for="n-business">Business name <span class="muted">(optional)</span></label><input name="business" id="n-business">
+        <label for="n-email">Their email</label><input name="email" id="n-email" type="email" required>
+        <label for="n-amount">How much they pay each month, in pounds <span class="muted">(optional)</span></label><input name="amount" id="n-amount" inputmode="decimal">
+        <div class="help">Leave this empty to use the plan's normal price.</div>
+        <p style="margin-top:18px"><button class="primary">Add them and start setting up</button></p>
       </form></div>`;
     return send(reply, req, "Add customer", body, "/customers");
   });
 
   app.post<{ Body: Record<string, string> }>("/customers/new", async (req, reply) => {
     const b = req.body ?? {};
+    if (b.choice) [b.product, b.plan] = b.choice.split("|");
     const product = requireProduct(b.product ?? "");
     const plan = getPlan(product, b.plan ?? "");
     if (!plan) return reply.code(400).send(`Unknown plan for ${product.name}`);
@@ -390,7 +406,7 @@ export async function adminRoutes(app: FastifyInstance) {
     await logEvent({ type: "customer.created", message: `Added ${b.name} to ${product.name} by hand`, product: product.slug, customerId: customer!.id });
     await instantiateSteps(customer!);
     await advanceOnboarding(customer!.id);
-    return back(reply, `/customers/${customer!.id}`, "Customer created and onboarding started.");
+    return back(reply, `/customers/${customer!.id}`, "Added. They've been sent a welcome email and setup has started.");
   });
 
   app.get<{ Params: { id: string } }>("/customers/:id", async (req, reply) => {
@@ -411,12 +427,12 @@ export async function adminRoutes(app: FastifyInstance) {
         <div class="muted">${product.name} · ${plan?.name ?? c.plan} · ${formatPrice(c.amount_pence, c.interval)} · since ${fmtDate(c.created_at)}</div></div>
         <form method="post" action="/customers/${c.id}/status" class="row">
           ${chip(c.status)}
-          ${c.status !== "active" && c.status !== "cancelled" ? html`<button class="small" name="status" value="active">Mark live</button>` : ""}
-          ${c.status === "active" ? html`<button class="small" name="status" value="paused">Pause</button>` : ""}
-          ${c.status !== "cancelled" ? html`<button class="small danger" name="status" value="cancelled" onclick="return confirm('Cancel this customer? Their Stripe subscription must be cancelled in Stripe.')">Cancel</button>` : ""}
+          ${c.status !== "active" && c.status !== "cancelled" ? html`<button class="small" name="status" value="active">Mark as live</button>` : ""}
+          ${c.status === "active" ? html`<button class="small" name="status" value="paused">Pause their service</button>` : ""}
+          ${c.status !== "cancelled" ? html`<button class="small danger" name="status" value="cancelled" onclick="return confirm('Mark this customer as having left? This stops all work for them. If they pay by card, also cancel their subscription in Stripe.')">Mark as left</button>` : ""}
         </form></div>
       <div class="grid-2">
-        <div class="panel"><h2>Contact</h2>
+        <div class="panel"><h2>Contact details</h2>
           <table><tr><td class="muted">Name</td><td>${c.name}</td></tr>
             <tr><td class="muted">Email</td><td><a href="mailto:${c.email}">${c.email}</a></td></tr>
             <tr><td class="muted">Phone</td><td>${c.phone}</td></tr>
@@ -425,31 +441,31 @@ export async function adminRoutes(app: FastifyInstance) {
             ${c.data.cancel_requested_at ? html`<tr><td class="muted">Cancelling</td><td><span class="chip bad">${c.data.cancel_at ? `ends ${fmtDate(c.data.cancel_at)}` : "requested"}</span>${c.data.cancel_reason ? html`<div class="small">${c.data.cancel_reason}</div>` : ""}</td></tr>` : ""}
             ${c.stripe_customer_id ? html`<tr><td class="muted">Stripe</td><td><a href="https://dashboard.stripe.com/customers/${c.stripe_customer_id}">${c.stripe_customer_id}</a></td></tr>` : ""}
           </table></div>
-        <div class="panel"><h2>Onboarding</h2>
+        <div class="panel"><h2>Setting them up</h2>
           <table>${steps.map((s) => html`<tr><td>${s.title}${s.last_error ? html`<div class="small" style="color:var(--bad)">${s.last_error}</div>` : ""}</td>
             <td>${chip(s.status)}</td>
-            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Retry</button></form>` : ""}
-              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step?')"><button class="small">Skip</button></form>` : ""}</td></tr>`)}</table>
+            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}
+              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step? It won\'t be done for this customer.')"><button class="small">Skip</button></form>` : ""}</td></tr>`)}</table>
         </div>
       </div>
-      ${tasks.length ? html`<h2>Waiting on you</h2>${await Promise.all(tasks.map(taskCard))}` : ""}
+      ${tasks.length ? html`<h2>Waiting for you</h2>${await Promise.all(tasks.map(taskCard))}` : ""}
       ${await clientPanels(c)}
       <div class="grid-2">
-        <div class="panel"><h2>Intake answers</h2>
-          ${Object.keys(intake).length ? html`<table>${product.intake.map((f) => html`<tr><td class="muted">${f.label}</td><td style="white-space:pre-wrap">${intake[f.key]}</td></tr>`)}</table>` : empty("Not filled in yet.")}
+        <div class="panel"><h2>What they told us</h2>
+          ${Object.keys(intake).length ? html`<table>${product.intake.map((f) => html`<tr><td class="muted">${f.label}</td><td style="white-space:pre-wrap">${intake[f.key]}</td></tr>`)}</table>` : empty("They haven't filled in their form yet.")}
         </div>
-        <div class="panel"><h2>Saved work</h2>
-          ${saved.length ? saved.map(([k, v]) => html`<h3>${k.replace(/_/g, " ")}</h3><div class="pre small">${typeof v === "string" ? v : JSON.stringify(v, null, 2)}</div>`) : empty("Nothing saved yet.")}
+        <div class="panel"><h2>Notes and drafts</h2>
+          ${saved.length ? saved.map(([k, v]) => html`<h3>${k.replace(/_/g, " ")}</h3><div class="pre small">${typeof v === "string" ? v : JSON.stringify(v, null, 2)}</div>`) : empty("Nothing yet.")}
         </div>
       </div>
-      <div class="panel"><h2>Recurring work</h2>
-        ${deliveries.length ? html`<table><tr><th>Routine</th><th>Period</th><th>Status</th><th></th></tr>${deliveries.map((d) => html`<tr>
+      <div class="panel"><h2>Regular work for them</h2>
+        ${deliveries.length ? html`<table><tr><th>What</th><th>For</th><th>Status</th><th></th></tr>${deliveries.map((d) => html`<tr>
           <td>${product.routines.find((r) => r.key === d.routine)?.title ?? d.routine}${d.last_error ? html`<div class="small" style="color:var(--bad)">${d.last_error}</div>` : ""}</td>
           <td>${d.period}</td><td>${chip(d.status)}</td>
-          <td>${d.status === "failed" ? html`<form method="post" action="/customers/${c.id}/deliveries/${d.id}/retry" class="inline"><button class="small">Retry</button></form>` : ""}</td></tr>`)}</table>` : empty("Starts once the customer is live.")}
+          <td>${d.status === "failed" ? html`<form method="post" action="/customers/${c.id}/deliveries/${d.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}</td></tr>`)}</table>` : empty("This starts once they're live.")}
       </div>
       <div class="grid-2">
-        <div class="panel"><h2>Emails</h2>${emails.length ? html`<table>${emails.map((e) => html`<tr><td>${e.subject}<div class="small muted">${e.kind} · ${ago(e.created_at)}</div></td><td>${chip(e.status)}</td></tr>`)}</table>` : empty("None yet.")}</div>
+        <div class="panel"><h2>Emails to them</h2>${emails.length ? html`<table>${emails.map((e) => html`<tr><td>${e.subject}<div class="small muted">${ago(e.created_at)}</div></td><td>${chip(e.status)}</td></tr>`)}</table>` : empty("None yet.")}</div>
         <div class="panel"><h2>History</h2>${events.length ? html`<table>${events.map((e) => html`<tr><td>${e.message}<div class="small muted">${fmtDate(e.at, true)}</div></td></tr>`)}</table>` : empty("None yet.")}</div>
       </div>`;
     return send(reply, req, c.business || c.email, body, "/customers");
@@ -457,24 +473,24 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { id: string; stepId: string } }>("/customers/:id/steps/:stepId/retry", async (req, reply) => {
     await retryStep(req.params.stepId);
-    return back(reply, `/customers/${req.params.id}`, "Retried.");
+    return back(reply, `/customers/${req.params.id}`, "Trying that step again now.");
   });
 
   app.post<{ Params: { id: string; stepId: string } }>("/customers/:id/steps/:stepId/skip", async (req, reply) => {
     await skipStep(req.params.stepId);
-    return back(reply, `/customers/${req.params.id}`, "Skipped.");
+    return back(reply, `/customers/${req.params.id}`, "Skipped that step.");
   });
 
   app.post<{ Params: { id: string }; Body: { status?: string } }>("/customers/:id/status", async (req, reply) => {
     const status = req.body?.status;
     if (status !== "active" && status !== "paused" && status !== "cancelled") return reply.code(400).send("Bad status");
     await setCustomerStatus(req.params.id, status);
-    return back(reply, `/customers/${req.params.id}`, status === "cancelled" ? "Cancelled here. Also cancel the subscription in Stripe if they had one." : "Updated.");
+    return back(reply, `/customers/${req.params.id}`, status === "cancelled" ? "Marked as left and all work for them has stopped. If they pay by card, also cancel their subscription in Stripe." : "Updated.");
   });
 
   app.post<{ Params: { id: string; deliveryId: string } }>("/customers/:id/deliveries/:deliveryId/retry", async (req, reply) => {
     await retryDelivery(req.params.deliveryId);
-    return back(reply, `/customers/${req.params.id}`, "Retried.");
+    return back(reply, `/customers/${req.params.id}`, "Trying again now.");
   });
 
   // Leads -----------------------------------------------------------------
@@ -485,12 +501,15 @@ export async function adminRoutes(app: FastifyInstance) {
       [req.query.product || null, req.query.status || null],
     );
     const statuses = ["new", "contacted", "followed_up", "replied", "won", "lost", "unsubscribed"];
-    const body = html`<div class="spread"><h1>Leads</h1>
+    const body = html`<div class="spread"><h1>Enquiries</h1>
       <form class="row" method="get">
-        <select name="product"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
-        <select name="status"><option value="">Any status</option>${statuses.map((s) => html`<option ${req.query.status === s ? "selected" : ""}>${s}</option>`)}</select>
-        <button>Filter</button></form></div>
-      <div class="panel">${rows.length ? leadsTable(rows, true) : empty("No enquiries match.")}</div>`;
+        <label for="l-product" class="sr-only">Product</label>
+        <select name="product" id="l-product" style="width:auto"><option value="">All products</option>${products.map((p) => html`<option value="${p.slug}" ${req.query.product === p.slug ? "selected" : ""}>${p.name}</option>`)}</select>
+        <label for="l-status" class="sr-only">Status</label>
+        <select name="status" id="l-status" style="width:auto"><option value="">Any status</option>${statuses.map((s) => html`<option value="${s}" ${req.query.status === s ? "selected" : ""}>${statusLabel(s)}</option>`)}</select>
+        <button>Show</button></form></div>
+      ${intro("People who've filled in a form on one of the websites, or replied to a cold email. Each one gets a reply within a few minutes, then a couple of friendly follow-ups.")}
+      <div class="panel">${rows.length ? leadsTable(rows, true) : empty(req.query.product || req.query.status ? "No enquiries match those choices." : "No enquiries yet.")}</div>`;
     return send(reply, req, "Leads", body, "/leads");
   });
 
@@ -500,16 +519,16 @@ export async function adminRoutes(app: FastifyInstance) {
     const emails = await query(`SELECT * FROM emails WHERE lead_id = $1 ORDER BY created_at`, [l.id]);
     const fields = [["Name", l.name], ["Email", l.email], ["Phone", l.phone], ["Business", l.business], ["Website", l.website], ["Town", l.town], ["Message", l.message], ["Source", l.source]];
     const body = html`<div class="spread"><div><h1>${l.business || l.name || l.email}</h1>
-        <div class="muted">${productName(l.product)} enquiry · ${fmtDate(l.created_at, true)}</div></div>${chip(l.status)}</div>
+        <div class="muted">${productName(l.product)} enquiry, received ${fmtDate(l.created_at, true)}</div></div>${chip(l.status)}</div>
       <div class="grid-2">
         <div class="panel"><h2>Details</h2><table>${fields.filter(([, v]) => v).map(([k, v]) => html`<tr><td class="muted">${k}</td><td style="white-space:pre-wrap">${v}</td></tr>`)}
           ${Object.entries(l.data ?? {}).map(([k, v]) => html`<tr><td class="muted">${k}</td><td>${String(v)}</td></tr>`)}</table>
           <form method="post" action="/leads/${l.id}/status" class="row" style="margin-top:12px">
-            <button name="status" value="lost">Mark lost</button>
-            <button name="status" value="unsubscribed">Asked to stop</button>
-            ${l.next_touch_at ? html`<span class="small muted">Next follow-up ${fmtDate(l.next_touch_at, true)}</span>` : ""}
+            <button name="status" value="lost">They're not interested</button>
+            <button name="status" value="unsubscribed">They asked us to stop</button>
+            ${l.next_touch_at ? html`<span class="small muted">Next follow-up: ${fmtDate(l.next_touch_at, true)}</span>` : ""}
           </form></div>
-        <div class="panel"><h2>Emails</h2>${emails.length ? emails.map((e) => html`<h3>${e.subject} ${chip(e.status)}</h3><div class="pre small">${e.body_text}</div>`) : empty("None yet. A reply is drafted within five minutes of the enquiry.")}</div>
+        <div class="panel"><h2>Emails</h2>${emails.length ? emails.map((e) => html`<h3>${e.subject} ${chip(e.status)}</h3><div class="pre small">${e.body_text}</div>`) : empty("None yet. A reply is written within about five minutes of the enquiry.")}</div>
       </div>`;
     return send(reply, req, "Lead", body, "/leads");
   });
@@ -525,7 +544,7 @@ export async function adminRoutes(app: FastifyInstance) {
       await query(`UPDATE emails SET status = 'cancelled' WHERE lead_id = $1 AND status IN ('draft','queued')`, [req.params.id]);
       await query(`UPDATE tasks SET status = 'dismissed', resolved_at = now() WHERE lead_id = $1 AND status = 'open'`, [req.params.id]);
     }
-    return back(reply, `/leads/${req.params.id}`, "Updated.");
+    return back(reply, `/leads/${req.params.id}`, "Updated. We won't email them again.");
   });
 
   // Outreach --------------------------------------------------------------
@@ -555,54 +574,58 @@ export async function adminRoutes(app: FastifyInstance) {
       .reduce((a, t) => a + t.n, 0);
     const excluded = byType.filter((t) => !["limited", "llp", "plc", "public_sector"].includes(t.company_type) && !(s.allowUnknown && t.company_type === "unknown"));
 
-    const body = html`<div class="spread"><h1>Outreach</h1>
-        <form class="row" method="get"><select name="product" onchange="this.form.submit()">
+    const body = html`<div class="spread"><h1>Cold emails</h1>
+        <form class="row" method="get"><label for="o-product" class="sr-only">Product</label><select name="product" id="o-product" onchange="this.form.submit()" style="width:auto">
           ${products.map((p) => html`<option value="${p.slug}" ${p.slug === product.slug ? "selected" : ""}>${p.name}</option>`)}
         </select></form></div>
-      <p class="muted">Cold email to imported prospects: written individually by Claude, a short sequence, capped per day,
-        weekdays 9 to 5. Anyone who replies becomes a lead; anyone who says stop is never emailed again by any product.</p>
+      ${intro(html`<p>Short, individually written emails to businesses you've added below. They go out on weekdays between 9 and 5,
+        never more than your daily limit. Anyone who replies becomes an enquiry. Anyone who asks us to stop is never emailed again, by any product.</p>`)}
       <div class="grid">
         <div class="stat"><div class="label">Ready to email</div><div class="value">${eligible}</div>
-          ${excluded.length ? html`<div class="sub">${excluded.map((t) => `${t.n} ${t.company_type.replace("_", " ")}`).join(", ")} held back</div>` : ""}</div>
-        <div class="stat"><div class="label">In sequence</div><div class="value">${n("in_sequence")}</div></div>
-        <div class="stat"><div class="label">Sent, last 7 days</div><div class="value">${sentWeek?.sent ?? 0}</div>
-          <div class="sub">${sentWeek?.drafts ?? 0} awaiting approval</div></div>
-        <div class="stat"><div class="label">Replies, last 7 days</div><div class="value">${replies?.n ?? 0}</div></div>
-        <div class="stat"><div class="label">Opted out</div><div class="value">${n("suppressed")}</div></div>
+          ${excluded.length ? html`<div class="sub">${excluded.map((t) => `${t.n} ${t.company_type.replace("_", " ")}`).join(", ")} can't be emailed (UK rules)</div>` : ""}</div>
+        <div class="stat"><div class="label">Being emailed now</div><div class="value">${n("in_sequence")}</div></div>
+        <div class="stat"><div class="label">Sent this week</div><div class="value">${sentWeek?.sent ?? 0}</div>
+          <div class="sub">${sentWeek?.drafts ?? 0} waiting for your OK</div></div>
+        <div class="stat"><div class="label">Replies this week</div><div class="value">${replies?.n ?? 0}</div></div>
+        <div class="stat"><div class="label">Asked us to stop</div><div class="value">${n("suppressed")}</div></div>
       </div>
       <div class="grid-2">
         <div class="panel"><h2>${product.name} settings</h2>
           <form method="post" action="/outreach/${product.slug}/settings">
-            <label><input type="checkbox" name="enabled" value="1" style="width:auto" ${s.enabled ? "checked" : ""}> Outreach on</label>
-            <label>Emails per day (first emails and follow-ups together)</label><input name="dailyCap" type="number" min="0" max="200" value="${s.dailyCap}">
-            <label>Follow-up days after the first email</label><input name="days" value="${s.days.slice(1).join(", ")}">
-            <label><input type="checkbox" name="allowUnknown" value="1" style="width:auto" ${s.allowUnknown ? "checked" : ""}> Also email prospects whose company type is unknown</label>
-            <div class="help">Sole traders and partnerships are never cold-emailed: UK rules (PECR) need their consent first.
-              Start at 20 a day or fewer and raise it slowly to protect the sending domain.</div>
+            <label><input type="checkbox" name="enabled" value="1" ${s.enabled ? "checked" : ""}> Send cold emails for ${product.name}</label>
+            <label for="o-cap">Most emails to send in a day</label><input name="dailyCap" id="o-cap" type="number" min="0" max="200" value="${s.dailyCap}">
+            <div class="help">This counts first emails and follow-ups together.</div>
+            <label for="o-days">Send follow-ups this many days after the first email</label><input name="days" id="o-days" value="${s.days.slice(1).join(", ")}">
+            <div class="help">For example "3, 7" sends one follow-up after 3 days and another after 7.</div>
+            <label><input type="checkbox" name="allowUnknown" value="1" ${s.allowUnknown ? "checked" : ""}> Also email businesses when we don't know what type of company they are</label>
+            <div class="help">Sole traders and partnerships are never cold-emailed, because UK rules (PECR) need their permission first.
+              Start at 20 a day or fewer and build up slowly, so emails keep landing in inboxes rather than spam.</div>
             <p><button class="primary">Save</button></p>
           </form></div>
-        <div class="panel"><h2>Import prospects</h2>
+        <div class="panel"><h2>Add people to email</h2>
           <form method="post" action="/outreach/${product.slug}/import">
-            <label>Paste CSV with a header row</label>
-            <textarea name="csv" placeholder="email,first_name,last_name,company,company_type,website,town" required></textarea>
-            <div class="help">Recognised columns: email, name or first_name/last_name, company, company_type, website, town.
-              Any other columns are kept and can be used in the email. Company type is guessed from "Ltd", "LLP" or "PLC" if missing.</div>
-            <label>Source label</label><input name="source" placeholder="e.g. Apollo, Sept 2026, Stockport electricians">
-            <p><button class="primary">Import</button></p>
+            <label for="o-csv">Paste a spreadsheet (CSV), including the heading row</label>
+            <textarea name="csv" id="o-csv" placeholder="email,first_name,last_name,company,company_type,website,town" required></textarea>
+            <div class="help">Useful columns: email, name (or first_name and last_name), company, company_type, website, town.
+              Other columns are kept too. If company type is missing, we work it out from "Ltd", "LLP" or "PLC" in the name.</div>
+            <label for="o-source">Where this list came from</label><input name="source" id="o-source" placeholder="For example: Apollo, Sept 2026, Stockport electricians">
+            <p><button class="primary">Add them</button></p>
           </form></div>
       </div>
-      <div class="panel"><h2>Prospects</h2>
-        ${recent.length ? html`<table><tr><th>Prospect</th><th>Type</th><th>Status</th><th class="num">Emails</th><th>Next</th></tr>
+      <div class="panel"><h2>People on the list</h2>
+        ${recent.length ? html`<table><tr><th>Business</th><th>Type</th><th>Status</th><th class="num">Emails sent</th><th>Next email</th></tr>
           ${recent.map((p) => html`<tr><td>${p.business || p.name || p.email}<div class="small muted">${p.email} · ${p.source}</div></td>
-            <td class="small">${p.company_type.replace("_", " ")}</td><td>${chip(p.status)}${p.lead_id ? html` <a class="small" href="/leads/${p.lead_id}">lead</a>` : ""}</td>
-            <td class="num">${p.step}</td><td class="small">${p.next_send_at ? fmtDate(p.next_send_at) : ""}</td></tr>`)}</table>` : empty("No prospects imported yet.")}
+            <td class="small">${p.company_type.replace("_", " ")}</td><td>${chip(p.status)}${p.lead_id ? html` <a class="small" href="/leads/${p.lead_id}">open enquiry</a>` : ""}</td>
+            <td class="num">${p.step}</td><td class="small">${p.next_send_at ? fmtDate(p.next_send_at) : ""}</td></tr>`)}</table>` : empty("No one added yet. Paste a list above to get started.")}
       </div>
-      <div class="panel"><h2>Do-not-contact list</h2>
+      <div class="panel"><h2>Never email</h2>
+        <p class="small muted">Anyone here is never emailed by any product. People who reply asking us to stop are added automatically.</p>
         <form method="post" action="/outreach/suppress" class="row">
-          <input name="value" placeholder="email@example.com or @example.com for a whole domain" style="max-width:380px" required>
-          <input name="reason" placeholder="Reason" style="max-width:220px">
-          <button>Add</button></form>
-        <p class="small muted">Applies to every product. Stop requests from replies are added automatically.</p></div>`;
+          <label for="o-sup" class="sr-only">Email address or domain</label>
+          <input name="value" id="o-sup" placeholder="name@example.com, or @example.com for a whole company" style="max-width:380px" required>
+          <label for="o-reason" class="sr-only">Reason</label>
+          <input name="reason" id="o-reason" placeholder="Reason (optional)" style="max-width:220px">
+          <button>Add</button></form></div>`;
     return send(reply, req, "Outreach", body, "/outreach");
   });
 
@@ -619,13 +642,13 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post<{ Params: { slug: string }; Body: { csv?: string; source?: string } }>("/outreach/:slug/import", async (req, reply) => {
     const r = await importProspects(req.params.slug, req.body?.csv ?? "", req.body?.source ?? "import");
     return back(reply, `/outreach?product=${req.params.slug}`,
-      `Imported ${r.added}. ${r.duplicates} already there, ${r.invalid} without a valid email, ${r.suppressed} on the do-not-contact list.`);
+      `Added ${r.added}. Skipped ${r.duplicates} already on the list, ${r.invalid} without a proper email address and ${r.suppressed} on the never-email list.`);
   });
 
   app.post<{ Body: { value?: string; reason?: string } }>("/outreach/suppress", async (req, reply) => {
     await suppress(req.body?.value ?? "", req.body?.reason || "Added by hand");
     const ref = req.headers.referer;
-    return back(reply, ref ? new URL(ref).pathname + new URL(ref).search.replace(/[?&]flash=[^&]*/, "") : "/outreach", "Added to the do-not-contact list.");
+    return back(reply, ref ? new URL(ref).pathname + new URL(ref).search.replace(/[?&]flash=[^&]*/, "") : "/outreach", "Added. They'll never be emailed.");
   });
 
   // Activity and system ----------------------------------------------------
@@ -634,13 +657,14 @@ export async function adminRoutes(app: FastifyInstance) {
       `SELECT * FROM events WHERE ($1::text IS NULL OR level = $1) ORDER BY at DESC LIMIT 300`,
       [req.query.level || null],
     );
-    const body = html`<div class="spread"><h1>Activity</h1>
-        <div class="row"><a href="/activity">All</a><a href="/activity?level=warn">Warnings</a><a href="/activity?level=error">Errors</a></div></div>
+    const body = html`<div class="spread"><h1>What's happened</h1>
+        <nav class="row" aria-label="Filter"><a href="/activity">Everything</a><a href="/activity?level=warn">Worth a look</a><a href="/activity?level=error">Problems</a></nav></div>
+      ${intro("A diary of everything the system has done, newest first. You don't need to read it. It's here if you ever want to check what happened and when.")}
       <div class="panel">${events.length ? html`<table><tr><th>When</th><th>Product</th><th>What happened</th></tr>${events.map((e) => html`<tr>
         <td class="small muted" style="white-space:nowrap">${fmtDate(e.at, true)}</td><td class="small">${productName(e.product)}</td>
         <td><span class="dot ${e.level === "error" ? "bad" : e.level === "warn" ? "warn" : "ok"}"></span>${e.message}
-          ${e.customer_id ? html` <a class="small" href="/customers/${e.customer_id}">customer</a>` : ""}
-          ${e.lead_id ? html` <a class="small" href="/leads/${e.lead_id}">lead</a>` : ""}</td></tr>`)}</table>` : empty("Nothing yet.")}</div>`;
+          ${e.customer_id ? html` <a class="small" href="/customers/${e.customer_id}">open customer</a>` : ""}
+          ${e.lead_id ? html` <a class="small" href="/leads/${e.lead_id}">open enquiry</a>` : ""}</td></tr>`)}</table>` : empty("Nothing yet.")}</div>`;
     return send(reply, req, "Activity", body, "/activity");
   });
 
@@ -649,31 +673,32 @@ export async function adminRoutes(app: FastifyInstance) {
     const lastOk = await query(`SELECT job, max(started_at) AS at FROM job_runs WHERE status = 'ok' GROUP BY job`);
     const pausedAll = await getSetting<boolean>("paused:all", false);
     const warnings = assertProductionConfig();
-    const body = html`<div class="spread"><h1>Automation</h1>
+    const body = html`<div class="spread"><h1>Automation and connections</h1>
         <form method="post" action="/system/pause">
-          ${pausedAll ? html`<span class="chip bad">Everything paused</span> <button class="primary" name="paused" value="false">Resume everything</button>`
-                      : html`<button class="danger" name="paused" value="true">Pause everything</button>`}
+          ${pausedAll ? html`<span class="chip bad">Everything is paused</span> <button class="primary" name="paused" value="false">Switch everything back on</button>`
+                      : html`<button class="danger" name="paused" value="true" onclick="return confirm('Pause everything? No emails or work will go out for any product until you switch it back on.')">Pause everything</button>`}
         </form></div>
+      ${intro("This is the engine room. You shouldn't need to come here often: if anything stops working, it shows up on your to-do list. The pause button above is an emergency stop for every product.")}
       ${warnings.length ? html`<div class="flash">${warnings.join("; ")}</div>` : ""}
-      <div class="panel"><h2>Scheduled jobs</h2>
-        <table><tr><th>Job</th><th>Schedule</th><th>Last run</th><th>Result</th><th></th></tr>
+      <div class="panel"><h2>Regular jobs</h2>
+        <table><tr><th>What it does</th><th>How often</th><th>Last ran</th><th>Result</th><th></th></tr>
         ${jobs.map((j) => {
           const r = lastRuns.find((x) => x.job === j.name);
           const ok = lastOk.find((x) => x.job === j.name);
           return html`<tr><td><strong>${j.name}</strong><div class="small muted">${j.description}</div></td>
-            <td class="small">${"everyMinutes" in j.schedule ? `every ${j.schedule.everyMinutes} min` : `daily ${j.schedule.dailyAt}`}</td>
-            <td class="small">${r ? ago(r.started_at) : "never"}${ok && r?.status === "error" ? html`<div class="muted">last ok ${ago(ok.at)}</div>` : ""}</td>
+            <td class="small">${"everyMinutes" in j.schedule ? `every ${j.schedule.everyMinutes} min` : `every day at ${j.schedule.dailyAt}`}</td>
+            <td class="small">${r ? ago(r.started_at) : "never"}${ok && r?.status === "error" ? html`<div class="muted">last worked ${ago(ok.at)}</div>` : ""}</td>
             <td>${r ? chip(r.status) : ""}<div class="small muted">${r?.error ?? r?.summary ?? ""}</div></td>
             <td><form method="post" action="/system/jobs/${j.name}/run"><button class="small">Run now</button></form></td></tr>`;
         })}</table></div>
       <div class="panel"><h2>Connections</h2>
-        <table><tr><th>Service</th><th>Used for</th><th>Settings needed</th><th>Status</th></tr>
+        <table><tr><th>Service</th><th>What it's for</th><th>Key name</th><th>Status</th></tr>
         ${integrations.map((i) => html`<tr><td>${i.name}${i.notes ? html`<div class="small muted">${i.notes}</div>` : ""}</td><td class="small">${i.purpose}</td>
           <td class="small"><code>${i.envVars.join(", ")}</code></td>
-          <td>${i.configured() ? (i.automation === "full" ? html`<span class="chip ok">connected</span>` : html`<span class="chip warn">key set; manual tasks for now</span>`) : html`<span class="chip bad">not connected</span>`}</td></tr>`)}
+          <td>${i.configured() ? (i.automation === "full" ? html`<span class="chip ok">Connected</span>` : html`<span class="chip warn">Key added; you get to-dos for now</span>`) : html`<span class="chip bad">Not connected</span>`}</td></tr>`)}
         </table>
-        <p class="small muted">Settings are environment variables on the DigitalOcean app. Stripe webhook URL:
-          <code>${config.baseUrl}/webhooks/stripe</code></p></div>`;
+        <p class="small muted">Keys are kept as secrets in GitHub and handed to the app each time it's deployed.
+          Stripe sends payment updates to <code>${config.baseUrl}/webhooks/stripe</code>.</p></div>`;
     return send(reply, req, "Automation", body, "/system");
   });
 
@@ -681,23 +706,23 @@ export async function adminRoutes(app: FastifyInstance) {
     const job = jobs.find((j) => j.name === req.params.name);
     if (!job) return reply.code(404).send("Unknown job");
     const summary = await runJob(job);
-    return back(reply, "/system", summary === null ? `${job.name} is already running or failed; see below.` : `${job.name}: ${summary}`);
+    return back(reply, "/system", summary === null ? `${job.name} is already running, or it hit a problem. See below.` : `Done. ${job.name}: ${summary}`);
   });
 
   app.post<{ Body: { paused?: string } }>("/system/pause", async (req, reply) => {
     const paused = req.body?.paused === "true";
     await setSetting("paused:all", paused);
     await logEvent({ type: "system.paused", level: "warn", message: `All automation ${paused ? "paused" : "resumed"}` });
-    return back(reply, "/system", paused ? "Everything is paused." : "Resumed.");
+    return back(reply, "/system", paused ? "Everything is paused. Nothing will go out until you switch it back on." : "Everything is back on.");
   });
 
   await clientAdminRoutes(app, send);
 }
 
 function customersTable(rows: CustomerRow[], showProduct = false): Raw {
-  return html`<table><tr><th>Customer</th>${showProduct ? html`<th>Product</th>` : ""}<th>Plan</th><th class="num">Value</th><th>Status</th><th>Since</th></tr>
+  return html`<table><tr><th>Customer</th>${showProduct ? html`<th>Product</th>` : ""}<th>Plan</th><th class="num">Pays</th><th>Status</th><th>Joined</th></tr>
     ${rows.map((c) => html`<tr><td><a href="/customers/${c.id}">${c.business || c.name || c.email}</a><div class="small muted">${c.email}</div></td>
-      ${showProduct ? html`<td>${productName(c.product)}</td>` : ""}<td>${c.plan}</td>
+      ${showProduct ? html`<td>${productName(c.product)}</td>` : ""}<td>${getPlan(requireProduct(c.product), c.plan)?.name ?? c.plan}</td>
       <td class="num">${formatPrice(c.amount_pence, c.interval)}</td><td>${chip(c.status)}</td><td class="small">${fmtDate(c.created_at)}</td></tr>`)}</table>`;
 }
 
