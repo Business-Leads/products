@@ -34,6 +34,13 @@ export function portalUrl(product: Product): string {
   return domainsEnabled(product.slug) ? `https://${product.portal.host}` : `${config.baseUrl}/portal/${product.slug}`;
 }
 
+/** Where a sign-up button sends people: checkout, via the product's own domain where it has one. */
+export function buyUrl(product: Product, planId: string, extra: Record<string, string> = {}): string {
+  const base = domainsEnabled(product.slug) ? `https://${product.portal.host}` : config.baseUrl;
+  const qs = new URLSearchParams(Object.entries(extra).filter(([, v]) => v)).toString();
+  return `${base}/buy/${product.slug}/${planId}${qs ? `?${qs}` : ""}`;
+}
+
 /** The product whose account area is served on this host, if any. */
 export function productForHost(host: string | undefined): Product | undefined {
   const h = (host ?? "").split(":")[0]!.toLowerCase();

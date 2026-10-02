@@ -666,6 +666,8 @@ export async function portalRoutes(app: FastifyInstance) {
 /** Map requests on a product's own account domain onto its /portal/<slug> routes. */
 export function rewritePortalUrl(host: string | undefined, url: string): string {
   const product: Product | undefined = productForHost(host);
-  if (!product || url.startsWith("/static/") || url === "/healthz" || url.startsWith("/webhooks/")) return url;
+  // Checkout links and enquiry forms also work on the product's own domain.
+  const shared = ["/static/", "/webhooks/", "/buy/", "/api/leads/"];
+  if (!product || url === "/healthz" || shared.some((p) => url.startsWith(p))) return url;
   return `/portal/${product.slug}${url.startsWith("/") ? url : `/${url}`}`;
 }

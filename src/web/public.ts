@@ -66,7 +66,7 @@ export async function publicRoutes(app: FastifyInstance) {
     const wantsJson = (req.headers["content-type"] ?? "").includes("application/json");
 
     // Honeypot fields used by the product sites; bots fill them in, people don't.
-    if (body["company-name"] || body._gotcha) return wantsJson ? { ok: true } : reply.redirect(body._redirect || "/");
+    if (body["company-name"] || body["bot-field"] || body._gotcha) return wantsJson ? { ok: true } : reply.redirect(body._redirect || "/");
     if (rateLimited(req.ip)) return reply.code(429).send({ ok: false, error: "Too many requests" });
     if (!body.email && !body.phone) return reply.code(400).send({ ok: false, error: "An email or phone number is needed" });
 

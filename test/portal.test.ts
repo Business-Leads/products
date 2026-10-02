@@ -364,4 +364,20 @@ describe("client account areas", () => {
     assert.equal(other.json().matched, false);
     assert.ok(await one(`SELECT 1 FROM tasks WHERE dedupe_key = 'sbl:unlinked:camp_x'`));
   });
+
+  it("takes enquiries and sign-up links on a product's own domain", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/leads/linkn",
+      headers: { host: "account.linkn.co.uk", origin: "https://linkn.co.uk", "content-type": "application/json" },
+      payload: { email: "jo@firm.co.uk", linkedin: "https://linkedin.com/in/jo", _source: "Profile review form" },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.headers["access-control-allow-origin"], "https://linkn.co.uk");
+    const lead = await one(`SELECT * FROM leads`);
+    assert.equal(lead.source, "Profile review form");
+    const bot = await app.inject({ method: "POST", url: "/api/leads/onlinebusinessbuilder", headers: { "content-type": "application/json" }, payload: { phone: "1", "bot-field": "x" } });
+    assert.equal(bot.statusCode, 200);
+    assert.equal((await query(`SELECT * FROM leads`)).length, 1);
+  });
 });

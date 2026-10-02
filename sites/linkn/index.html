@@ -497,6 +497,7 @@ html { scroll-behavior: smooth; }
   @keyframes lk-fade { from { opacity: 0; } to { opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.lk-plan__chat { display: block; margin-top: 10px; text-align: center; color: var(--ink-muted); }
 </style>
 </head>
 <body class="ft-page" id="top">
@@ -509,6 +510,7 @@ html { scroll-behavior: smooth; }
       <li><a href="#said">Clients</a></li>
       <li><a href="#pricing">Pricing</a></li>
       <li><a href="#questions">Questions</a></li>
+      <li><a href="https://account.linkn.co.uk/login">Log in</a></li>
     </ul>
     <div class="ft-nav__actions">
       <a class="ft-btn ft-btn--soft" href="#review">Profile review</a>
@@ -686,7 +688,8 @@ html { scroll-behavior: smooth; }
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>Four images and two carousels a month</li>
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>A one-page report every month</li>
         </ul>
-        <a class="ft-btn ft-btn--soft" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">Book a chat</a>
+        <a class="ft-btn ft-btn--soft" href="https://account.linkn.co.uk/buy/linkn/starter">Start Starter</a>
+        <a class="copy-sm lk-plan__chat" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">or book a chat first</a>
       </article>
       <article class="lk-plan" data-rise style="--i:1">
         <h3 class="card-title">Business</h3>
@@ -698,7 +701,8 @@ html { scroll-behavior: smooth; }
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>People who respond to your posts approached first</li>
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>Replies handled, and anyone ready to talk passed to you the same working day</li>
         </ul>
-        <a class="ft-btn ft-btn--cta" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">Book a chat</a>
+        <a class="ft-btn ft-btn--cta" href="https://account.linkn.co.uk/buy/linkn/business">Start Business</a>
+        <a class="copy-sm lk-plan__chat" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">or book a chat first</a>
       </article>
       <article class="lk-plan" data-rise style="--i:2">
         <h3 class="card-title">Growth</h3>
@@ -711,10 +715,11 @@ html { scroll-behavior: smooth; }
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>A short guide each quarter, in your name</li>
           <li><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>A 30-minute review call each month</li>
         </ul>
-        <a class="ft-btn ft-btn--soft" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">Book a chat</a>
+        <a class="ft-btn ft-btn--soft" href="https://account.linkn.co.uk/buy/linkn/growth">Start Growth</a>
+        <a class="copy-sm lk-plan__chat" href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">or book a chat first</a>
       </article>
     </div>
-    <p class="lead lk-terms">Every plan is monthly, with no minimum term.</p>
+    <p class="lead lk-terms">Every plan is monthly, with no minimum term. Pay securely by card, then you will set up your account and we start straight away.</p>
   </div>
 </section>
 
@@ -773,8 +778,9 @@ html { scroll-behavior: smooth; }
   </header>
   <div class="ft-section__body">
     <div class="lk-review" data-rise>
-      <form class="lk-review__form" name="profile-review" method="POST" data-netlify="true" netlify-honeypot="company-name" action="/thanks/">
-        <input type="hidden" name="form-name" value="profile-review">
+      <form class="lk-review__form" name="profile-review" method="POST" action="https://account.linkn.co.uk/api/leads/linkn">
+        <input type="hidden" name="_source" value="Profile review form">
+        <input type="hidden" name="_redirect" value="https://linkn.co.uk/thanks/">
         <p class="lk-hp"><label>Do not fill this in <input name="company-name" tabindex="-1" autocomplete="off"></label></p>
         <div class="fields">
           <label class="f wide">Your LinkedIn profile<input name="linkedin" type="url" required placeholder="https://www.linkedin.com/in/yourname" autocomplete="url"></label>
@@ -804,7 +810,7 @@ html { scroll-behavior: smooth; }
       </div>
       <nav class="ft-footer__cols" aria-label="Footer">
         <div class="ft-footer__col"><h3 class="column-head">Service</h3><ul><li><a href="#known">How it works</a></li><li><a href="#what">What you get</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#questions">Questions</a></li></ul></div>
-        <div class="ft-footer__col"><h3 class="column-head">Get started</h3><ul><li><a href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">Book a chat</a></li><li><a href="#review">Free profile review</a></li><li><a href="https://www.linkedin.com/in/felixclarke/" target="_blank" rel="noopener">Felix on LinkedIn</a></li></ul></div>
+        <div class="ft-footer__col"><h3 class="column-head">Get started</h3><ul><li><a href="https://calendly.com/felixclarke/chat-with-felix-clarke" target="_blank" rel="noopener">Book a chat</a></li><li><a href="#review">Free profile review</a></li><li><a href="https://www.linkedin.com/in/felixclarke/" target="_blank" rel="noopener">Felix on LinkedIn</a><a href="https://account.linkn.co.uk/login">Client log in</a></li></ul></div>
         
       </nav>
     </div>
@@ -832,7 +838,7 @@ html { scroll-behavior: smooth; }
     e.preventDefault();
     var msg = document.getElementById("reviewmsg"), btn = rf.querySelector("button");
     msg.className = "err"; msg.textContent = ""; btn.disabled = true; btn.textContent = "Sending";
-    fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(new FormData(rf)).toString() })
+    fetch(rf.action, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData(rf))) })
       .then(function (r) {
         if (!r.ok) throw new Error(r.status);
         rf.querySelector(".fields").hidden = true; btn.hidden = true; rf.querySelector(".lk-review__small").hidden = true;

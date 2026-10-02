@@ -1,3 +1,4 @@
+import { buyUrl } from "../portal/accounts.js";
 import { config } from "../config.js";
 import { one, query } from "../db/index.js";
 import { claudeAvailable, draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
@@ -77,14 +78,16 @@ export async function createLead(input: LeadInput): Promise<{ id: string; duplic
   return { id: row!.id, duplicate: false };
 }
 
-function planLines(product: Product, leadId: string): string {
+function planLines(product: Product, leadId: string, lead?: LeadRow): string {
+  // Extras the visitor ticked on the site (EmailFirst's price calculator) carry into checkout.
+  const addons = String(lead?.data?.addons ?? "").split(",").map((a) => a.trim()).filter((a) => product.addOns?.some((x) => x.id === a)).join(",");
   if (product.quoted) return `Pricing is quoted per engagement. Booking link: ${product.bookingUrl}`;
   return product.plans
     .map(
       (p) =>
         `- ${p.name}: ${formatPrice(p.amountPence)} a ${p.interval}` +
         (p.setupFeePence ? ` plus ${formatPrice(p.setupFeePence)} setup` : "") +
-        `. ${p.summary}\n  Start here: ${config.baseUrl}/buy/${product.slug}/${p.id}?lead=${leadId}`,
+        `. ${p.summary}\n  Start here: ${buyUrl(product, p.id, { lead: leadId, addons })}`,
     )
     .join("\n");
 }
@@ -114,14 +117,14 @@ async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): P
           subject: `Your enquiry about ${product.name}`,
           body:
             `Hello ${lead.name?.split(/\s+/)[0] || "there"},\n\nThank you for getting in touch about ${product.name}.\n\n` +
-            `${planLines(product, lead.id)}\n\nIf you'd like to talk it through first, ` +
+            `${planLines(product, lead.id, lead)}\n\nIf you'd like to talk it through first, ` +
             `you can book a short call here: ${product.bookingUrl}\n\nFelix`,
         }
       : {
           subject: `Following up: ${product.name}`,
           body:
             `Hello ${lead.name?.split(/\s+/)[0] || "there"},\n\nJust following up on your enquiry about ${product.name}. ` +
-            `If it's still of interest, you can start here:\n\n${planLines(product, lead.id)}\n\n` +
+            `If it's still of interest, you can start here:\n\n${planLines(product, lead.id, lead)}\n\n` +
             `Or book a short call: ${product.bookingUrl}\n\nFelix`,
         };
   }
@@ -131,7 +134,7 @@ async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): P
       "Use only the facts, prices and links provided. Keep it under 200 words. Include the relevant sign-up " +
       "link or the booking link exactly as given. End with a line saying they can reply 'stop' to hear no more.",
     prompt:
-      `Enquiry:\n${leadDetails(lead)}\n\nPlans and links:\n${planLines(product, lead.id)}\n` +
+      `Enquiry:\n${leadDetails(lead)}\n\nPlans and links:\n${planLines(product, lead.id, lead)}\n` +
       `Booking link: ${product.bookingUrl}\n\n` +
       (first
         ? `Write the first reply to this enquiry. ${product.leadBrief ?? ""}`

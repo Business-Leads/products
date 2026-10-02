@@ -12,7 +12,7 @@ import { logEvent } from "../lib/events.js";
 import { autonomyFor, getSetting, setSetting } from "../lib/settings.js";
 import { ago, fmtDate, token } from "../lib/util.js";
 import { formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
-import { portalUrl } from "../portal/accounts.js";
+import { buyUrl, portalUrl } from "../portal/accounts.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
@@ -281,7 +281,7 @@ export async function adminRoutes(app: FastifyInstance) {
           <p class="small muted">Each link takes a customer straight to payment. Use them for the buttons on the website.</p>
           <table>${product.plans.map((p) => html`<tr><td><strong>${p.name}</strong><div class="small muted">${p.summary}</div></td>
             <td class="num">${product.quoted ? "Quoted" : formatPrice(p.amountPence, p.interval)}${p.setupFeePence ? html`<div class="small muted">+ ${formatPrice(p.setupFeePence)} setup</div>` : ""}</td></tr>
-            ${product.quoted ? "" : html`<tr><td colspan="2"><input readonly aria-label="Sign-up link for ${p.name}" value="${config.baseUrl}/buy/${product.slug}/${p.id}" onclick="this.select()"></td></tr>`}`)}</table>
+            ${product.quoted ? "" : html`<tr><td colspan="2"><input readonly aria-label="Sign-up link for ${p.name}" value="${buyUrl(product, p.id)}" onclick="this.select()"></td></tr>`}`)}</table>
           ${product.addOns?.length ? html`<p class="small muted">Add-ons: ${product.addOns.map((a) => `${a.name} (${formatPrice(a.amountPence)}${a.recurring ? " recurring" : " one-off"}, ?addons=${a.id})`).join("; ")}</p>` : ""}
         </div>
         <div class="panel"><h2>How much runs by itself</h2>

@@ -1,0 +1,35 @@
+# Publishes the product sites in sites/<name>/ to their Netlify sites.
+# Run by hand; choose one site or "all".
+name: Publish sites to Netlify
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "linkn, speedtolead, goodquestions, onlinebusinessbuilder, emailfirst or all"
+        required: true
+        default: all
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publish
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ inputs.site }}
+        run: |
+          set -e
+          publish() {
+            name="$1"; id="$2"
+            if [ "$SITE" != "all" ] && [ "$SITE" != "$name" ]; then return; fi
+            echo "== $name"
+            npx -y netlify-cli@17 deploy --prod --dir "sites/$name" --site "$id" --auth "$NETLIFY_AUTH_TOKEN" --message "From GitHub: $GITHUB_SHA" | tail -5
+          }
+          publish linkn 76010523-af1e-4be8-bdc2-342f3c3519e0
+          publish speedtolead 0f42c0e0-b617-4f3f-9563-826df7079f46
+          publish goodquestions 50b517f9-76d3-451b-ba51-f764bbc53a06
+          publish onlinebusinessbuilder 002190b8-b963-4446-a83e-b9b6d5a5af8b
+          publish emailfirst 02fa6241-324b-4ffc-bf46-5fce0cee02f0
