@@ -1,0 +1,23 @@
+# Read-only: loads each URL the way a visitor would and reports the result.
+name: Check sites
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Space-separated URLs"
+        required: true
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          for u in $URLS; do
+            r=$(curl -s -o page.html -L --max-time 20 -w "%{http_code} %{url_effective}" "$u" || echo "000 failed")
+            title=$(grep -o '<title>[^<]*' page.html 2>/dev/null | head -1 | sed 's/<title>//')
+            echo "$u -> $r | ${title:-no title}"
+          done
