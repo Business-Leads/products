@@ -313,7 +313,12 @@ export async function adminRoutes(app: FastifyInstance) {
         <pre class="pre small">${formSnippet}</pre>
         <h3 style="margin-top:14px">Client log-in button</h3>
         <p class="small muted">Link the site's "Log in" button here. Clients sign in with their email and password.</p>
-        <input readonly value="${portalUrl(product)}/login" onclick="this.select()"></div>`;
+        <input readonly value="${portalUrl(product)}/login" onclick="this.select()">
+        ${product.slug === "linkn" ? html`<h3 style="margin-top:14px">Sbl.so webhook address</h3>
+          ${config.sbl.webhookToken
+            ? html`<p class="small muted">In Sbl.so: Webhooks → Add webhook. Paste this, tick all six events, keep "All campaigns". Keep it private.</p>
+              <input readonly value="${config.baseUrl}/webhooks/sbl/${config.sbl.webhookToken}" onclick="this.select()">`
+            : html`<p class="small muted">Appears after the next deploy.</p>`}` : ""}</div>`;
     return send(reply, req, product.name, body, `/products/${product.slug}`);
   });
 

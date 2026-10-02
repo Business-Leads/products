@@ -60,6 +60,11 @@ export async function clientPanels(c: CustomerRow): Promise<Raw> {
         </form>
       </div>
     </div>
+    ${product.slug === "linkn" ? html`<div class="panel"><h2>Sbl.so campaigns</h2>
+      <p class="small muted">Campaign ids for this client. Events Sbl.so sends for these campaigns (replies, accepted connections) are counted on their dashboard, and replies come to your inbox.</p>
+      <form method="post" action="/customers/${c.id}/sbl" class="row">
+        <input name="campaigns" value="${(c.data.sbl_campaign_ids ?? []).join(", ")}" placeholder="campaign id, another id" style="flex:1">
+        <button class="small">Save</button></form></div>` : ""}
     <div class="grid-2">
       <div class="panel"><h2>Post an update to their dashboard</h2>
         <form method="post" action="/customers/${c.id}/updates">
@@ -180,6 +185,17 @@ export async function clientAdminRoutes(app: FastifyInstance, send: (reply: Fast
     }
     await saveMetrics(c.id, period, values);
     return back(reply, `/customers/${c.id}`, `Figures for ${periodLabel(period)} saved.`);
+  });
+
+  app.post<{ Params: { id: string }; Body: { campaigns?: string } }>("/customers/:id/sbl", async (req, reply) => {
+    const ids = String(req.body?.campaigns ?? "").split(/[\s,]+/).map((x) => x.trim()).filter(Boolean).slice(0, 20);
+    await query(`UPDATE customers SET data = data || jsonb_build_object('sbl_campaign_ids', $2::jsonb), updated_at = now() WHERE id = $1 AND product = 'linkn'`, [
+      req.params.id,
+      JSON.stringify(ids),
+    ]);
+    // Link anything already received for these campaigns.
+    await query(`UPDATE sbl_events SET customer_id = $1 WHERE customer_id IS NULL AND campaign_id = ANY($2::text[])`, [req.params.id, ids]);
+    return back(reply, `/customers/${req.params.id}`, "Sbl.so campaigns saved.");
   });
 
   app.post<{ Params: { id: string }; Body: Record<string, string> }>("/customers/:id/updates", async (req, reply) => {

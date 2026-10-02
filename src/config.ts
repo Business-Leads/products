@@ -36,6 +36,11 @@ export const config = {
     domains: str("PORTAL_DOMAINS"),
   },
 
+  sbl: {
+    // Secret path segment for the Sbl.so webhook: /webhooks/sbl/<token>
+    webhookToken: str("SBL_WEBHOOK_TOKEN"),
+  },
+
   stripe: {
     secretKey: str("STRIPE_SECRET_KEY"),
     webhookSecret: str("STRIPE_WEBHOOK_SECRET"),

@@ -80,6 +80,9 @@ services:
       - key: SBL_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: SBL_WEBHOOK_TOKEN
+        scope: RUN_TIME
+        type: SECRET
       - key: SBL_COMPANY_ID
         scope: RUN_TIME
         type: SECRET

@@ -4,6 +4,7 @@ import { handleStripeEvent } from "../engine/billing.js";
 import { createLead } from "../engine/leads.js";
 import type { CustomerRow } from "../engine/types.js";
 import { saveIntake } from "../engine/clients.js";
+import { handleSblEvent, sblTokenMatches } from "../engine/sbl.js";
 import { portalUrl } from "../portal/accounts.js";
 import { logEvent } from "../lib/events.js";
 import { createCheckout, stripeConfigured, verifyWebhook } from "../lib/stripe.js";
@@ -206,6 +207,15 @@ export async function publicRoutes(app: FastifyInstance) {
   });
 
   // --------------------------------------------------------------- Stripe
+
+  // Sbl.so (Linkn's LinkedIn outreach) pushes events here; the token in the path is the secret.
+  app.post<{ Params: { token: string }; Body: Record<string, unknown> }>("/webhooks/sbl/:token", async (req, reply) => {
+    if (!sblTokenMatches(req.params.token)) return reply.code(404).send({ ok: false });
+    const body = req.body;
+    if (!body || typeof body !== "object") return reply.code(400).send({ ok: false, error: "Expected JSON" });
+    const result = await handleSblEvent(body as Record<string, unknown>);
+    return { ok: true, ...result };
+  });
 
   app.post("/webhooks/stripe", async (req, reply) => {
     // server.ts keeps this route's body as a Buffer so the signature can be verified.

@@ -6,6 +6,7 @@ process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_secret";
 process.env.ADMIN_PASSWORD = "pw";
 process.env.BASE_URL = "https://hq.example.com";
 process.env.PORTAL_DOMAINS = "linkn";
+process.env.SBL_WEBHOOK_TOKEN = "sbl-secret-token";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -23,7 +24,7 @@ const { buildServer } = await import("../src/web/server.js");
 type App = Awaited<ReturnType<typeof buildServer>>;
 
 async function reset() {
-  await query(`TRUNCATE client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures,
+  await query(`TRUNCATE sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures,
     leads, customers, onboarding_steps, tasks, emails, deliveries, stripe_events, events, settings, sessions RESTART IDENTITY CASCADE`);
 }
 
@@ -335,5 +336,32 @@ describe("client account areas", () => {
     for (let i = 0; i < 5; i++) await app.inject({ method: "POST", url: "/login", ...form({ password: "guess" }) });
     const res = await app.inject({ method: "POST", url: "/login", ...form({ password: "pw" }) });
     assert.equal(res.headers.location, "/login?error=locked");
+  });
+
+  it("takes Sbl.so webhook events into the client's figures and the inbox", async () => {
+    await handleStripeEvent(checkoutEvent("evt_s", "linkn", "business"));
+    const c = await one(`SELECT * FROM customers`);
+    const admin = await adminCookie(app);
+    await app.inject({ method: "POST", url: `/customers/${c.id}/sbl`, ...form({ campaigns: "camp_1" }, admin) });
+
+    const wrong = await app.inject({ method: "POST", url: "/webhooks/sbl/nope", payload: { event: "message_sent" } });
+    assert.equal(wrong.statusCode, 404);
+    const post = (body: object) => app.inject({ method: "POST", url: "/webhooks/sbl/sbl-secret-token", payload: body });
+    await post({ event: "connection_request_sent", campaign_id: "camp_1" });
+    await post({ event: "connection_request_sent", campaign_id: "camp_1" });
+    const reply = await post({ event: "prospect_replied", campaign_id: "camp_1", prospect: { name: "Jo Buyer", company: "Acme" }, message: "Sounds interesting" });
+    assert.equal(reply.json().matched, true);
+
+    const task = await one(`SELECT * FROM tasks WHERE title LIKE 'LinkedIn reply%'`);
+    assert.match(task.body, /Jo Buyer, Acme/);
+    const fresh = await one(`SELECT data FROM customers WHERE id = $1`, [c.id]);
+    const latest = fresh.data.metrics_history.at(-1);
+    assert.equal(latest.values.connection_requests, 2);
+    assert.equal(latest.values.replies, 1);
+
+    // An unknown campaign is kept and flagged so it can be linked.
+    const other = await post({ event: "message_sent", campaign_id: "camp_x" });
+    assert.equal(other.json().matched, false);
+    assert.ok(await one(`SELECT 1 FROM tasks WHERE dedupe_key = 'sbl:unlinked:camp_x'`));
   });
 });
