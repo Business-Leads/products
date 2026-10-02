@@ -5,9 +5,14 @@ import { config } from "../config.js";
 // injected by App Platform as ${db.CA_CERT}) lets us verify it properly.
 const ca = process.env.DATABASE_CA_CERT?.trim();
 
+// Newer Postgres (15+), as on DigitalOcean's dev database, doesn't let the app
+// user create tables in "public", so the app keeps its tables in its own schema.
+export const SCHEMA = (process.env.DATABASE_SCHEMA?.trim() || "app").replace(/[^a-z0-9_]/gi, "");
+
 export const pool = new pg.Pool({
   connectionString: ca ? config.databaseUrl.replace(/[?&]sslmode=[^&]*/, "") : config.databaseUrl,
   ssl: ca ? { ca } : config.databaseSsl ? { rejectUnauthorized: false } : undefined,
+  options: `-c search_path=${SCHEMA},public`,
   max: 10,
 });
 

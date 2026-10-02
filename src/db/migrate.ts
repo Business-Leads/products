@@ -1,11 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { pool } from "./index.js";
+import { pool, SCHEMA } from "./index.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 export async function migrate(): Promise<string[]> {
+  await pool.query(`CREATE SCHEMA IF NOT EXISTS "${SCHEMA}"`);
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   const dir = path.join(here, "migrations");
