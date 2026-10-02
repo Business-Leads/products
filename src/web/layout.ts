@@ -174,6 +174,7 @@ const labels: Record<string, [string, string]> = {
   dismissed: ["Not needed", ""],
   // enquiries and prospects
   new: ["New", "accent"],
+  assessment: ["Took the assessment", "violet"],
   contacted: ["Replied to", "violet"],
   followed_up: ["Followed up", "violet"],
   replied: ["They replied", "ok"],

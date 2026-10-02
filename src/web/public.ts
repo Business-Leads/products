@@ -5,6 +5,7 @@ import { createLead } from "../engine/leads.js";
 import type { CustomerRow } from "../engine/types.js";
 import { saveIntake } from "../engine/clients.js";
 import { handleSblEvent, sblTokenMatches } from "../engine/sbl.js";
+import { handleAssessment, type AssessmentInput } from "../engine/assessment.js";
 import { portalUrl } from "../portal/accounts.js";
 import { logEvent } from "../lib/events.js";
 import { createCheckout, stripeConfigured, verifyWebhook } from "../lib/stripe.js";
@@ -64,6 +65,13 @@ export async function publicRoutes(app: FastifyInstance) {
     if (!product) return reply.code(404).send({ ok: false, error: "Unknown product" });
     const body = (req.body ?? {}) as Record<string, string>;
     const wantsJson = (req.headers["content-type"] ?? "").includes("application/json");
+
+    // The Good Questions assessment: results for the research, a report if asked for, never a sales enquiry by default.
+    if (product.slug === "goodquestions" && body._type === "assessment") {
+      if (body["company-name"] || rateLimited(req.ip)) return { ok: true };
+      const result = await handleAssessment(body as unknown as AssessmentInput);
+      return reply.code(result.ok ? 200 : 400).send(result);
+    }
 
     // Honeypot fields used by the product sites; bots fill them in, people don't.
     if (body["company-name"] || body["bot-field"] || body._gotcha) return wantsJson ? { ok: true } : reply.redirect(body._redirect || "/");

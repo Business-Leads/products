@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How ready is your business for AI? · Good Questions</title>
+<meta name="description" content="Fifteen questions, about three minutes, and a score you get straight away across strategy, leadership, people, data and implementation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Urbanist:wght@400..700&display=swap">
+<style>
+  :root { --ink: #080808; --muted: #5E5E66; --line: #E1E2E5; --bg: #F1F2F5; --coral: #D42A19; --violet: #6B3BD9; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.6 Urbanist, system-ui, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .top a { color: var(--ink); font: 700 20px Inter, sans-serif; text-decoration: none; }
+  .top span { color: var(--muted); font-size: 16px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 36px; }
+  h1 { font: 700 34px/1.2 Inter, sans-serif; margin: 0 0 12px; }
+  h2 { font: 700 26px/1.3 Inter, sans-serif; margin: 0 0 22px; }
+  p { margin: 0 0 14px; }
+  .muted { color: var(--muted); }
+  .btn { font: inherit; font-weight: 600; display: inline-block; background: var(--coral); color: #fff; border: 0; border-radius: 12px; padding: 14px 24px; cursor: pointer; text-decoration: none; min-height: 52px; }
+  .btn.soft { background: #fff; color: var(--ink); border: 1px solid #C9CAD0; }
+  .progress { display: flex; justify-content: space-between; color: var(--muted); font-size: 16px; margin-bottom: 10px; }
+  .bar { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; margin-bottom: 26px; }
+  .bar i { display: block; height: 100%; background: var(--violet); width: 0; transition: width .3s; }
+  .opts { display: grid; gap: 12px; }
+  .opt { text-align: left; font: inherit; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px; cursor: pointer; color: var(--ink); }
+  .opt:hover, .opt:focus-visible { border-color: var(--violet); outline: none; }
+  .opt[aria-pressed="true"] { border-color: var(--violet); background: #F1EBFE; }
+  .back { margin-top: 18px; background: none; border: 0; color: var(--violet); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .score { font: 700 64px/1 Inter, sans-serif; margin: 6px 0 4px; }
+  .areas { display: grid; gap: 12px; margin: 22px 0 26px; }
+  .area { display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; }
+  .area .track { height: 12px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+  .area .track i { display: block; height: 100%; background: var(--coral); }
+  ol.steps { padding-left: 22px; margin: 0 0 26px; } ol.steps li { margin-bottom: 8px; }
+  form { border-top: 1px solid var(--line); padding-top: 24px; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input[type=text], input[type=email] { width: 100%; font: inherit; padding: 12px 14px; border: 1px solid #C9CAD0; border-radius: 12px; }
+  .check { display: flex; gap: 12px; align-items: flex-start; margin: 18px 0; font-weight: 400; }
+  .check input { width: 22px; height: 22px; margin-top: 3px; accent-color: var(--coral); }
+  .hp { position: absolute; left: -9999px; }
+  .status { margin-top: 12px; }
+  footer { margin-top: 26px; color: var(--muted); font-size: 15px; }
+  :focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
+  @media (max-width: 600px) { .card { padding: 24px; } .area { grid-template-columns: 110px 1fr 36px; } h1 { font-size: 28px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="/">Good Questions</a><span>AI readiness assessment</span></div>
+  <main class="card" id="app" aria-live="polite">
+    <section id="intro">
+      <h1>How ready is your business for AI?</h1>
+      <p>Fifteen questions, about three minutes. Your score appears on screen as soon as you finish, across strategy, leadership, people, data and implementation.</p>
+      <p class="muted">Taking part is not an enquiry. At the end you can ask for help improving your score, or simply keep your report.</p>
+      <button class="btn" id="start">Start the assessment</button>
+    </section>
+    <section id="quiz" hidden>
+      <div class="progress"><span id="count"></span><span id="area"></span></div>
+      <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+      <h2 id="question" tabindex="-1"></h2>
+      <div class="opts" id="opts" role="group" aria-labelledby="question"></div>
+      <button class="back" id="back" hidden>Back to the previous question</button>
+    </section>
+    <section id="result" hidden>
+      <p class="muted">Your score</p>
+      <div class="score"><span id="total"></span><span class="muted" style="font-size:24px"> out of 100</span></div>
+      <div class="areas" id="areas"></div>
+      <h2>What to do next</h2>
+      <ol class="steps" id="steps"></ol>
+      <form id="report" novalidate>
+        <h2>Get your written report</h2>
+        <p class="hp"><label>Leave this empty <input name="company-name" tabindex="-1" autocomplete="off"></label></p>
+        <label for="r-name">Your name</label><input type="text" id="r-name" name="name" autocomplete="name">
+        <label for="r-email">Email</label><input type="email" id="r-email" name="email" autocomplete="email" required>
+        <label for="r-business">Business name <span class="muted">(optional)</span></label><input type="text" id="r-business" name="business" autocomplete="organization">
+        <label class="check"><input type="checkbox" name="wants_help" id="r-help"> <span>I'd like help improving my score. <span class="muted">Leave this unticked and you won't hear from us again.</span></span></label>
+        <button class="btn" type="submit">Email me the report</button>
+        <p class="status" id="status" role="status"></p>
+      </form>
+    </section>
+  </main>
+  <footer>Your answers are combined with everyone else's to show how UK businesses are doing. Published findings are totals and percentages, never named businesses. Good Questions is a trading name of AI Future Technologies Ltd, registered in England and Wales, company number 16785608.</footer>
+</div>
+<script>
+(function () {
+  var API = "https://account.goodquestions.co.uk/api/leads/goodquestions";
+  var AREAS = { strategy: "Strategy", leadership: "Leadership", people: "People", data: "Data", implementation: "Implementation" };
+  var ADVICE = {
+    strategy: "Write down three tasks where AI would save real time, and put them in order.",
+    leadership: "Name one person who decides how AI is used in the business, and tell everyone who it is.",
+    people: "Give your team a one-page guide to what they can and cannot use AI for.",
+    data: "Agree which company information must never go into a public AI tool, and write it down.",
+    implementation: "Turn one AI experiment into a written, repeatable process, and measure the time it saves."
+  };
+  var Q = [
+    ["strategy", "Have you looked at how AI is changing the way customers find and choose businesses like yours?", ["Not yet", "We have talked about it", "Yes, and we have acted on it"]],
+    ["strategy", "Do you know which tasks in your business AI could save the most time on?", ["No idea yet", "We have some guesses", "Yes, written down and in order"]],
+    ["strategy", "Is AI part of your plans for the next twelve months?", ["It is not mentioned", "It is mentioned, without detail", "Yes, with goals and a budget"]],
+    ["leadership", "Is it clear who in the business decides how AI gets used?", ["It is left to whoever is interested", "Yes, informally", "Yes, one person, and everyone knows who"]],
+    ["leadership", "Do the people running the business use AI tools themselves?", ["Rarely or never", "Now and then", "Most weeks"]],
+    ["leadership", "When someone suggests using AI for something, is there a way to decide yes or no?", ["Not really", "We talk it through each time", "Yes, a simple agreed way"]],
+    ["people", "Have your people had practical guidance about what they can and cannot use AI for?", ["No", "Some informal tips", "Yes, written guidance"]],
+    ["people", "Has anyone had training in using AI tools well?", ["No one", "One or two people taught themselves", "Yes, everyone who needs it"]],
+    ["people", "How do people feel about AI at work?", ["Worried or uninterested", "Mixed", "Mostly keen to use it well"]],
+    ["data", "Could you say today which company information should never be entered into a public AI tool?", ["No", "Roughly", "Yes, and it is written down"]],
+    ["data", "Is your key information (customers, prices, documents) kept somewhere organised and up to date?", ["It is scattered across people and inboxes", "Partly", "Yes, mostly in one place"]],
+    ["data", "Do you know which AI tools are being used in the business, and on whose accounts?", ["No idea", "Some idea", "Yes, we keep track"]],
+    ["implementation", "Is AI part of a regular, repeatable process in your business, rather than occasional experimentation?", ["Not yet", "Occasional experiments", "Yes, at least one regular process"]],
+    ["implementation", "When AI does work, do you measure the time or money it saves?", ["No", "Roughly", "Yes"]],
+    ["implementation", "When AI gets something wrong, would someone notice before a customer did?", ["Probably not", "Sometimes", "Yes, there are checks"]]
+  ];
+  var answers = [], i = 0, scores = null;
+  var ref = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+  var $ = function (id) { return document.getElementById(id); };
+
+  function show(id) { ["intro", "quiz", "result"].forEach(function (s) { $(s).hidden = s !== id; }); }
+  function render() {
+    var q = Q[i];
+    $("count").textContent = "Question " + (i + 1) + " of " + Q.length;
+    $("area").textContent = AREAS[q[0]];
+    $("fill").style.width = (i / Q.length * 100) + "%";
+    $("question").textContent = q[1];
+    var opts = $("opts"); opts.innerHTML = "";
+    q[2].forEach(function (label, n) {
+      var b = document.createElement("button");
+      b.className = "opt"; b.type = "button"; b.textContent = label;
+      b.setAttribute("aria-pressed", answers[i] === n ? "true" : "false");
+      b.addEventListener("click", function () { answers[i] = n; next(); });
+      opts.appendChild(b);
+    });
+    $("back").hidden = i === 0;
+    $("question").focus();
+  }
+  function next() { if (i < Q.length - 1) { i++; render(); } else finish(); }
+  function send(extra) {
+    var body = Object.assign({ _type: "assessment", ref: ref, scores: scores, answers: answers }, extra || {});
+    return fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
+  function finish() {
+    var sum = {}, n = {};
+    Q.forEach(function (q, k) { sum[q[0]] = (sum[q[0]] || 0) + answers[k] * 50; n[q[0]] = (n[q[0]] || 0) + 1; });
+    scores = {}; Object.keys(AREAS).forEach(function (a) { scores[a] = Math.round(sum[a] / n[a]); });
+    var total = Math.round(Object.keys(scores).reduce(function (s, a) { return s + scores[a]; }, 0) / 5);
+    $("total").textContent = total;
+    $("areas").innerHTML = Object.keys(AREAS).map(function (a) {
+      return '<div class="area"><span>' + AREAS[a] + '</span><span class="track"><i style="width:' + scores[a] + '%"></i></span><strong>' + scores[a] + '</strong></div>';
+    }).join("");
+    $("steps").innerHTML = Object.keys(AREAS).sort(function (a, b) { return scores[a] - scores[b]; }).slice(0, 3)
+      .map(function (a) { return "<li>" + ADVICE[a] + "</li>"; }).join("");
+    show("result");
+    send().catch(function () {});
+  }
+  $("start").addEventListener("click", function () { show("quiz"); render(); });
+  $("back").addEventListener("click", function () { if (i > 0) { i--; render(); } });
+  $("report").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.target, status = $("status");
+    if (!f.email.checkValidity()) { status.textContent = "Please enter your email address."; f.email.focus(); return; }
+    var btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
+    send({ name: f.name.value, email: f.email.value, business: f.business.value, wants_help: f.wants_help.checked, "company-name": f["company-name"].value })
+      .then(function (r) { if (!r.ok) throw new Error(); f.innerHTML = '<h2>Thank you</h2><p>Your written report is on its way to ' + f.email.value.replace(/[<>&"]/g, "") + '.</p>'; })
+      .catch(function () { status.textContent = "Sorry, that did not send. Please try again."; btn.disabled = false; btn.textContent = "Email me the report"; });
+  });
+})();
+</script>
+</body>
+</html>

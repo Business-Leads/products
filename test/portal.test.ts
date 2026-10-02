@@ -380,4 +380,25 @@ describe("client account areas", () => {
     assert.equal(bot.statusCode, 200);
     assert.equal((await query(`SELECT * FROM leads`)).length, 1);
   });
+
+  it("stores AI readiness results, sends the report, and only follows up when asked", async () => {
+    const post = (payload: object) => app.inject({ method: "POST", url: "/api/leads/goodquestions", headers: { "content-type": "application/json" }, payload });
+    const scores = { strategy: 50, leadership: 100, people: 0, data: 50, implementation: 17 };
+    assert.equal((await post({ _type: "assessment", ref: "r1", scores })).statusCode, 200);
+    let lead = await one(`SELECT * FROM leads`);
+    assert.equal(lead.status, "assessment");
+    assert.equal(lead.data.overall, 43);
+    await post({ _type: "assessment", ref: "r1", scores, email: "boss@firm.co.uk", name: "Pat", wants_help: false });
+    assert.equal((await query(`SELECT * FROM leads`)).length, 1);
+    const report = await one(`SELECT * FROM emails WHERE kind = 'assessment_report'`);
+    assert.match(report.subject, /43 out of 100/);
+    assert.match(report.body_text, /won't hear from us again/);
+    assert.equal((await query(`SELECT * FROM tasks`)).length, 0);
+    lead = await one(`SELECT * FROM leads`);
+    assert.equal(lead.status, "assessment");
+
+    await post({ _type: "assessment", ref: "r2", scores, email: "keen@firm.co.uk", wants_help: true });
+    assert.ok(await one(`SELECT 1 FROM tasks WHERE title LIKE '%would like help%'`));
+    assert.equal((await post({ _type: "assessment", scores: { strategy: 500 } })).statusCode, 400);
+  });
 });
