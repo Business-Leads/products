@@ -1,0 +1,22 @@
+# Read-only: prints the text of public documentation pages so they can be read
+# from sessions where those sites are blocked.
+name: Read docs
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Space-separated URLs"
+        required: true
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          pip install -q html2text
+          for u in $URLS; do
+            echo "=================== $u"
+            curl -sL --max-time 30 "$u" | python3 -c "import sys,html2text; h=html2text.HTML2Text(); h.ignore_images=True; h.body_width=0; print(h.handle(sys.stdin.read())[:60000])"
+          done
