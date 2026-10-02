@@ -43,20 +43,22 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.type("text/html").send(
       publicPage(
         `Sign in · ${config.brand}`,
-        html`<div class="panel" style="max-width:420px;margin:72px auto">
+        html`<div class="panel" style="max-width:420px;margin:72px auto;text-align:center">
+          <img src="/static/logo.svg" alt="" width="96" height="96" style="display:block;margin:0 auto 12px">
           <h1>Welcome back</h1>
           <p class="muted">Sign in to ${config.brand}.</p>
           ${noPassword ? html`<p class="flash" role="alert">Sign-in isn't switched on yet. Add an ADMIN_PASSWORD secret in GitHub and redeploy.</p>` : ""}
           ${req.query.error === "locked"
             ? html`<p class="flash" role="alert">Too many wrong tries, so sign-in is paused for 15 minutes. This keeps your dashboard safe.</p>`
             : req.query.error ? html`<p class="flash" role="alert">That password isn't right. Please try again.</p>` : ""}
-          <form method="post" action="/login">
+          <form method="post" action="/login" style="text-align:left">
             <input type="hidden" name="next" value="${req.query.next ?? "/"}">
             <label for="password">Your password</label>
             <input type="password" name="password" id="password" autocomplete="current-password" autofocus required>
             <p style="margin-top:18px"><button class="primary">Sign in</button></p>
           </form>
         </div>`,
+        { hq: true },
       ),
     );
   });

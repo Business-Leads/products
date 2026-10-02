@@ -166,3 +166,5 @@ body.hq {
 .hq .brand span.words { display: block; color: #fff; font-family: inherit; font-size: 18px; font-weight: 700; }
 .hq .brand span.mark { color: #fff; font-family: inherit; }
 @media (min-width: 901px) { .hq .shell { background: linear-gradient(to right, #1E1C27 300px, transparent 300px); } }
+.hq .brand img.logo { width: 52px; height: 52px; flex: none; filter: drop-shadow(0 4px 10px rgba(229,72,77,.35)); transition: transform .2s; }
+.hq .brand:hover img.logo { transform: rotate(-6deg) scale(1.05); }

@@ -81,6 +81,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/app.css">
 <link rel="stylesheet" href="/static/hq.css">
 </head>
@@ -88,7 +89,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
 <a class="skip" href="#content">Skip to the page</a>
 <div class="shell">
   <nav class="nav" aria-label="Main menu">
-    <div class="brand"><span class="mark" aria-hidden="true">OBB</span><span class="words">${config.brand}<small>Your control room</small></span></div>
+    <div class="brand"><img class="logo" src="/static/logo.svg" alt="" width="52" height="52"><span class="words">${config.brand}<small>Your control room</small></span></div>
     ${link("/", "Home", "home")}
     ${link("/inbox", "To-do list", "todo", opts.counts?.inbox, "things waiting for you")}
     ${link("/support", "Messages", "messages", opts.counts?.support, "unanswered messages")}
@@ -127,7 +128,7 @@ export function intro(text: Raw | string): Raw {
   return html`<div class="intro">${typeof text === "string" ? html`<p>${text}</p>` : text}</div>`;
 }
 
-export function publicPage(title: string, body: Raw): string {
+export function publicPage(title: string, body: Raw, opts: { hq?: boolean } = {}): string {
   return html`<!doctype html>
 <html lang="en-GB">
 <head>
@@ -136,9 +137,11 @@ export function publicPage(title: string, body: Raw): string {
 <meta name="robots" content="noindex">
 <title>${title}</title>
 ${FONTS}
+${opts.hq ? html`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"><link rel="icon" href="/static/logo.svg" type="image/svg+xml">` : ""}
 <link rel="stylesheet" href="/static/app.css">
+${opts.hq ? html`<link rel="stylesheet" href="/static/hq.css">` : ""}
 </head>
-<body><main class="public" id="content">${body}</main></body>
+<body${opts.hq ? raw(' class="hq"') : ""}><main class="public" id="content">${body}</main></body>
 </html>`.value;
 }
 
