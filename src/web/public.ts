@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { one, query } from "../db/index.js";
 import { handleStripeEvent } from "../engine/billing.js";
 import { createLead } from "../engine/leads.js";
+import { requestCall } from "../engine/callback.js";
 import type { CustomerRow } from "../engine/types.js";
 import { saveIntake } from "../engine/clients.js";
 import { handleSblEvent, sblTokenMatches } from "../engine/sbl.js";
@@ -95,6 +96,18 @@ export async function publicRoutes(app: FastifyInstance) {
       source: body._source || "website",
       data,
     });
+    // Someone who ticked "call me" gets a call from the phone assistant.
+    if (!lead.duplicate && body.phone && body.call_permission === "yes") {
+      await requestCall({
+        leadId: lead.id,
+        product: product.slug,
+        name: body.name,
+        phone: body.phone,
+        email: body.email,
+        business: body.business,
+        callTime: body.call_time,
+      });
+    }
     if (wantsJson) return { ok: true, id: lead.id };
     if (body._redirect) return reply.redirect(body._redirect, 303);
     return reply.type("text/html").send(

@@ -95,6 +95,9 @@ services:
       - key: AWAZ_WEBHOOK_TOKEN
         scope: RUN_TIME
         type: SECRET
+      - key: MAKE_CALL_WEBHOOK_URL
+        scope: RUN_TIME
+        type: SECRET
       - key: SBL_WEBHOOK_SECRET
         scope: RUN_TIME
         type: SECRET

@@ -464,4 +464,23 @@ describe("client account areas", () => {
     assert.equal(v.jobs_booked, 1);
     assert.equal(v.call_backs, 1);
   });
+
+  it("asks the phone assistant to call people who tick 'call me', or makes a to-do", async () => {
+    const send = (payload: object) => app.inject({ method: "POST", url: "/api/leads/onlinebusinessbuilder", headers: { "content-type": "application/json" }, payload });
+    await send({ name: "Sam", phone: "07700 900123", call_permission: "yes", _source: "Call me form" });
+    assert.ok(await one(`SELECT 1 FROM tasks WHERE title LIKE 'Call Sam back%'`));
+    process.env.MAKE_CALL_WEBHOOK_URL = "https://hook.eu1.make.com/abc";
+    const realFetch = globalThis.fetch;
+    let sent: any;
+    globalThis.fetch = (async (_url: string, init: any) => { sent = JSON.parse(init.body); return new Response("Accepted"); }) as typeof fetch;
+    try {
+      await send({ name: "Jo Bloggs", phone: "07700 900456", call_permission: "yes", business: "Jo's Plumbing" });
+    } finally {
+      globalThis.fetch = realFetch;
+      delete process.env.MAKE_CALL_WEBHOOK_URL;
+    }
+    assert.equal(sent.phone, "+447700900456");
+    assert.equal(sent.first_name, "Jo");
+    assert.equal((await query(`SELECT * FROM tasks WHERE title LIKE 'Call Jo%'`)).length, 0);
+  });
 });
