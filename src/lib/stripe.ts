@@ -81,6 +81,13 @@ export function buildCheckoutParams(
     line_items: lineItems,
     customer_email: opts.email || undefined,
     allow_promotion_codes: true,
+    // The Stripe account is shared, so each checkout shows the product's own name, not the account's.
+    branding_settings: {
+      display_name: product.name,
+      button_color: product.portal.accent,
+      border_style: "rounded",
+      ...(product.slug === "onlinebusinessbuilder" && config.baseUrl.startsWith("https://") ? { icon: { type: "url", url: `${config.baseUrl}/static/logo.png` } } : {}),
+    },
     metadata,
     subscription_data: {
       metadata,

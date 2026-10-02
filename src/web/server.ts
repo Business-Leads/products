@@ -49,6 +49,8 @@ export async function buildServer() {
     const css = await readFile(path.join(here, "static", file), "utf8");
     app.get(`/static/${file}`, async (_req, reply) => reply.type("text/css").header("Cache-Control", "public, max-age=300").send(css));
   }
+  const logoPng = await readFile(path.join(here, "static", "logo.png"));
+  app.get("/static/logo.png", async (_req, reply) => reply.type("image/png").header("Cache-Control", "public, max-age=86400").send(logoPng));
   const logo = await readFile(path.join(here, "static", "logo.svg"), "utf8");
   for (const route of ["/static/logo.svg", "/favicon.ico"]) {
     app.get(route, async (_req, reply) => reply.type("image/svg+xml").header("Cache-Control", "public, max-age=86400").send(logo));

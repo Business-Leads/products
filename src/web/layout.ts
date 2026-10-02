@@ -26,20 +26,47 @@ const AREA_NAMES: Record<Area, string> = {
   system: "Behind the scenes",
 };
 
+// Cute little characters, to match the logo: a white shape with a smiley face.
+const face = (x: number, y: number) =>
+  `<g fill="#3B2440"><circle cx="${x - 2.1}" cy="${y}" r="1"/><circle cx="${x + 2.1}" cy="${y}" r="1"/></g>` +
+  `<path d="M${x - 1.3} ${y + 1.7}q1.3 1.2 2.6 0" fill="none" stroke="#3B2440" stroke-width="1" stroke-linecap="round"/>` +
+  `<g fill="#FF8FA3" opacity=".75"><circle cx="${x - 3.6}" cy="${y + 1.5}" r=".9"/><circle cx="${x + 3.6}" cy="${y + 1.5}" r=".9"/></g>`;
+
 const ICONS: Record<Area, string> = {
-  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
-  todo: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"/>',
-  messages: '<path d="M4 5h16v11H8l-4 4z"/>',
-  customers: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.6.2 4.6 1.9 5.3 5.4"/>',
-  logins: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-  leads: '<path d="M4 4h16v16H4z"/><path d="M4 9h16M9 14h6"/>',
-  outreach: '<path d="M3 5h18v14H3z"/><path d="M3 6l9 7 9-7"/>',
-  products: '<path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/>',
-  system: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  home: `<path d="M12 2.6 2.4 10.4a1 1 0 0 0 .6 1.8H4.5V20a1.8 1.8 0 0 0 1.8 1.8h11.4a1.8 1.8 0 0 0 1.8-1.8v-7.8H21a1 1 0 0 0 .6-1.8z" fill="#fff"/>${face(12, 14)}`,
+  todo: `<rect x="4" y="3.5" width="16" height="18.5" rx="3.5" fill="#fff"/><rect x="8.5" y="2" width="7" height="3.6" rx="1.6" fill="#FFE08A"/><path d="M15.3 8.4l1.3 1.3 2.4-2.6" fill="none" stroke="#2BB38A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>${face(12, 13.5)}`,
+  messages: `<path d="M5.5 3.5h13a3.5 3.5 0 0 1 3.5 3.5v7.5a3.5 3.5 0 0 1-3.5 3.5H11l-5 3.5V18h-.5A3.5 3.5 0 0 1 2 14.5V7a3.5 3.5 0 0 1 3.5-3.5z" fill="#fff"/>${face(12, 10)}`,
+  customers: `<circle cx="16.5" cy="11" r="5.5" fill="#FFE6EE"/><path d="M10 22a6.5 6.5 0 0 1 13 0z" fill="#FFE6EE"/><circle cx="9" cy="10" r="6" fill="#fff"/><path d="M1.5 22.5a7.5 7.5 0 0 1 15 0z" fill="#fff"/>${face(9, 9.6)}`,
+  logins: `<path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="3.5" y="10" width="17" height="12.5" rx="4" fill="#fff"/>${face(12, 15.3)}`,
+  leads: `<path d="M6 2.5h8.5l5.5 5.5v12a2.5 2.5 0 0 1-2.5 2.5h-11.5A2.5 2.5 0 0 1 3.5 20V5A2.5 2.5 0 0 1 6 2.5z" fill="#fff"/><path d="M14.5 2.5V6.5a1.5 1.5 0 0 0 1.5 1.5h4z" fill="#D6E4FF"/>${face(11.8, 14)}`,
+  outreach: `<rect x="2" y="5" width="20" height="15" rx="3.5" fill="#fff"/><path d="M3 6.5l9 6 9-6" fill="none" stroke="#FFC44D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.6 1.6c.9-.9 2.6-.3 2.4 1.2-.2 1.2-2.4 2.6-2.4 2.6s-2.2-1.4-2.4-2.6c-.2-1.5 1.5-2.1 2.4-1.2z" fill="#FF8FA3"/>${face(12, 15.2)}`,
+  products: `<path d="M12 2 21.5 6.5v11L12 22 2.5 17.5v-11z" fill="#fff"/><path d="M2.5 6.5 12 11l9.5-4.5" fill="none" stroke="#CFF5E4" stroke-width="1.4" stroke-linejoin="round"/>${face(12, 15)}`,
+  system: `<g fill="#fff"><circle cx="12" cy="12" r="7.5"/>${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => `<rect x="10" y="1.5" width="4" height="5" rx="1.6" transform="rotate(${a} 12 12)"/>`).join("")}</g>${face(12, 11.4)}`,
 };
 
+// Each product has its own little character, about what it does.
+const PRODUCT_ICONS: Record<string, string> = {
+  // a map pin: be found locally
+  firstpagelocal: `<path d="M12 1.8a8 8 0 0 0-8 8c0 5.6 6.4 11.4 7.3 12.2a1 1 0 0 0 1.4 0c.9-.8 7.3-6.6 7.3-12.2a8 8 0 0 0-8-8z" fill="#fff"/>${face(12, 9.6)}`,
+  // two linked friends
+  linkn: `<circle cx="16.2" cy="13.5" r="6.3" fill="#D8E9FF"/><circle cx="8.6" cy="11" r="7" fill="#fff"/><path d="M12.4 15.6a6.3 6.3 0 0 0 3.8 4.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>${face(8.6, 10.4)}`,
+  // a phone that answers in a flash
+  speedtolead: `<rect x="5" y="2" width="12.5" height="20" rx="3.5" fill="#fff"/><rect x="9" y="3.6" width="4.5" height="1.3" rx=".65" fill="#FFD9B8"/><path d="M20.4 2.5l-2.6 4.6h2.4l-1.8 4" fill="none" stroke="#FFF3A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>${face(11.25, 12)}`,
+  // a paper plane on its way
+  emailfirst: `<path d="M21.6 2.6 2.8 10.2a.8.8 0 0 0 0 1.5l6.4 2.6 2.6 6.6a.8.8 0 0 0 1.5 0z" fill="#fff"/><path d="M9.2 14.3 21.6 2.6l-8 13.2" fill="#FFD6EE"/><path d="M1.5 18.5h3M2.5 21.5h4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>${face(9.6, 9.6)}`,
+  // a bright idea
+  goodquestions: `<path d="M12 1.8a7.6 7.6 0 0 0-4.4 13.8V18h8.8v-2.4A7.6 7.6 0 0 0 12 1.8z" fill="#fff"/><rect x="8.4" y="19" width="7.2" height="3.2" rx="1.6" fill="#FFE08A"/>${face(12, 9.4)}`,
+  // a happy little website
+  onlinebusinessbuilder: `<rect x="2" y="3.5" width="20" height="17" rx="3.5" fill="#fff"/><path d="M2 8.5h20" stroke="#FFD2C2" stroke-width="1.4"/><g fill="#FF8A5B"><circle cx="5" cy="6" r=".9"/><circle cx="7.6" cy="6" r=".9"/></g><path d="M18.5 1.2l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="#FFF6D6"/>${face(12, 13.6)}`,
+};
+
+export function productIcon(slug: string): Raw {
+  const body = PRODUCT_ICONS[slug] ?? ICONS.products;
+  return raw(`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`);
+}
+
 export function icon(area: Area): Raw {
-  return raw(`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[area]}</svg>`);
+  return raw(`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[area]}</svg>`);
 }
 
 function areaFor(active: string | undefined): Area {
@@ -56,13 +83,14 @@ function areaFor(active: string | undefined): Area {
 }
 
 export function page(title: string, body: Raw, opts: { active?: string; counts?: NavCounts; flash?: string } = {}): string {
-  const link = (href: string, label: string, area: Area, badge?: number, badgeLabel?: string) => {
+  const link = (href: string, label: string, area: Area, badge?: number, badgeLabel?: string, slug?: string) => {
     const current = opts.active === href;
-    return html`<a href="${href}" class="area-${area} ${current ? "active" : ""}" ${current ? raw('aria-current="page"') : ""}><span class="ti">${icon(area)}</span><span class="label">${label}</span>${
+    return html`<a href="${href}" class="area-${area} ${current ? "active" : ""}" ${current ? raw('aria-current="page"') : ""}><span class="ti ${slug ? `prod-${slug}` : ""}">${slug ? productIcon(slug) : icon(area)}</span><span class="label">${label}</span>${
       badge ? html`<span class="chip" aria-label="${badge} ${badgeLabel ?? "waiting"}">${badge}</span>` : ""
     }</a>`;
   };
   const area = areaFor(opts.active);
+  const productSlug = /^\/products\/([a-z]+)/.exec(opts.active ?? "")?.[1];
 
   // The page's first heading and intro move into the coloured header band.
   let content = body.value;
@@ -99,7 +127,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     ${link("/clients", "Client logins", "logins")}
     ${link("/outreach", "Cold emails", "outreach")}
     <div class="section">Products</div>
-    ${products.map((p) => link(`/products/${p.slug}`, p.name, "products"))}
+    ${products.map((p) => link(`/products/${p.slug}`, p.name, "products", undefined, undefined, p.slug))}
     <div class="section">Behind the scenes</div>
     ${link("/activity", "What's happened", "system")}
     ${link("/system", "Settings", "system")}
@@ -108,7 +136,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
   </nav>
   <main class="main" id="content" tabindex="-1">
     <div class="area-band">
-      <span class="ti big" aria-hidden="true">${icon(area)}</span>
+      <span class="ti big ${productSlug ? `prod-${productSlug}` : ""}" aria-hidden="true">${productSlug ? productIcon(productSlug) : icon(area)}</span>
       <div class="band-text">
         <p class="where">${AREA_NAMES[area]}</p>
         <h1>${raw(h1?.[1] ?? title)}</h1>

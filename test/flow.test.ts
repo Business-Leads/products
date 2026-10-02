@@ -97,6 +97,7 @@ describe("checkout", () => {
     assert.equal(params.line_items![1]!.price_data!.recurring, undefined);
     assert.equal(params.metadata!.hq_product, "speedtolead");
     assert.equal(params.metadata!.hq_lead_id, "7");
+    assert.equal(params.branding_settings!.display_name, "Speed to Lead");
   });
 
   it("bills EmailFirst weekly with recurring and one-off add-ons", () => {

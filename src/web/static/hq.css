@@ -49,11 +49,11 @@ body.hq {
 /* Glossy icon tile */
 .hq .ti { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--grad); color: #fff;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 2px 6px rgba(20, 16, 40, 0.18); }
-.hq .ti .ico { width: 20px; height: 20px; color: #fff; }
+.hq .ti .ico { width: 26px; height: 26px; color: #fff; }
 .hq .ti.lg { width: 56px; height: 56px; border-radius: 16px; }
-.hq .ti.lg .ico { width: 30px; height: 30px; }
+.hq .ti.lg .ico { width: 40px; height: 40px; }
 .hq .ti.big { width: 64px; height: 64px; border-radius: 18px; }
-.hq .ti.big .ico { width: 34px; height: 34px; }
+.hq .ti.big .ico { width: 46px; height: 46px; }
 
 /* Menu */
 .hq .shell { grid-template-columns: 300px 1fr; }
@@ -168,3 +168,11 @@ body.hq {
 @media (min-width: 901px) { .hq .shell { background: linear-gradient(to right, #1E1C27 300px, transparent 300px); } }
 .hq .brand img.logo { width: 52px; height: 52px; flex: none; filter: drop-shadow(0 4px 10px rgba(229,72,77,.35)); transition: transform .2s; }
 .hq .brand:hover img.logo { transform: rotate(-6deg) scale(1.05); }
+
+/* Each product's own icon colour. */
+.hq .ti.prod-firstpagelocal { --grad: linear-gradient(160deg, #FF8DBA 0%, #E2477F 100%); }
+.hq .ti.prod-linkn { --grad: linear-gradient(160deg, #6CB3FA 0%, #2A6FD9 100%); }
+.hq .ti.prod-speedtolead { --grad: linear-gradient(160deg, #FFBC52 0%, #F0701F 100%); }
+.hq .ti.prod-emailfirst { --grad: linear-gradient(160deg, #F59AD6 0%, #B9459A 100%); }
+.hq .ti.prod-goodquestions { --grad: linear-gradient(160deg, #8E96FF 0%, #4E52D6 100%); }
+.hq .ti.prod-onlinebusinessbuilder { --grad: linear-gradient(160deg, #FF9566 0%, #E5484D 100%); }
