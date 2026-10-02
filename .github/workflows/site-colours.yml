@@ -1,0 +1,27 @@
+# Read-only: lists the colours and fonts each product site uses, so the
+# dashboard and client areas can match them.
+name: Site colours
+on:
+  workflow_dispatch:
+jobs:
+  colours:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read colours
+        run: |
+          for site in https://onlinebusinessbuilder.co.uk https://linkn.co.uk https://speedtolead.co.uk https://goodquestions.co.uk https://emailfirst.netlify.app; do
+            echo "=================== $site"
+            curl -sL --max-time 20 "$site" -o page.html || continue
+            : > all.css
+            cat page.html >> all.css
+            for css in $(grep -oE 'href="[^"]+\.css[^"]*"' page.html | sed 's/href="//; s/"$//' | head -5); do
+              case "$css" in http*) url="$css";; //*) url="https:$css";; /*) url="$site$css";; *) url="$site/$css";; esac
+              curl -sL --max-time 20 "$url" >> all.css
+            done
+            echo "-- CSS variables"
+            grep -oE -- '--[a-zA-Z0-9-]+:\s*[^;}]+' all.css | sort -u | head -60
+            echo "-- most used colours"
+            grep -oiE '#[0-9a-f]{6}\b|#[0-9a-f]{3}\b|rgba?\([^)]+\)' all.css | tr 'A-F' 'a-f' | sort | uniq -c | sort -rn | head -20
+            echo "-- fonts"
+            grep -oiE 'font-family:[^;}]+|family=[^"&]+' all.css | sort | uniq -c | sort -rn | head -8
+          done
