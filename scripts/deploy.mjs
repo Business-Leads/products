@@ -82,6 +82,29 @@ if (existing) {
   app = (await doApi("POST", "/apps", { spec: applyValues(structuredClone(spec)) })).app;
 }
 
+/** Print the end of DigitalOcean's logs for a failed deployment, so the cause is visible. */
+async function printFailureLogs(appId) {
+  const { deployments = [] } = await doApi("GET", `/apps/${appId}/deployments?per_page=1`);
+  const dep = deployments[0];
+  if (!dep) return;
+  console.log(`\nLatest deployment ${dep.id}: ${dep.phase}`);
+  for (const step of dep.progress?.steps ?? []) {
+    if (step.status === "ERROR") console.log(`  failed step: ${step.name} ${step.reason?.message ?? ""}`);
+  }
+  for (const type of ["BUILD", "DEPLOY", "RUN"]) {
+    try {
+      const logs = await doApi("GET", `/apps/${appId}/deployments/${dep.id}/components/web/logs?type=${type}`);
+      for (const url of logs.historic_urls ?? (logs.live_url ? [logs.live_url] : [])) {
+        const text = await (await fetch(url)).text();
+        console.log(`--- ${type} log (last 60 lines) ---`);
+        console.log(text.trim().split("\n").slice(-60).join("\n"));
+      }
+    } catch (err) {
+      console.log(`(no ${type} log: ${err.message})`);
+    }
+  }
+}
+
 // Wait for the deployment to go live.
 for (let i = 0; i < 150; i++) {
   await new Promise((r) => setTimeout(r, 10_000));
@@ -90,8 +113,10 @@ for (let i = 0; i < 150; i++) {
   process.stdout.write(`  ${phase ?? "pending"}\r`);
   // A running version is enough: later pushes keep starting new builds.
   if (app.active_deployment?.phase === "ACTIVE" && app.live_url) break;
-  if (["ERROR", "CANCELED"].includes(app.in_progress_deployment?.phase)) {
-    throw new Error(`Deployment ${app.in_progress_deployment.phase}. See the app's build logs in DigitalOcean.`);
+  const latest = (await doApi("GET", `/apps/${app.id}/deployments?per_page=1`)).deployments?.[0];
+  if (["ERROR", "CANCELED"].includes(latest?.phase) && !(app.active_deployment?.phase === "ACTIVE" && app.live_url)) {
+    await printFailureLogs(app.id);
+    throw new Error(`Deployment ${latest.phase}; see the logs above.`);
   }
 }
 if (!app.live_url) throw new Error("Timed out waiting for the app to go live");
