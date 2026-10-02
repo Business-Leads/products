@@ -45,8 +45,10 @@ export async function buildServer() {
   await app.register(formbody);
   await app.register(cookie);
 
-  const css = await readFile(path.join(here, "static", "app.css"), "utf8");
-  app.get("/static/app.css", async (_req, reply) => reply.type("text/css").header("Cache-Control", "public, max-age=300").send(css));
+  for (const file of ["app.css", "hq.css"]) {
+    const css = await readFile(path.join(here, "static", file), "utf8");
+    app.get(`/static/${file}`, async (_req, reply) => reply.type("text/css").header("Cache-Control", "public, max-age=300").send(css));
+  }
 
   await app.register(publicRoutes);
   await app.register(authRoutes);

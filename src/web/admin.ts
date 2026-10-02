@@ -16,7 +16,7 @@ import { buyUrl, portalUrl } from "../portal/accounts.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
-import { chip, empty, intro, page, statusLabel } from "./layout.js";
+import { chip, empty, icon, intro, page, statusLabel, type Area } from "./layout.js";
 
 async function navCounts() {
   const r = await one(`SELECT count(*)::int AS n FROM tasks WHERE status = 'open'`);
@@ -32,6 +32,12 @@ async function send(reply: FastifyReply, req: FastifyRequest, title: string, bod
 function back(reply: FastifyReply, to: string, flash?: string) {
   const sep = to.includes("?") ? "&" : "?";
   return reply.redirect(flash ? `${to}${sep}flash=${encodeURIComponent(flash)}` : to, 303);
+}
+
+/** A big coloured button on the home page leading to one area. */
+function tile(href: string, area: Area, name: string, what: string, count: string, urgent = false): Raw {
+  return html`<a class="tile area-${area} ${urgent ? "urgent" : ""}" href="${href}">${icon(area)}<span class="name">${name}</span>
+    <span class="what">${what}</span><span class="count">${count}</span></a>`;
 }
 
 /** "Good morning" and so on, in UK time. */
@@ -148,6 +154,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const events = await query(`SELECT * FROM events ORDER BY at DESC LIMIT 12`);
     const openTotal = tasks.reduce((s, r) => s + r.n, 0);
     const warnings = assertProductionConfig();
+    const openSupport = (await one(`SELECT count(*)::int AS n FROM support_requests WHERE status = 'open'`))?.n ?? 0;
     const disconnected = integrations.filter((i) => !i.configured());
 
     const body = html`
@@ -156,15 +163,15 @@ export async function adminRoutes(app: FastifyInstance) {
         ? `Here's how everything is doing. Most of it runs by itself. There ${openTotal === 1 ? "is 1 thing" : `are ${openTotal} things`} waiting for you in your to-do list.`
         : "Here's how everything is doing. Most of it runs by itself, and nothing needs you right now.")}
       ${warnings.length ? html`<div class="flash">One thing to set up: ${warnings.join("; ")}.</div>` : ""}
-      <div class="grid">
-        <div class="stat"><div class="label">Coming in each month</div><div class="value">${formatPrice(totalMrr)}</div></div>
-        <div class="stat"><div class="label">Live customers</div><div class="value">${counts.reduce((s, r) => s + r.live, 0)}</div>
-          <div class="sub">plus ${counts.reduce((s, r) => s + r.onboarding, 0)} being set up</div></div>
-        <div class="stat"><div class="label">New enquiries this week</div><div class="value">${leads.reduce((s, r) => s + r.n, 0)}</div></div>
-        <div class="stat"><div class="label">Waiting for you</div><div class="value">${openTotal}</div>
-          <div class="sub"><a href="/inbox">Open your to-do list</a></div></div>
-        <div class="stat"><div class="label">Websites working</div><div class="value">${allSites.filter((s) => s.ok).length}/${allSites.length}</div></div>
+      <div class="tiles">
+        ${tile("/inbox", "todo", "To-do list", "Things that need you", openTotal ? `${openTotal} waiting` : "All done", openTotal > 0)}
+        ${tile("/support", "messages", "Messages", "Questions from clients", openSupport ? `${openSupport} to answer` : "None waiting", openSupport > 0)}
+        ${tile("/customers", "customers", "Customers", "Everyone who has signed up", `${counts.reduce((s, r) => s + r.live, 0)} live, ${counts.reduce((s, r) => s + r.onboarding, 0)} being set up`)}
+        ${tile("/leads", "leads", "Enquiries", "People who filled in a form", `${leads.reduce((s, r) => s + r.n, 0)} this week`)}
+        ${tile("/outreach", "outreach", "Cold emails", "Emails to new businesses", "Settings and lists")}
+        ${tile("/clients", "logins", "Client logins", "Clients' own accounts", "See their dashboards")}
       </div>
+      <p class="small"><strong>Coming in each month:</strong> ${formatPrice(totalMrr)} · <strong>Websites working:</strong> ${allSites.filter((s) => s.ok).length} of ${allSites.length}</p>
 
       <div class="panel"><h2>Your products</h2>
         <table><tr><th>Product</th><th class="num">Live</th><th class="num">Being set up</th><th class="num">Each month</th>

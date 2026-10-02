@@ -1,0 +1,127 @@
+/*
+  HQ (operator dashboard) look. Built for easy reading every day:
+  - Atkinson Hyperlegible, a typeface designed for low vision, at 20px
+  - warm cream background, near-black text, nothing pure white
+  - every area has its own colour, used in the menu, the page header and the
+    home tiles, so you can tell where you are at a glance
+  - strong borders and large buttons
+*/
+body.hq {
+  --bg: #F6EFDF;
+  --panel: #FFFAF0;
+  --raised: #FBF4E6;
+  --ink: #1A1A1A;
+  --muted: #45413A;
+  --line: #CFC3AC;
+  --line-soft: #E2D8C4;
+  --chip: #EDE3CF;
+  --accent: #B3301D;
+  --accent-soft: #F8DDD6;
+  --violet: #5A2FC2;
+  --focus: #1D4ED8;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: none;
+  font-family: "Atkinson Hyperlegible", Verdana, Arial, sans-serif;
+  font-size: 20px;
+  line-height: 1.55;
+  background: var(--bg);
+}
+.hq h1, .hq h2, .hq h3 { font-family: "Atkinson Hyperlegible", Verdana, Arial, sans-serif; letter-spacing: 0; }
+.hq h1 { font-size: 34px; }
+.hq h2 { font-size: 24px; }
+.hq h3 { font-size: 21px; }
+.hq .small { font-size: 18px; }
+.hq .muted { color: var(--muted); }
+.hq a { color: var(--violet); text-decoration-thickness: 2px; }
+.hq :focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
+
+/* Area colours: menu, page header and home tiles share them. */
+.area-home     { --area: #B3301D; --area-soft: #F8DDD6; }
+.area-todo     { --area: #B3301D; --area-soft: #F8DDD6; }
+.area-messages { --area: #5A2FC2; --area-soft: #E6DDFB; }
+.area-customers{ --area: #0F6E63; --area-soft: #D3EEE9; }
+.area-logins   { --area: #0F6E63; --area-soft: #D3EEE9; }
+.area-leads    { --area: #1E56B8; --area-soft: #DCE6F8; }
+.area-outreach { --area: #8A5300; --area-soft: #F7E6C4; }
+.area-products { --area: #2F6B1F; --area-soft: #DDEFD3; }
+.area-system   { --area: #4A4A55; --area-soft: #E4E2DD; }
+
+/* Menu: a dark band, so it stands apart from the page. */
+.hq .shell { grid-template-columns: 300px 1fr; }
+.hq .nav { background: #22201C; color: #F6EFDF; border-right: 0; padding: 22px 14px; }
+.hq .brand { color: #FFFFFF; font-size: 20px; margin: 0 10px 22px; }
+.hq .brand span { color: #D9CDB4; font-size: 16px; font-family: inherit; }
+.hq .nav a { color: #F6EFDF; font-size: 20px; padding: 12px 14px; min-height: 52px; border-radius: 12px; border-left: 6px solid transparent; justify-content: flex-start; }
+.hq .nav a .ico { width: 26px; height: 26px; flex: none; color: var(--area-light, #F6EFDF); }
+.hq .nav a .label { flex: 1; }
+.hq .nav a:hover { background: #34312B; }
+.hq .nav a.active, .hq .nav a[aria-current="page"] { background: #F6EFDF; color: #1A1A1A; font-weight: 700; border-left-color: var(--area); }
+.hq .nav a.active .ico { color: var(--area); }
+.hq .nav .section { color: #D9CDB4; font-size: 15px; letter-spacing: 0.08em; margin: 22px 14px 8px; }
+.hq .nav .chip { background: #E8533C; color: #FFFFFF; font-size: 17px; padding: 2px 10px; }
+.hq .nav button { background: transparent; color: #F6EFDF; border: 2px solid #6B655A; font-size: 17px; }
+.hq .nav button:hover { background: #34312B; }
+
+/* Page header: a coloured band naming the area you're in. */
+.hq .main { padding: 0 40px 72px; max-width: 1240px; }
+.hq .area-band { margin: 0 -40px 28px; padding: 26px 40px 22px; background: var(--area-soft); border-bottom: 4px solid var(--area); }
+.hq .area-band .where { font-size: 17px; font-weight: 700; color: var(--area); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px; }
+.hq .area-band h1 { margin: 0; }
+.hq .area-band .intro-text { margin: 8px 0 0; max-width: 820px; color: #2B2824; }
+.hq .intro { background: transparent; padding: 0; margin: 0 0 22px; }
+
+.hq .panel { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+.hq .stat { background: var(--panel); border: 2px solid var(--line); }
+.hq .stat .value { font-family: inherit; font-size: 34px; }
+.hq .stat .label { font-size: 18px; color: var(--muted); }
+.hq .stat .sub { font-size: 16px; }
+
+.hq th, .hq td { padding: 14px 10px; border-bottom: 2px solid var(--line-soft); }
+.hq th { font-size: 17px; color: var(--muted); font-weight: 700; }
+
+.hq .chip { font-size: 17px; padding: 3px 12px; border: 1px solid transparent; }
+.hq .chip.ok { background: #D5EEDC; color: #14532D; }
+.hq .chip.warn { background: #F7E2B5; color: #6B4100; }
+.hq .chip.bad { background: #F6D3D0; color: #8E1F16; }
+.hq .chip.accent { background: #F8DDD6; color: #8E1F16; }
+.hq .chip.violet { background: #E6DDFB; color: #44209A; }
+
+.hq button, .hq .btn { font-size: 19px; min-height: 50px; padding: 10px 20px; border: 2px solid #9C907A; background: var(--panel); border-radius: 12px; }
+.hq button.small, .hq .btn.small { font-size: 17px; min-height: 44px; padding: 7px 14px; }
+.hq button.primary, .hq .btn.primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+.hq button.danger { color: #8E1F16; border-color: #D9A39C; }
+.hq input, .hq textarea, .hq select { font-size: 19px; border: 2px solid #9C907A; background: #FFFDF8; min-height: 52px; border-radius: 12px; }
+.hq label { font-size: 19px; }
+.hq .help { font-size: 17px; color: var(--muted); }
+.hq .pre { background: var(--raised); border: 2px solid var(--line-soft); }
+.hq .flash { background: #FCEFC0; border: 2px solid #E2C35A; font-size: 19px; }
+.hq .task { border-left: 8px solid var(--line); }
+.hq .task.p1 { border-left-color: var(--accent); }
+.hq .task.approval { border-left-color: var(--violet); }
+.hq .empty { font-size: 19px; color: var(--muted); }
+
+/* Home: big tiles, one per area, so it's obvious where to go. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-bottom: 28px; }
+.hq a.tile, .tile { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: 18px; background: var(--area-soft); border: 3px solid var(--area); color: #1A1A1A; text-decoration: none; min-height: 170px; }
+.tile:hover { text-decoration: none; filter: brightness(0.97); }
+.tile .ico { width: 40px; height: 40px; color: var(--area); }
+.tile .name { font-size: 24px; font-weight: 700; }
+.tile .what { font-size: 18px; color: #2B2824; }
+.tile .count { margin-top: auto; font-size: 19px; font-weight: 700; color: var(--area); }
+.tile.urgent { background: var(--area); color: #FFFFFF; }
+.tile.urgent .ico, .tile.urgent .count, .tile.urgent .what { color: #FFFFFF; }
+
+@media (max-width: 900px) {
+  .hq .shell { grid-template-columns: 1fr; }
+  .hq .nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hq .nav .brand { width: 100%; }
+  .hq .nav a { font-size: 18px; min-height: 46px; }
+  .hq .main { padding: 0 16px 48px; }
+  .hq .area-band { margin: 0 -16px 22px; padding: 20px 16px; }
+}
+.hq .area-band .where .ico { width: 22px; height: 22px; vertical-align: -4px; margin-right: 4px; }
+.hq a.tile { color: #1A1A1A; text-decoration: none; }
+.hq a.tile .name { color: #1A1A1A; }
+.hq a.tile.urgent, .hq a.tile.urgent .name { color: #FFFFFF; }
+.hq .main > .spread, .hq .main > form.row { margin-bottom: 18px; }
