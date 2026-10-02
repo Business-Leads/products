@@ -1,0 +1,43 @@
+# Connects product domains to their Netlify sites: attaches the domain (and
+# www) to the site, points GoDaddy's A @ and CNAME www records at Netlify, and
+# asks Netlify for an HTTPS certificate. Only touches those two records; email
+# (MX/TXT) is never changed. Input: "domain=netlify-site-id domain=site-id ..."
+name: Connect domains
+on:
+  workflow_dispatch:
+    inputs:
+      pairs:
+        description: "Space-separated domain=netlifySiteId pairs"
+        required: true
+permissions: {}
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Connect
+        env:
+          KEY: ${{ secrets.GODADDY_API_KEY }}
+          SECRET: ${{ secrets.GODADDY_API_SECRET }}
+          NETLIFY: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          PAIRS: ${{ inputs.pairs }}
+        run: |
+          GD="Authorization: sso-key $KEY:$SECRET"
+          NL="Authorization: Bearer $NETLIFY"
+          for pair in $PAIRS; do
+            d="${pair%%=*}"; site="${pair#*=}"
+            echo "== $d -> Netlify site $site"
+            name=$(curl -s -H "$NL" "https://api.netlify.com/api/v1/sites/$site" | jq -r '.name')
+            [ -n "$name" ] && [ "$name" != "null" ] || { echo "  Netlify site not found"; continue; }
+            code=$(curl -s -o nl.json -w "%{http_code}" -X PATCH -H "$NL" -H "Content-Type: application/json" \
+              -d "{\"custom_domain\":\"$d\",\"domain_aliases\":[\"www.$d\"]}" "https://api.netlify.com/api/v1/sites/$site")
+            echo "  Netlify attach: $code $(jq -r '.custom_domain // .message // empty' nl.json)"
+            echo "  before: A@=$(curl -s -H "$GD" "https://api.godaddy.com/v1/domains/$d/records/A/@" | jq -c '[.[]?.data]') CNAME www=$(curl -s -H "$GD" "https://api.godaddy.com/v1/domains/$d/records/CNAME/www" | jq -c '[.[]?.data]')"
+            a=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "$GD" -H "Content-Type: application/json" \
+              -d '[{"data":"75.2.60.5","ttl":600}]' "https://api.godaddy.com/v1/domains/$d/records/A/@")
+            c=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "$GD" -H "Content-Type: application/json" \
+              -d "[{\"data\":\"$name.netlify.app\",\"ttl\":3600}]" "https://api.godaddy.com/v1/domains/$d/records/CNAME/www")
+            echo "  GoDaddy update: A@ $a, CNAME www $c"
+            s=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "$NL" "https://api.netlify.com/api/v1/sites/$site/ssl")
+            echo "  HTTPS certificate request: $s (may need DNS to settle first; Netlify retries automatically)"
+          done
