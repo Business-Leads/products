@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Online Business Builder | Fast websites and managed Google profiles for local businesses</title>
+<meta name="description" content="A fast website built to rank in Google and AI search, plus a Google Business Profile managed for you every week. £99 a month, no setup fee.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Urbanist:wght@100..900&display=swap">
+<style>
+/* Floating Tiles tokens */
+:root {
+  --canvas: #FFFFFF;
+  --surface: #F1F2F5;
+  --raised: #F9F9F9;
+  --ink: #080808;
+  --ink-muted: #72727A;
+  --on-color: #FFFFFF;
+  --line: #E1E2E5;
+  --line-soft: #EAEAEA;
+  --thread: #D3D3D3;
+  --violet-300: #B18AFB;
+  --violet-500: #9A66FA;
+  --violet-600: #884BF9;
+  --coral-300: #F3786B;
+  --coral-500: #F04939;
+  --coral-600: #EF3927;
+  --sun-300: #FBEA76;
+  --sun-500: #F9DC45;
+  --star: #F8D52F;
+  --sky-300: #63D9F9;
+  --sky-500: #2EC7EE;
+  --shadow-tile: 0 20px 40px #00000017;
+  --shadow-gloss: inset 0 1.5px 0 #FFFFFF66, inset 0 -3px 6px #00000014;
+  --shadow-soft: 0 12px 32px #0000000F;
+  --shadow-cta: 0 14px 28px -10px #00000040;
+  --shadow-coral: 0 12px 24px -10px #F0493966;
+  --shadow-violet: 0 12px 24px -10px #884BF966;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-34: 34px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-58: 58px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --radius-tooltip: 3px;
+  --radius-button: 10px;
+  --radius-social: 10px;
+  --radius-avatar: 12px;
+  --radius-chip: 14px;
+  --radius-integration: 16px;
+  --radius-tile-xs: 16px;
+  --radius-tile-sm: 18px;
+  --radius-nav: 18px;
+  --radius-card: 20px;
+  --radius-tile-md: 20px;
+  --radius-tile-lg: 22px;
+  --radius-panel: 28px;
+  --radius-tile-xl: 30px;
+  --radius-round: 50%;
+  --grad-coral: linear-gradient(180deg, #F15647 0%, #EE3C29 100%);
+  --grad-violet: linear-gradient(180deg, #9F72F8 0%, #894FF9 100%);
+  --grad-violet-tile: linear-gradient(180deg, #AC81FC 0%, #9561F5 100%);
+  --grad-coral-tile: linear-gradient(180deg, #F1594A 0%, #EE4A3A 100%);
+  --grad-sun: linear-gradient(180deg, #FBEA76 0%, #F9DC45 100%);
+  --grad-sky: linear-gradient(180deg, #63D9F9 0%, #2EC7EE 100%);
+  --grad-fade: linear-gradient(180deg, #FFFFFF00 55%, #FFFFFFD9 100%);
+  --content: 1248px;
+  --nav-h: 64px;
+  --button-h: 44px;
+  --button-h-lg: 52px;
+  --button-w-lg: 256px;
+  --arrow: 56px;
+  --social: 58px;
+  --tile-xl: 168px;
+  --tile-lg: 124px;
+  --tile-md: 100px;
+  --tile-sm: 76px;
+  --tile-xs: 64px;
+  --photo-w: 176px;
+  --photo-h: 226px;
+  --avatar: 64px;
+  --integration-tile: 184px;
+  --node: 8px;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Urbanist", "Avenir Next", system-ui, sans-serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 84px; line-height: 84px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.display-l { font-family: var(--font-display); font-size: 76px; line-height: 76px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.display-m { font-family: var(--font-display); font-size: 44px; line-height: 52px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.card-title { font-family: var(--font-display); font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variation-settings: 'opsz' 26; }
+.label { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; font-variation-settings: 'opsz' 20; }
+.statement { font-family: var(--font-display); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; font-variation-settings: 'opsz' 18; }
+.column-head { font-family: var(--font-display); font-size: 16px; line-height: 20px; font-weight: 500; letter-spacing: 0; font-variation-settings: 'opsz' 16; }
+.lead { font-family: var(--font-text); font-size: 18px; line-height: 24px; font-weight: 400; letter-spacing: 0.01em; }
+.copy { font-family: var(--font-text); font-size: 17px; line-height: 24px; font-weight: 400; letter-spacing: 0; }
+.copy-sm { font-family: var(--font-text); font-size: 16px; line-height: 22px; font-weight: 400; letter-spacing: 0; }
+.ui { font-family: var(--font-text); font-size: 16px; line-height: 20px; font-weight: 500; letter-spacing: 0; }
+.ui-lg { font-family: var(--font-text); font-size: 18px; line-height: 24px; font-weight: 500; letter-spacing: 0; }
+.brand { font-family: var(--font-text); font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.01em; }
+.brand-lg { font-family: var(--font-display); font-size: 32px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; font-variation-settings: 'opsz' 32; }
+
+/* Floating Tiles components: plain HTML and CSS. Load tokens.css first, then this file. Every class starts ft-. */
+
+:where([class*="ft-"]) :where(p, h1, h2, h3, figure, ul) { margin: 0; }
+:where([class*="ft-"]) :where(ul) { padding: 0; list-style: none; }
+
+/* Preview stage (preview cards only) */
+body:has(> .ft-stage) { margin: 0; background: var(--surface); }
+body:has(> .ft-stage--canvas) { background: var(--canvas); }
+.ft-stage { box-sizing: border-box; padding: 36px; background: var(--surface); color: var(--ink); font-family: var(--font-text); -webkit-font-smoothing: antialiased; }
+.ft-stage--canvas { background: var(--canvas); }
+.ft-stage--center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ft-stage *, .ft-stage *::before, .ft-stage *::after { box-sizing: border-box; }
+.ft-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.ft-row + .ft-row { margin-top: 24px; }
+.ft-wash { display: block; width: 100%; height: 100%; background: var(--wash, var(--surface)); }
+
+/* Icons: 24px grid line icons that inherit colour */
+.ft-icon { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Focus */
+.ft-btn:focus-visible, .ft-round:focus-visible, .ft-social:focus-visible, .ft-nav a:focus-visible, .ft-footer a:focus-visible { outline: 2px solid var(--violet-600); outline-offset: 2px; }
+
+/* Button */
+.ft-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--button-h); min-width: 100px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--radius-button); font-family: var(--font-text); font-size: 16px; line-height: 20px; font-weight: 500; text-decoration: none; white-space: nowrap; cursor: pointer; transition: filter .15s ease, background-color .15s ease; }
+.ft-btn--primary { background: var(--ink); color: var(--on-color); box-shadow: var(--shadow-cta); }
+.ft-btn--soft { background: var(--raised); border-color: var(--line-soft); color: var(--ink); }
+.ft-btn--soft:hover { background: var(--canvas); }
+.ft-btn--cta, .ft-btn--accent { height: var(--button-h-lg); min-width: var(--button-w-lg); padding: 0 28px; font-size: 18px; line-height: 24px; color: var(--on-color); }
+.ft-btn--cta { background: var(--grad-coral); box-shadow: inset 0 1px 0 #FFFFFF47, var(--shadow-coral); }
+.ft-btn--accent { background: var(--grad-violet); box-shadow: inset 0 1px 0 #FFFFFF59, var(--shadow-violet); }
+.ft-btn--primary:hover, .ft-btn--cta:hover, .ft-btn--accent:hover { filter: brightness(1.06); }
+.ft-round { display: inline-grid; place-items: center; width: var(--arrow); height: var(--arrow); padding: 0; border: 1px solid var(--line); border-radius: var(--radius-round); background: var(--canvas); color: var(--ink); cursor: pointer; }
+.ft-round .ft-icon { width: 20px; height: 20px; }
+.ft-round:hover { background: var(--raised); }
+
+/* Nav */
+.ft-nav { display: inline-flex; align-items: center; height: var(--nav-h); padding: 0 var(--space-10) 0 var(--space-20); background: var(--canvas); border: 1px solid var(--line-soft); border-radius: var(--radius-nav); }
+.ft-nav--sticky { position: sticky; top: var(--space-34); z-index: 10; }
+.ft-nav__brand { margin-right: 44px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.ft-nav__links { display: flex; gap: var(--space-24); }
+.ft-nav__links a { color: var(--ink); text-decoration: none; font: 500 16px/20px var(--font-text); }
+.ft-nav__actions { display: flex; gap: var(--space-8); margin-left: 40px; }
+@media (max-width: 860px) { .ft-nav__links { display: none; } .ft-nav__brand { margin-right: 24px; } .ft-nav__actions { margin-left: auto; } }
+
+/* Icon tile */
+.ft-tile { --size: var(--tile-md); --r: var(--radius-tile-md); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--size); height: var(--size); border-radius: var(--r); color: var(--on-color); box-shadow: var(--shadow-gloss), var(--shadow-tile); }
+.ft-tile > .ft-icon { width: 44%; height: 44%; }
+.ft-tile--xl { --size: var(--tile-xl); --r: var(--radius-tile-xl); }
+.ft-tile--lg { --size: var(--tile-lg); --r: var(--radius-tile-lg); }
+.ft-tile--sm { --size: var(--tile-sm); --r: var(--radius-tile-sm); }
+.ft-tile--xs { --size: var(--tile-xs); --r: var(--radius-tile-xs); }
+.ft-tile--violet { background: var(--grad-violet-tile); }
+.ft-tile--coral { background: var(--grad-coral-tile); }
+.ft-tile--sun { background: var(--grad-sun); color: var(--ink); }
+.ft-tile--sky { background: var(--grad-sky); }
+.ft-tile--white { background: var(--raised); color: var(--violet-500); border: 1px solid var(--line-soft); box-shadow: var(--shadow-tile); }
+.ft-tile--photo { padding: 3px; background: var(--canvas); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-tile--photo > img, .ft-tile--photo > .ft-wash { width: 100%; height: 100%; object-fit: cover; border-radius: calc(var(--r) - 3px); }
+
+/* Hero threads: lay out at 1248 x 380, scale as one piece below that */
+.ft-threads { position: relative; width: var(--content); height: 380px; margin: 0 auto; }
+.ft-threads__lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ft-threads__lines path { fill: none; stroke: var(--thread); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ft-threads__lines circle { fill: var(--violet-500); stroke: var(--canvas); stroke-width: 2; }
+.ft-threads__item { position: absolute; left: calc(50% + var(--x, 0px)); top: calc(50% + var(--y, 0px)); transform: translate(-50%, -50%); }
+
+/* Section header */
+.ft-section-head { display: flex; flex-direction: column; align-items: center; max-width: 760px; margin: 0 auto; text-align: center; }
+.ft-section-head > .ft-tile { margin-bottom: var(--space-48); }
+.ft-section-head__title { color: var(--ink); text-wrap: balance; }
+.ft-section-head__lead { max-width: 460px; margin-top: var(--space-20); color: var(--ink-muted); }
+.ft-section-head > .ft-btn { margin-top: var(--space-32); }
+.ft-section-head--compact > .ft-tile { margin-bottom: var(--space-28); }
+.ft-section-head--compact .ft-section-head__title { max-width: 560px; }
+
+/* Photo tile */
+.ft-photo { position: relative; display: block; flex: none; width: var(--photo-w); height: var(--photo-h); overflow: hidden; border: 3px solid var(--canvas); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-soft); }
+.ft-photo > img, .ft-photo > .ft-wash { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ft-photo::after { content: ""; position: absolute; inset: 0; background: var(--grad-fade); pointer-events: none; }
+.ft-photos { display: flex; align-items: center; justify-content: center; gap: 36px; padding: 24px 0; }
+
+/* Feature card */
+.ft-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-20); width: var(--content); max-width: 100%; margin: 0 auto; }
+.ft-card { position: relative; display: flex; flex-direction: column; min-height: 360px; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.ft-card--wide { grid-column: span 2; }
+.ft-card__art { position: relative; flex: 1; min-height: 220px; }
+.ft-card__text { position: relative; padding: 0 var(--space-28) var(--space-28); }
+.ft-card__title { margin-bottom: var(--space-8); color: var(--ink); }
+.ft-card__copy { max-width: 340px; color: var(--ink-muted); }
+
+/* Card art kit */
+.ft-mini { position: absolute; background: var(--canvas); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow-soft); color: var(--ink); font-family: var(--font-text); }
+.ft-mini__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ft-mini__title { font: 600 10px/12px var(--font-display); letter-spacing: -0.01em; }
+.ft-mini__pill { display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border: 1px solid var(--line-soft); border-radius: 5px; font: 500 8px/10px var(--font-text); }
+.ft-mini__pill .ft-icon { width: 8px; height: 8px; stroke-width: 3; }
+.ft-report__body { display: flex; gap: 10px; margin-top: 10px; }
+.ft-report__days { display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-bars { position: relative; flex: 1; display: flex; align-items: flex-end; justify-content: space-around; height: 96px; }
+.ft-bars__avg { position: absolute; left: 0; right: 0; top: 20px; border-top: 1px dashed var(--ink-muted); opacity: .45; }
+.ft-bars__pair { position: relative; display: flex; align-items: flex-end; gap: 3px; }
+.ft-bars__pair > .ft-tip { position: absolute; left: -1px; bottom: calc(100% + 4px); }
+.ft-bar { display: block; width: 20px; height: var(--h); border-radius: 3px 3px 0 0; background: linear-gradient(to top, var(--base) 0 var(--split, 55%), var(--top) var(--split, 55%) 100%); }
+.ft-bar--violet { --base: var(--violet-600); --top: var(--violet-300); }
+.ft-bar--coral { --base: var(--coral-600); --top: var(--coral-300); }
+.ft-tip, .ft-count { display: inline-block; padding: 2px 4px; border-radius: var(--radius-tooltip); background: var(--ink); color: var(--on-color); font: 600 8px/10px var(--font-display); text-align: center; white-space: nowrap; }
+.ft-count { min-width: 15px; padding: 1px 4px; }
+.ft-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--surface); }
+.ft-seg > span { padding: 2px 6px; border-radius: 4px; font: 500 8px/10px var(--font-text); color: var(--ink-muted); }
+.ft-seg > .is-active { background: var(--ink-muted); color: var(--on-color); }
+.ft-tabs { display: flex; gap: 12px; margin: 10px 0 2px; border-bottom: 1px solid var(--line-soft); font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-tabs > span { display: inline-flex; align-items: center; gap: 4px; padding-bottom: 5px; margin-bottom: -1px; }
+.ft-tabs > .is-active { color: var(--ink); border-bottom: 1.5px solid var(--ink); }
+.ft-person { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+.ft-person + .ft-person { border-top: 1px solid var(--line-soft); }
+.ft-person__face { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--wash, var(--surface)); }
+.ft-person__who { display: grid; }
+.ft-person__name { font: 600 9px/11px var(--font-display); }
+.ft-person__role { font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-person__act { display: grid; place-items: center; width: 20px; height: 20px; margin-left: auto; border: 1px solid var(--line-soft); border-radius: 5px; }
+.ft-person__act .ft-icon { width: 11px; height: 11px; }
+.ft-chart { position: relative; display: flex; align-items: flex-end; gap: 10px; height: 118px; margin-top: 12px; background: repeating-linear-gradient(180deg, transparent 0 28px, var(--line-soft) 28px 29px); }
+.ft-chart__bar { position: relative; flex: 1; height: var(--h); border-radius: 3px 3px 0 0; background: var(--surface); }
+.ft-chart__bar.is-hot { background: linear-gradient(180deg, var(--violet-600) 0%, var(--violet-300) 70%, #B18AFB00 100%); }
+.ft-chart__bar > .ft-tip { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); }
+.ft-chip { display: inline-flex; align-items: center; gap: 14px; height: 60px; padding: 0 22px 0 9px; background: var(--canvas); border: 1px solid var(--line-soft); border-radius: var(--radius-chip); box-shadow: var(--shadow-soft); color: var(--ink); font: 500 17px/24px var(--font-text); white-space: nowrap; }
+.ft-chip > .ft-tile { --size: 42px; --r: 10px; box-shadow: var(--shadow-gloss); }
+.ft-chipstack { position: absolute; left: 50%; top: 70px; display: grid; transform: translateX(-50%); }
+.ft-chipstack > .ft-chip { grid-area: 1 / 1; }
+.ft-chipstack > .ft-chip.is-back { transform: translateY(24px) scale(.93); opacity: .45; }
+.ft-rings { position: absolute; left: 50%; top: 96px; width: 260px; height: 260px; margin: -130px 0 0 -130px; border: 1px solid var(--line-soft); border-radius: 50%; }
+.ft-rings::after { content: ""; position: absolute; inset: 48px; border: 1px solid var(--line-soft); border-radius: 50%; }
+.ft-ghost { position: absolute; border-radius: 12px; background: var(--surface); opacity: .8; }
+.ft-guides { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 37px, var(--line-soft) 37px 38px); -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%); mask-image: linear-gradient(180deg, #000 0%, transparent 85%); }
+.ft-doc { position: absolute; width: 112px; height: 84px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--canvas); box-shadow: var(--shadow-soft); }
+.ft-doc::before { content: ""; position: absolute; left: 14px; top: 14px; width: 26px; height: 26px; border-radius: 6px; background: var(--surface); }
+.ft-doc::after { content: ""; position: absolute; left: 14px; right: 14px; top: 50px; height: 6px; border-radius: 3px; background: var(--surface); box-shadow: 0 12px 0 var(--surface); }
+.ft-orbit { position: absolute; left: 50%; top: 120px; width: 0; height: 0; }
+.ft-orbit__hub { position: absolute; left: -46px; top: -46px; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--canvas); color: var(--ink); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-orbit__hub .ft-icon { width: 32px; height: 32px; }
+.ft-orbit__face { position: absolute; left: -19px; top: -19px; width: 38px; height: 38px; border: 2px solid var(--canvas); border-radius: 10px; background: var(--wash, var(--surface)); box-shadow: var(--shadow-soft); transform: rotate(var(--a)) translateY(-92px) rotate(calc(var(--a) * -1)) rotate(var(--tilt, 0deg)); }
+
+/* Integration arc */
+.ft-panel { position: relative; width: var(--content); max-width: 100%; margin: 0 auto; padding: 36px 32px 40px; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.ft-arc { position: relative; height: 330px; margin-top: 64px; }
+.ft-arc__tile { position: absolute; left: 50%; top: 0; display: grid; place-items: center; width: var(--integration-tile); height: var(--integration-tile); margin-left: calc(var(--integration-tile) / -2); border-radius: var(--radius-integration); background: var(--surface); transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--rot, 0deg)); }
+.ft-arc__tile > .ft-icon { width: 38%; height: 38%; stroke-width: 1.8; }
+.ft-arc__caption { position: absolute; left: 50%; top: calc(var(--integration-tile) + 40px); text-align: center; white-space: nowrap; transform: translateX(-50%); }
+.ft-arc__caption > .copy-sm { margin-top: 8px; color: var(--ink-muted); }
+
+/* Testimonial card */
+.ft-quote { display: flex; flex-direction: column; align-items: center; width: 380px; min-height: 424px; padding: 40px 44px; text-align: center; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.ft-avatar { display: block; flex: none; width: calc(var(--avatar) + 6px); height: calc(var(--avatar) + 6px); padding: 3px; border-radius: var(--radius-avatar); background: var(--canvas); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-avatar > img, .ft-avatar > .ft-wash { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 9px; }
+.ft-quote__name { margin-top: var(--space-24); color: var(--ink); }
+.ft-quote__role { margin-top: var(--space-8); color: var(--ink-muted); }
+.ft-stars { display: flex; align-items: center; gap: var(--space-6); margin-top: var(--space-40); color: var(--star); }
+.ft-stars .ft-icon { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+.ft-stars__score { margin-left: 6px; color: var(--ink); font: 500 16px/20px var(--font-text); }
+.ft-quote__text { margin-top: 20px; color: var(--ink-muted); }
+.ft-fan { position: relative; height: 440px; }
+.ft-fan > .ft-quote { position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+.ft-fan > .ft-quote.is-back-l { transform: translateX(calc(-50% - 310px)) translateY(22px) rotate(-8deg); opacity: .45; }
+.ft-fan > .ft-quote.is-back-r { transform: translateX(calc(-50% + 310px)) translateY(22px) rotate(6deg); opacity: .45; }
+.ft-carousel-nav { display: flex; justify-content: center; gap: var(--space-16); margin-top: 28px; }
+
+/* Footer */
+.ft-footer { position: relative; width: var(--content); max-width: 100%; margin: 0 auto; padding: var(--space-64) var(--space-64) var(--space-40); overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.ft-footer__top { display: grid; grid-template-columns: 402px auto 1fr; align-items: start; }
+.ft-footer__brand { display: inline-block; margin-bottom: var(--space-24); color: var(--ink); text-decoration: none; }
+.ft-footer__statement { max-width: 300px; color: var(--ink); }
+.ft-footer__cols { display: flex; gap: 60px; }
+.ft-footer__col h3 { margin-bottom: 14px; color: var(--ink); }
+.ft-footer__col h3 a { color: inherit; text-decoration: none; }
+.ft-footer__col ul { display: grid; gap: 12px; }
+.ft-footer__col li a { color: var(--ink-muted); text-decoration: none; font: 400 16px/22px var(--font-text); }
+.ft-footer__follow { justify-self: end; }
+.ft-footer__social { display: flex; gap: var(--space-6); margin-top: 16px; }
+.ft-social { display: grid; place-items: center; width: var(--social); height: var(--social); border-radius: var(--radius-social); background: var(--surface); color: var(--ink); }
+.ft-social .ft-icon { width: 22px; height: 22px; }
+.ft-footer__bottom { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-16) var(--space-40); margin-top: var(--space-64); padding-top: var(--space-28); border-top: 1px solid var(--line); color: var(--ink-muted); }
+.ft-footer__legal { max-width: 820px; }
+.ft-footer__bottom a { color: var(--ink); text-decoration: none; font: 500 16px/22px var(--font-text); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .ft-btn { transition: none; } }
+
+/* ---------- Page layout (for full pages built with this skill) ---------- */
+.ft-page { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-text); -webkit-font-smoothing: antialiased; }
+.ft-page *, .ft-page *::before, .ft-page *::after { box-sizing: border-box; }
+.ft-page img { max-width: 100%; }
+.ft-navbar { position: sticky; top: var(--space-34); z-index: 20; display: flex; justify-content: center; height: 0; overflow: visible; }
+.ft-hero { padding: 132px var(--space-96) var(--space-96); background: var(--canvas); text-align: center; }
+.ft-hero__title { margin: var(--space-40) auto 0; max-width: 760px; text-wrap: balance; }
+.ft-hero__lead { margin: var(--space-28) auto 0; max-width: 400px; color: var(--ink-muted); }
+.ft-hero .ft-btn--cta { margin-top: var(--space-40); }
+.ft-section { padding: var(--space-96) var(--space-96); }
+.ft-section__body { margin-top: var(--space-58); }
+.ft-photo-band { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 48px; max-width: var(--content); margin: 0 auto; }
+.ft-photo-stack { display: grid; grid-template-columns: repeat(2, var(--photo-w)); gap: 20px 24px; }
+.ft-photo-stack > :nth-child(odd) { transform: translateY(-28px); }
+.ft-photo-stack > :nth-child(even) { transform: translateY(28px); }
+.ft-fan-wrap { max-width: 1100px; margin: 0 auto; overflow: hidden; }
+@media (max-width: 1340px) { .ft-threads, .ft-arc { zoom: .78; } .ft-photo-stack { grid-template-columns: var(--photo-w); } .ft-photo-stack > :nth-child(n+3) { display: none; } }
+@media (max-width: 1080px) { .ft-grid { grid-template-columns: 1fr 1fr; } .ft-card--wide { grid-column: span 2; } .ft-photo-band { grid-template-columns: 1fr; } .ft-photo-stack { display: none; } .ft-footer__top { grid-template-columns: 1fr; gap: 40px; } .ft-footer__follow { justify-self: start; } }
+@media (max-width: 860px) { .ft-threads { zoom: .5; } .ft-arc { zoom: .55; } .ft-hero, .ft-section { padding-left: 20px; padding-right: 20px; } .ft-hero__title { font-size: 52px; line-height: 54px; } .ft-section-head__title.display-l { font-size: 44px; line-height: 48px; } .ft-fan > .ft-quote.is-back-l, .ft-fan > .ft-quote.is-back-r { display: none; } }
+@media (max-width: 640px) { .ft-nav { padding-left: 14px; } .ft-nav__brand { margin-right: 12px; font-size: 17px; } .ft-nav .ft-btn--soft { display: none; } .ft-threads { zoom: .27 !important; } .ft-hero { padding-top: 112px; } .ft-footer { padding: 40px 24px 28px; } .ft-footer__bottom { margin-top: var(--space-40); } .ft-panel { padding-left: 16px; padding-right: 16px; } .ft-grid { grid-template-columns: 1fr; } .ft-card--wide { grid-column: auto; } .ft-threads { zoom: .3; } .ft-arc { zoom: .35; } .ft-quote { width: 100%; } .ft-footer__cols { flex-wrap: wrap; gap: 28px; } }
+
+
+html { scroll-behavior: smooth; scroll-padding-top: 116px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body.ft-page { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ft-navbar { top: calc(var(--space-34) + env(safe-area-inset-top, 0px)); }
+.obb-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: var(--space-40); }
+.ft-hero .obb-actions .ft-btn--cta { margin-top: 0; }
+.ft-hero__lead { max-width: 460px; }
+.obb-note { margin-top: 18px; color: var(--ink-muted); }
+.obb-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 48px; padding: 0 12px; }
+.obb-step > .ft-tile { margin-bottom: 24px; }
+.obb-step h3 { color: var(--ink); margin-bottom: 8px; }
+.obb-step p { color: var(--ink-muted); max-width: 320px; }
+.obb-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.obb-plan { padding: 36px 32px 32px; min-height: 0; }
+.obb-plan .label { color: var(--ink); }
+.obb-price { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 14px; }
+.obb-price b { font: 600 76px/76px var(--font-display); letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; color: var(--ink); }
+.obb-price span { color: var(--ink-muted); }
+.obb-plan > p.copy { color: var(--ink-muted); max-width: 440px; }
+.obb-list { display: grid; gap: 12px; margin: 26px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line); list-style: none; }
+.obb-list li { display: flex; gap: 12px; align-items: flex-start; color: var(--ink); }
+.obb-list .ft-icon { flex: none; width: 22px; height: 22px; color: var(--violet-500); margin-top: 1px; }
+.obb-small { margin-top: 28px; text-align: center; color: var(--ink-muted); }
+.obb-choice { padding: 32px 28px; min-height: 0; }
+.obb-choice > .ft-tile { margin-bottom: 28px; }
+.obb-choice p { color: var(--ink-muted); margin-top: 8px; }
+.obb-faq { max-width: 860px; margin: 40px auto 0; }
+.obb-faq details { border-top: 1px solid var(--line); }
+.obb-faq details:last-child { border-bottom: 1px solid var(--line); }
+.obb-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 4px; cursor: pointer; list-style: none; color: var(--ink); }
+.obb-faq summary::-webkit-details-marker { display: none; }
+.obb-faq summary .ft-icon { flex: none; width: 22px; height: 22px; transition: transform .2s ease; }
+.obb-faq details[open] summary .ft-icon { transform: rotate(180deg); }
+.obb-faq summary:focus-visible { outline: 2px solid var(--violet-600); outline-offset: 2px; border-radius: 6px; }
+.obb-faq .copy { padding: 0 4px 24px; color: var(--ink-muted); max-width: 720px; }
+.obb-faq .copy + .copy { margin-top: -12px; }
+.obb-start { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: start; }
+.obb-talk { padding: 36px 32px; min-height: 0; }
+.obb-talk > .ft-tile { margin-bottom: 32px; }
+.obb-talk h3 { color: var(--ink); margin-bottom: 12px; }
+.obb-talk p { color: var(--ink-muted); }
+.obb-talk .obb-tile-gap, .obb-talk form > .ft-tile { margin-bottom: 24px; }
+.obb-fields--one { grid-template-columns: 1fr; }
+.obb-talk .obb-submit .ft-btn { width: 100%; }
+.obb-form { padding: 36px 32px; min-height: 0; }
+.obb-form h3 { color: var(--ink); }
+.obb-form form > p.copy { margin-top: 8px; color: var(--ink-muted); }
+.obb-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; margin-top: 28px; }
+.obb-field { display: grid; gap: 8px; }
+.obb-field--full { grid-column: 1 / -1; }
+.obb-field label { font: 500 15px/20px var(--font-text); color: var(--ink); }
+.obb-field label span { color: var(--ink-muted); font-weight: 400; }
+.obb-field input, .obb-field select, .obb-field textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-button); background: var(--raised); color: var(--ink); font: 400 16px/22px var(--font-text); }
+.obb-field textarea { min-height: 104px; resize: vertical; }
+.obb-field input:focus, .obb-field select:focus, .obb-field textarea:focus { outline: 2px solid var(--violet-600); outline-offset: 2px; background: var(--canvas); }
+.obb-consent { display: flex; gap: 14px; align-items: flex-start; grid-column: 1 / -1; margin-top: 6px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--raised); }
+.obb-consent input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--violet-600); }
+.obb-consent label { font: 400 15px/21px var(--font-text); color: var(--ink); }
+.obb-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 28px; }
+.obb-submit .ft-btn { border: 0; cursor: pointer; }
+.obb-submit p { color: var(--ink-muted); max-width: 300px; }
+.obb-status { margin-top: 18px; color: var(--ink); }
+.obb-status[data-kind="error"] { color: var(--coral-600); }
+.obb-thanks { display: none; }
+.obb-form.is-sent .obb-thanks { display: block; }
+.obb-form.is-sent form { display: none; }
+.obb-thanks > .ft-tile { margin-bottom: 28px; }
+.obb-thanks p { margin-top: 10px; color: var(--ink-muted); max-width: 460px; }
+.obb-hidden { position: absolute; left: -9999px; }
+@media (max-width: 1080px) { .obb-start, .obb-two { grid-template-columns: 1fr; } .obb-start .ft-card, .obb-two .ft-card { grid-column: auto; } .obb-steps { grid-template-columns: 1fr; gap: 32px; } }
+@media (max-width: 640px) { .obb-fields { grid-template-columns: 1fr; } .obb-plan, .obb-form, .obb-talk { padding: 28px 20px; } .obb-price b { font-size: 60px; line-height: 60px; } .ft-hero .ft-btn, .ft-section-head .ft-btn { min-width: 0; width: 100%; } .obb-actions { flex-direction: column; } .obb-faq summary.label { font-size: 18px; } }
+
+@media (max-width: 860px) {
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 84px); }
+  .ft-navbar { top: 0; display: block; }
+  .ft-navbar .ft-nav { display: flex; width: 100%; height: auto; min-height: calc(env(safe-area-inset-top, 0px) + 68px); padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px 20px; border-width: 0 0 1px; border-color: var(--line); border-radius: 0; background: #FFFFFFEB; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .ft-hero { padding-top: calc(env(safe-area-inset-top, 0px) + 108px); }
+}
+
+.obb-one { max-width: 560px; margin: 0 auto; }
+.ft-footer__top.obb-foot { grid-template-columns: 402px auto; }
+@media (max-width: 640px) {
+  .ft-section { padding-top: 56px; padding-bottom: 56px; }
+  .ft-section__body { margin-top: 36px; }
+  .ft-section-head > .ft-tile { margin-bottom: 28px; }
+  .ft-section-head__lead { margin-top: 16px; }
+  .ft-grid { gap: 16px; }
+  .ft-card { min-height: 0; }
+  .ft-card__art { flex: none; height: 214px; min-height: 0; }
+  .ft-card__text { padding: 0 22px 24px; }
+  .ft-card__title { font-size: 23px; line-height: 28px; }
+  .ft-rings { top: 98px; width: 210px; height: 210px; margin: -105px 0 0 -105px; }
+  .ft-rings::after { inset: 38px; }
+  .ft-chip { height: 54px; gap: 12px; padding: 0 18px 0 8px; font-size: 16px; }
+  .ft-chip > .ft-tile { --size: 38px; --r: 9px; }
+  .ft-chipstack { display: flex; flex-direction: column; align-items: center; gap: 10px; top: 46px; }
+  .ft-chipstack > .ft-chip { grid-area: auto; }
+  .ft-chipstack > .ft-chip.is-back { order: 2; transform: none; opacity: .7; }
+  .ft-doc { width: 96px; height: 72px; }
+  .ft-card--wide .ft-mini { left: 50% !important; margin-left: -140px; }
+  .ft-card--wide .ft-mini + .ft-mini { display: none; }
+  .ft-card--wide .ft-card__art > .ft-tile[style*="left:28px"] { display: none; }
+  .ft-card--wide .ft-mini { top: 16px !important; }
+  .obb-submit .ft-btn { width: 100%; }
+  .obb-submit p { max-width: none; }
+  .ft-card .ft-tile--lg[style*="position:absolute"] { --size: 96px; --r: 20px; margin-left: -48px !important; top: 50px !important; }
+  .obb-choice > .ft-tile, .obb-talk > .ft-tile { margin-bottom: 22px; }
+  .ft-panel { padding-top: 32px; padding-bottom: 32px; }
+  .obb-steps { margin-top: 32px; gap: 28px; padding: 0 6px; }
+  .obb-step > .ft-tile { margin-bottom: 16px; }
+  .obb-faq { margin-top: 24px; }
+  .obb-faq summary { padding: 18px 2px; }
+  .ft-hero { padding-bottom: 64px; }
+  .ft-footer__bottom { margin-top: 32px; }
+}
+
+@media (max-width: 1080px) { .ft-footer__top.obb-foot { grid-template-columns: 1fr; gap: 36px; } }
+@media (max-width: 640px) { .ft-footer__brand { font-size: 26px; line-height: 30px; } .ft-footer__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 24px; } }
+.obb-one .obb-plan .ft-btn { width: 100%; }
+
+</style>
+</head>
+<body class="ft-page">
+<div class="ft-navbar">
+  <nav class="ft-nav" aria-label="Main">
+    <a class="ft-nav__brand brand" href="#top">Online Business Builder</a>
+    <ul class="ft-nav__links">
+      <li><a href="#website">Website</a></li>
+      <li><a href="#profile">Google profile</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faqs">Questions</a></li>
+    </ul>
+    <div class="ft-nav__actions">
+      <a class="ft-btn ft-btn--primary" href="#start-form">Get started</a>
+    </div>
+  </nav>
+</div>
+<header class="ft-hero" id="top">
+  <div class="ft-threads" role="img" aria-label="Your website, profile, reviews and reports joined together">
+    <svg class="ft-threads__lines" viewBox="-624 -190 1248 380" aria-hidden="true">
+      <path d="M-479 0H480"/><path d="M-212 0L-292 -108H-360"/><path d="M-168 0L-242 84H-306"/><path d="M170 0L243 -90H306"/><path d="M211 0L290 104H357"/>
+      <circle cx="-292" cy="-108" r="4"/><circle cx="-242" cy="84" r="4"/><circle cx="243" cy="-90" r="4"/><circle cx="290" cy="104" r="4"/>
+    </svg>
+    <span class="ft-threads__item" style="--x:0px; --y:0px"><span class="ft-tile ft-tile--xl ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.2 2.4 3.4 5.2 3.4 8.5s-1.2 6.1-3.4 8.5c-2.2-2.4-3.4-5.2-3.4-8.5s1.2-6.1 3.4-8.5z"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:-543px; --y:0px"><span class="ft-tile ft-tile--lg ft-tile--photo" style="--size:128px; --r:27px"><span class="ft-wash" style="--wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span></span></span>
+    <span class="ft-threads__item" style="--x:-398px; --y:-108px"><span class="ft-tile ft-tile--sm ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.3 6.1-.8z"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:-356px; --y:84px"><span class="ft-tile ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4.5 19.5l1.3-4.2A7.5 7.5 0 1 1 20 11.5z"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:356px; --y:-90px"><span class="ft-tile ft-tile--coral"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:542px; --y:0px"><span class="ft-tile ft-tile--lg ft-tile--white" style="color: var(--ink)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="8.4" cy="12" rx="3.3" ry="4.6"/><ellipse cx="15.6" cy="12" rx="3.3" ry="4.6"/><circle cx="9.3" cy="13.2" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="13.2" r="1.5" fill="currentColor" stroke="none"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:395px; --y:104px"><span class="ft-tile ft-tile--sm ft-tile--photo"><span class="ft-wash" style="--wash: linear-gradient(165deg, #F0DCD2 0%, #D39F8B 55%, #9A6656 100%)"></span></span></span>
+  </div>
+  <h1 class="display-xl ft-hero__title">Get found by local customers</h1>
+  <p class="lead ft-hero__lead">More local customers finding you on Google, on Maps and in AI answers, and choosing you when they do.</p>
+  <div class="obb-actions">
+    <a class="ft-btn ft-btn--cta" href="#talk" data-talk>Tell us about your business</a>
+    <a class="ft-btn ft-btn--accent" href="#start-form">Get started</a>
+  </div>
+</header>
+<main>
+<section class="ft-section" id="website">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--white" style="color: var(--violet-500)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.2 2.4 3.4 5.2 3.4 8.5s-1.2 6.1-3.4 8.5c-2.2-2.4-3.4-5.2-3.4-8.5s1.2-6.1 3.4-8.5z"/></svg></span>
+    <h2 class="display-l ft-section-head__title">A website that brings you customers</h2>
+    <p class="lead ft-section-head__lead">Found in Google, recommended by AI and ready to turn visitors into calls.</p>
+  </header>
+  <div class="ft-section__body"><div class="ft-grid">
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-rings"></span>
+<div class="ft-mini" style="left:50%; top:40px; width:200px; margin-left:-100px; padding:12px 14px 14px">
+  <div class="ft-mini__head"><span class="ft-mini__title">Page speed</span><span class="ft-mini__pill">Mobile</span></div>
+  <div style="display:flex; align-items:center; gap:12px; margin-top:12px">
+    <span class="ft-tile ft-tile--sun" style="--size:44px; --r:11px"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5.5 13.5H12L11 21l7.5-10.5H12z"/></svg></span>
+    <span style="display:grid; gap:6px; flex:1"><span style="height:6px; border-radius:3px; background:linear-gradient(90deg, var(--violet-600) 0 92%, var(--surface) 92%)"></span><span style="height:6px; border-radius:3px; background:var(--surface); width:70%"></span></span>
+  </div>
+</div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Visitors who stay</h3><p class="copy ft-card__copy">Your site opens in a moment on any phone, so the people who find you stay long enough to get in touch.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><div class="ft-mini" style="left:50%; top:30px; width:236px; margin-left:-118px; padding:10px 12px 4px">
+  <div class="ft-mini__head"><span class="ft-mini__title">Plumber near me</span><span class="ft-mini__pill">Map results</span></div>
+  <div class="ft-person"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Your business</span><span class="ft-person__role">4.9 stars · Open now</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span></div>
+  <div class="ft-person" style="opacity:.55"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Another business</span><span class="ft-person__role">4.2 stars · Open now</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span></div>
+  <div class="ft-person" style="opacity:.35"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #E1E6D9 0%, #A6B39A 55%, #6E7D64 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Another business</span><span class="ft-person__role">3.8 stars · Closes 5pm</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span></div>
+</div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Found by people nearby</h3><p class="copy ft-card__copy">When someone in your area searches for what you do, your business is there in front of them.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><div class="ft-chipstack"><span class="ft-chip is-back"><span class="ft-tile ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4.5 19.5l1.3-4.2A7.5 7.5 0 1 1 20 11.5z"/></svg></span>Recommended nearby</span><span class="ft-chip"><span class="ft-tile ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l1.8 4.7L18.5 10.5l-4.7 1.8L12 17l-1.8-4.7L5.5 10.5l4.7-1.8z"/><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span>Mentioned in AI answers</span></div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Recommended by AI</h3><p class="copy ft-card__copy">When people ask ChatGPT, Gemini or Google for a local recommendation, your business can be the answer.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-ghost" style="left:-30px; top:44px; width:70px; height:132px"></span>
+<span class="ft-ghost" style="right:-30px; top:44px; width:70px; height:132px"></span>
+<div class="ft-mini" style="left:50%; top:26px; width:124px; height:176px; margin-left:-62px; padding:10px">
+  <span style="display:block; height:54px; border-radius:6px; background:linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span>
+  <span style="display:block; height:6px; margin-top:10px; border-radius:3px; background:var(--ink); width:80%"></span>
+  <span style="display:block; height:5px; margin-top:7px; border-radius:3px; background:var(--surface)"></span>
+  <span style="display:block; height:5px; margin-top:5px; border-radius:3px; background:var(--surface); width:70%"></span>
+  <span style="display:block; height:16px; margin-top:12px; border-radius:5px; background:var(--grad-coral); width:62%"></span>
+</div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">A business people trust</h3><p class="copy ft-card__copy">You look established and professional from the first click, and first impressions win work.</p></div>
+    </article>
+    <article class="ft-card ft-card--wide">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-guides"></span><span class="ft-doc" style="left:calc(50% - 150px); top:74px"></span><span class="ft-doc" style="left:calc(50% + 38px); top:54px"></span><span class="ft-tile ft-tile--xs ft-tile--coral" style="position:absolute; left:50%; top:92px; margin-left:-32px"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/></svg></span></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Always up to date</h3><p class="copy ft-card__copy">New services, prices and photos appear on your site without you lifting a finger.</p></div>
+    </article>
+  </div></div>
+</section>
+<section class="ft-section" id="profile">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--white" style="color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
+    <h2 class="display-l ft-section-head__title">Chosen first on Google Maps</h2>
+    <p class="lead ft-section-head__lead">Your Google profile is often the first thing a customer sees. We make sure it wins them over.</p>
+  </header>
+  <div class="ft-section__body"><div class="ft-grid">
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-rings"></span><div class="ft-chipstack"><span class="ft-chip is-back"><span class="ft-tile ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="17" height="12" rx="2.5"/><path d="M9 7l1.2-2.5h3.6L15 7"/><circle cx="12" cy="13" r="3.2"/></svg></span>New photos added</span><span class="ft-chip"><span class="ft-tile ft-tile--coral"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>Weekly post published</span></div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Stand out on the map</h3><p class="copy ft-card__copy">A busy, up-to-date profile catches the eye and gives customers a reason to choose you.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-rings"></span><div class="ft-chipstack"><span class="ft-chip is-back"><span class="ft-tile ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4.5 19.5l1.3-4.2A7.5 7.5 0 1 1 20 11.5z"/></svg></span>Reply sent</span><span class="ft-chip"><span class="ft-tile ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.3 6.1-.8z"/></svg></span>New 5-star review</span></div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">A reputation that keeps growing</h3><p class="copy ft-card__copy">More good reviews, each one answered, so new customers feel confident picking up the phone.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-guides"></span><span class="ft-doc" style="left:calc(50% - 150px); top:74px"></span><span class="ft-doc" style="left:calc(50% + 38px); top:54px"></span><span class="ft-tile ft-tile--xs ft-tile--violet" style="position:absolute; left:50%; top:92px; margin-left:-32px"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">No missed customers</h3><p class="copy ft-card__copy">People always know when you are open and how to reach you, so no call or visit goes to waste.</p></div>
+    </article>
+    <article class="ft-card ft-card--wide">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-tile ft-tile--xs ft-tile--white" style="position:absolute; left:28px; top:28px; color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg></span>
+<div class="ft-mini" style="left:calc(50% - 250px); top:34px; width:280px; padding:10px 12px 12px">
+  <div class="ft-mini__head"><span class="ft-mini__title">Map ranking</span><span class="ft-seg"><span>Jun</span><span>Jul</span><span class="is-active">Aug</span></span></div>
+  <div class="ft-chart">
+    <span class="ft-chart__bar" style="--h:24%"></span><span class="ft-chart__bar" style="--h:32%"></span><span class="ft-chart__bar" style="--h:41%"></span><span class="ft-chart__bar" style="--h:50%"></span><span class="ft-chart__bar" style="--h:58%"></span><span class="ft-chart__bar is-hot" style="--h:72%"><span class="ft-tip">Top 3</span></span>
+  </div>
+</div>
+<div class="ft-mini" style="left:calc(50% + 46px); top:34px; width:224px; padding:10px 12px 12px">
+  <div class="ft-mini__head"><span class="ft-mini__title">Profile actions</span><span class="ft-mini__pill">Monthly <svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></span></div>
+  <div class="ft-report__body">
+    <div class="ft-report__days"><span>Calls</span><span>Visits</span><span>Routes</span></div>
+    <div class="ft-bars">
+      <span class="ft-bars__avg"></span>
+      <div class="ft-bars__pair"><span class="ft-bar ft-bar--violet" style="--h:42px; --split:52%"></span><span class="ft-bar ft-bar--coral" style="--h:30px; --split:58%"></span></div>
+      <div class="ft-bars__pair"><span class="ft-bar ft-bar--violet" style="--h:58px; --split:48%"></span><span class="ft-bar ft-bar--coral" style="--h:44px; --split:52%"></span></div>
+      <div class="ft-bars__pair"><span class="ft-tip">+24%</span><span class="ft-bar ft-bar--violet" style="--h:78px; --split:42%"></span><span class="ft-bar ft-bar--coral" style="--h:60px; --split:50%"></span></div>
+    </div>
+  </div>
+</div></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Watch your reach grow</h3><p class="copy ft-card__copy">See how far across your area customers can find you, and how many of them called or asked for directions.</p></div>
+    </article>
+    <article class="ft-card">
+      <div class="ft-card__art" aria-hidden="true"><span class="ft-rings"></span><span class="ft-tile ft-tile--lg ft-tile--violet" style="position:absolute; left:50%; top:34px; margin-left:-62px"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg></span></div>
+      <div class="ft-card__text"><h3 class="card-title ft-card__title">Your time back</h3><p class="copy ft-card__copy">All of this happens without you. You get on with running your business and see the results each month.</p></div>
+    </article>
+  </div></div>
+</section>
+<section class="ft-section" id="how">
+  <section class="ft-panel">
+    <header class="ft-section-head ft-section-head--compact">
+      <span class="ft-tile ft-tile--xs ft-tile--white" style="color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l1.8 4.7L18.5 10.5l-4.7 1.8L12 17l-1.8-4.7L5.5 10.5l4.7-1.8z"/><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></span>
+      <h2 class="display-m ft-section-head__title">What changes for you</h2>
+    </header>
+    <div class="obb-steps">
+      <div class="obb-step"><span class="ft-tile ft-tile--sm ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span><h3 class="card-title">More people find you</h3><p class="copy">You show up in Google, on Maps and in AI answers when locals search for what you offer.</p></div>
+      <div class="obb-step"><span class="ft-tile ft-tile--sm ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/></svg></span><h3 class="card-title">More of them get in touch</h3><p class="copy">A strong first impression and good reviews turn searches into calls and enquiries.</p></div>
+      <div class="obb-step"><span class="ft-tile ft-tile--sm ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><h3 class="card-title">More time for your work</h3><p class="copy">Your website and Google profile are looked after, month after month, while you run your business.</p></div>
+    </div>
+  </section>
+</section>
+<section class="ft-section" id="pricing">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--white" style="color: var(--violet-500)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg></span>
+    <h2 class="display-l ft-section-head__title">One simple monthly fee</h2>
+    <p class="lead ft-section-head__lead">Everything you need to be found and chosen locally, for one price.</p>
+  </header>
+  <div class="ft-section__body"><div class="obb-one">
+    <article class="ft-card obb-plan">
+      <p class="label">Website and Google profile</p>
+      <p class="obb-price"><b>£99</b><span class="lead">a month</span></p>
+      <p class="copy">No setup fee and nothing extra to buy.</p>
+      <ul class="obb-list"><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>A fast, professional website</span></li><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>Found in Google and AI search</span></li><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>A Google profile that stands out</span></li><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>A growing reputation, reviews answered</span></li><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>Changes made whenever you need</span></li><li class="copy"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg><span>Monthly view of your progress</span></li></ul>
+      <a class="ft-btn ft-btn--accent" href="#start-form" style="margin-top:28px">Get started</a>
+    </article>
+  </div></div>
+</section>
+<section class="ft-section" id="faqs">
+  <section class="ft-panel">
+    <header class="ft-section-head ft-section-head--compact">
+      <span class="ft-tile ft-tile--xs ft-tile--white" style="color: var(--violet-500)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4.5 19.5l1.3-4.2A7.5 7.5 0 1 1 20 11.5z"/></svg></span>
+      <h2 class="display-m ft-section-head__title">Questions people ask</h2>
+    </header>
+    <div class="obb-faq"><details><summary class="label">What do I get for my monthly fee?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">A fast website designed and built for you, set up for Google and AI search, with hosting and updates included. We also run your Google Business Profile, post every week, answer your reviews and send you a monthly ranking report.</p></details><details><summary class="label">Is there a setup fee?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">No. You pay £99 a month and nothing else. There is no upfront build cost and no extra charges.</p></details><details><summary class="label">How soon will I see results?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">Your profile starts being posted to and looked after straight away, and your new website goes live once you approve the design. Rankings in Google and AI answers build steadily over the first few months, and your monthly report shows you how they are moving.</p></details><details><summary class="label">Will I really be speaking to an AI assistant?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">Yes. Our voice assistant can talk to you about your business, answer your questions and get you started. If you would rather not talk now, fill in the form and give permission for the assistant to call you at a time that suits you.</p></details><details><summary class="label">Who is this for?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">Any business that serves local customers and benefits from a Google Business Profile, from trades and clinics to shops, salons and restaurants.</p></details><details><summary class="label">How much of my time will it take?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary><p class="copy">Very little. Tell us about your business, approve your design and send us any changes you want. We handle the rest.</p></details></div>
+  </section>
+</section>
+<section class="ft-section" id="start">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--white" style="color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/></svg></span>
+    <h2 class="display-l ft-section-head__title">Tell us about your business</h2>
+    <p class="lead ft-section-head__lead">Have our assistant call you now, or give us a few more details first.</p>
+  </header>
+  <div class="ft-section__body"><div class="ft-grid obb-start">
+    <article class="ft-card obb-form obb-talk" id="talk">
+      <form name="call-me" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <span class="ft-tile ft-tile--sm ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/></svg></span>
+        <h3 class="card-title">Talk to our assistant</h3>
+        <p class="copy">Leave your name and number and our assistant will call you in the next few minutes.</p>
+        <input type="hidden" name="form-name" value="call-me">
+        <p class="obb-hidden"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+        <div class="obb-fields obb-fields--one">
+          <div class="obb-field"><label for="c-name">Your name</label><input id="c-name" name="name" autocomplete="name" required></div>
+          <div class="obb-field"><label for="c-phone">Phone number</label><input id="c-phone" name="phone" type="tel" autocomplete="tel" required></div>
+          <div class="obb-consent"><input id="c-consent" name="call_permission" type="checkbox" value="yes" required><label for="c-consent">I am happy to be called by Online Business Builder's AI assistant.</label></div>
+        </div>
+        <div class="obb-submit"><button class="ft-btn ft-btn--cta" type="submit" data-label="Call me now">Call me now</button></div>
+        <p class="copy-sm obb-status" role="status" aria-live="polite"></p>
+      </form>
+      <div class="obb-thanks" tabindex="-1">
+        <span class="ft-tile ft-tile--sm ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg></span>
+        <h3 class="card-title">Thank you, we will call you shortly</h3>
+        <p class="copy">Keep your phone nearby. Our assistant will ring you in the next few minutes.</p>
+      </div>
+    </article>
+    <article class="ft-card obb-form" id="start-form">
+      <form name="get-started" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <h3 class="card-title">Get started</h3>
+        <p class="copy">A few details and our assistant will call you to talk it through.</p>
+        <input type="hidden" name="form-name" value="get-started">
+        <p class="obb-hidden"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+        <div class="obb-fields">
+          <div class="obb-field"><label for="f-name">Your name</label><input id="f-name" name="name" autocomplete="name" required></div>
+          <div class="obb-field"><label for="f-business">Business name</label><input id="f-business" name="business" autocomplete="organization" required></div>
+          <div class="obb-field"><label for="f-type">What does your business do?</label><input id="f-type" name="business_type" placeholder="e.g. plumber, dentist, salon" required></div>
+          <div class="obb-field"><label for="f-town">Town or area you serve</label><input id="f-town" name="area" autocomplete="address-level2" required></div>
+          <div class="obb-field"><label for="f-phone">Phone number</label><input id="f-phone" name="phone" type="tel" autocomplete="tel" required></div>
+          <div class="obb-field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+          <div class="obb-field"><label for="f-site">Current website <span>(if you have one)</span></label><input id="f-site" name="website" type="url" inputmode="url" placeholder="https://"></div>
+          <div class="obb-field"><label for="f-time">Best time to call</label>
+            <select id="f-time" name="call_time"><option>As soon as possible</option><option>Morning</option><option>Afternoon</option><option>Early evening</option></select></div>
+          <div class="obb-field obb-field--full"><label for="f-notes">Anything else we should know? <span>(optional)</span></label><textarea id="f-notes" name="notes"></textarea></div>
+          <div class="obb-consent"><input id="f-consent" name="call_permission" type="checkbox" value="yes" required><label for="f-consent">I give Online Business Builder permission to call me on the number above using its AI voice assistant, to talk about my business and this service. I understand I am speaking to an AI assistant and not a person.</label></div>
+        </div>
+        <div class="obb-submit">
+          <button class="ft-btn ft-btn--accent" type="submit" data-label="Get started">Get started</button>
+          <p class="copy-sm">We only use your details to respond to this enquiry.</p>
+        </div>
+        <p class="copy-sm obb-status" role="status" aria-live="polite"></p>
+      </form>
+      <div class="obb-thanks" tabindex="-1">
+        <span class="ft-tile ft-tile--sm ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/></svg></span>
+        <h3 class="card-title">Thank you, we have your details</h3>
+        <p class="copy">Our assistant will call you at the time you chose. If you miss the call, we will try again.</p>
+      </div>
+    </article>
+  </div></div>
+</section>
+<section class="ft-section">
+  <footer class="ft-footer">
+    <div class="ft-footer__top obb-foot">
+      <div class="ft-footer__intro">
+        <a class="brand-lg ft-footer__brand" href="#top">Online Business Builder</a>
+        <p class="statement ft-footer__statement">Found on Google. Chosen on Maps. Recommended by AI.</p>
+      </div>
+      <nav class="ft-footer__cols" aria-label="Footer">
+        <div class="ft-footer__col"><h3 class="column-head">Service</h3><ul><li><a href="#website">Your website</a></li><li><a href="#profile">Google profile</a></li><li><a href="#how">How it works</a></li></ul></div>
+        <div class="ft-footer__col"><h3 class="column-head">Pricing</h3><ul><li><a href="#pricing">Monthly fee</a></li></ul></div>
+        <div class="ft-footer__col"><h3 class="column-head">Help</h3><ul><li><a href="#faqs">Questions</a></li><li><a href="#start">Get started</a></li></ul></div>
+      </nav>
+    </div>
+    <div class="ft-footer__bottom">
+      <p class="copy-sm ft-footer__legal">Online Business Builder, onlinebusinessbuilder.co.uk. Prices are per month in pounds sterling.</p>
+      <a href="#top">Back to top</a>
+    </div>
+  </footer>
+</section>
+</main>
+<script>
+(function(){
+  var talk = document.getElementById('talk');
+  document.querySelectorAll('[data-talk]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      talk.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+      setTimeout(function(){ document.getElementById('c-name').focus({preventScroll:true}); }, 500);
+    });
+  });
+  document.querySelectorAll('form[data-netlify]').forEach(function(form){
+    var card = form.closest('.obb-form');
+    var status = form.querySelector('.obb-status');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      status.textContent = ''; status.removeAttribute('data-kind');
+      var bad = Array.prototype.find.call(form.elements, function(f){ return f.willValidate && !f.checkValidity(); });
+      if (bad) {
+        status.dataset.kind = 'error';
+        status.textContent = bad.type === 'checkbox' ? 'Please tick the box so our assistant can call you.' : 'Please complete: ' + form.querySelector('label[for="'+bad.id+'"]').firstChild.textContent.trim() + '.';
+        bad.focus(); return;
+      }
+      var btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      fetch('/', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: new URLSearchParams(new FormData(form)).toString() })
+        .then(function(r){ if (!r.ok) throw new Error(r.status); card.classList.add('is-sent'); card.querySelector('.obb-thanks').focus(); })
+        .catch(function(){ status.dataset.kind = 'error'; status.textContent = 'Sorry, that did not send. Please try again in a moment.'; })
+        .finally(function(){ btn.disabled = false; btn.textContent = btn.dataset.label; });
+    });
+  });
+})();
+</script>
+</body>
+</html>

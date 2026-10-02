@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Good Questions | Better decisions start with better questions</title>
+<meta name="description" content="Good Questions creates short, practical assessments that help UK business leaders see where their organisation stands. Take the AI readiness assessment, or commission research on the market you sell to.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Urbanist:wght@100..900&display=swap">
+<style>
+/* Floating Tiles tokens */
+:root {
+  --canvas: #FFFFFF;
+  --surface: #F1F2F5;
+  --raised: #F9F9F9;
+  --ink: #080808;
+  --ink-muted: #72727A;
+  --on-color: #FFFFFF;
+  --line: #E1E2E5;
+  --line-soft: #EAEAEA;
+  --thread: #D3D3D3;
+  --violet-300: #B18AFB;
+  --violet-500: #9A66FA;
+  --violet-600: #884BF9;
+  --coral-300: #F3786B;
+  --coral-500: #F04939;
+  --coral-600: #EF3927;
+  --sun-300: #FBEA76;
+  --sun-500: #F9DC45;
+  --star: #F8D52F;
+  --sky-300: #63D9F9;
+  --sky-500: #2EC7EE;
+  --shadow-tile: 0 20px 40px #00000017;
+  --shadow-gloss: inset 0 1.5px 0 #FFFFFF66, inset 0 -3px 6px #00000014;
+  --shadow-soft: 0 12px 32px #0000000F;
+  --shadow-cta: 0 14px 28px -10px #00000040;
+  --shadow-coral: 0 12px 24px -10px #F0493966;
+  --shadow-violet: 0 12px 24px -10px #884BF966;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-34: 34px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-58: 58px;
+  --space-64: 64px;
+  --space-96: 96px;
+  --radius-tooltip: 3px;
+  --radius-button: 10px;
+  --radius-social: 10px;
+  --radius-avatar: 12px;
+  --radius-chip: 14px;
+  --radius-integration: 16px;
+  --radius-tile-xs: 16px;
+  --radius-tile-sm: 18px;
+  --radius-nav: 18px;
+  --radius-card: 20px;
+  --radius-tile-md: 20px;
+  --radius-tile-lg: 22px;
+  --radius-panel: 28px;
+  --radius-tile-xl: 30px;
+  --radius-round: 50%;
+  --grad-coral: linear-gradient(180deg, #F15647 0%, #EE3C29 100%);
+  --grad-violet: linear-gradient(180deg, #9F72F8 0%, #894FF9 100%);
+  --grad-violet-tile: linear-gradient(180deg, #AC81FC 0%, #9561F5 100%);
+  --grad-coral-tile: linear-gradient(180deg, #F1594A 0%, #EE4A3A 100%);
+  --grad-sun: linear-gradient(180deg, #FBEA76 0%, #F9DC45 100%);
+  --grad-sky: linear-gradient(180deg, #63D9F9 0%, #2EC7EE 100%);
+  --grad-wordmark: linear-gradient(180deg, #F26457 0%, #EE4D3B 100%);
+  --grad-fade: linear-gradient(180deg, #FFFFFF00 55%, #FFFFFFD9 100%);
+  --content: 1248px;
+  --nav-h: 64px;
+  --button-h: 44px;
+  --button-h-lg: 52px;
+  --button-w-lg: 256px;
+  --arrow: 56px;
+  --social: 58px;
+  --tile-xl: 168px;
+  --tile-lg: 124px;
+  --tile-md: 100px;
+  --tile-sm: 76px;
+  --tile-xs: 64px;
+  --photo-w: 176px;
+  --photo-h: 226px;
+  --avatar: 64px;
+  --integration-tile: 184px;
+  --node: 8px;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Urbanist", "Avenir Next", system-ui, sans-serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 84px; line-height: 84px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.display-l { font-family: var(--font-display); font-size: 76px; line-height: 76px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.display-m { font-family: var(--font-display); font-size: 44px; line-height: 52px; font-weight: 600; letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; }
+.card-title { font-family: var(--font-display); font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variation-settings: 'opsz' 26; }
+.label { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; font-variation-settings: 'opsz' 20; }
+.statement { font-family: var(--font-display); font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; font-variation-settings: 'opsz' 18; }
+.column-head { font-family: var(--font-display); font-size: 16px; line-height: 20px; font-weight: 500; letter-spacing: 0; font-variation-settings: 'opsz' 16; }
+.lead { font-family: var(--font-text); font-size: 18px; line-height: 24px; font-weight: 400; letter-spacing: 0.01em; }
+.copy { font-family: var(--font-text); font-size: 17px; line-height: 24px; font-weight: 400; letter-spacing: 0; }
+.copy-sm { font-family: var(--font-text); font-size: 16px; line-height: 22px; font-weight: 400; letter-spacing: 0; }
+.ui { font-family: var(--font-text); font-size: 16px; line-height: 20px; font-weight: 500; letter-spacing: 0; }
+.ui-lg { font-family: var(--font-text); font-size: 18px; line-height: 24px; font-weight: 500; letter-spacing: 0; }
+.brand { font-family: var(--font-text); font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.01em; }
+
+/* Floating Tiles components: plain HTML and CSS. Load tokens.css first, then this file. Every class starts ft-. */
+
+:where([class*="ft-"]) :where(p, h1, h2, h3, figure, ul) { margin: 0; }
+:where([class*="ft-"]) :where(ul) { padding: 0; list-style: none; }
+
+/* Preview stage (preview cards only) */
+body:has(> .ft-stage) { margin: 0; background: var(--surface); }
+body:has(> .ft-stage--canvas) { background: var(--canvas); }
+.ft-stage { box-sizing: border-box; padding: 36px; background: var(--surface); color: var(--ink); font-family: var(--font-text); -webkit-font-smoothing: antialiased; }
+.ft-stage--canvas { background: var(--canvas); }
+.ft-stage--center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ft-stage *, .ft-stage *::before, .ft-stage *::after { box-sizing: border-box; }
+.ft-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.ft-row + .ft-row { margin-top: 24px; }
+.ft-wash { display: block; width: 100%; height: 100%; background: var(--wash, var(--surface)); }
+
+/* Icons: 24px grid line icons that inherit colour */
+.ft-icon { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Focus */
+.ft-btn:focus-visible, .ft-round:focus-visible, .ft-social:focus-visible, .ft-nav a:focus-visible, .ft-footer a:focus-visible { outline: 2px solid var(--violet-600); outline-offset: 2px; }
+
+/* Button */
+.ft-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--button-h); min-width: 100px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--radius-button); font-family: var(--font-text); font-size: 16px; line-height: 20px; font-weight: 500; text-decoration: none; white-space: nowrap; cursor: pointer; transition: filter .15s ease, background-color .15s ease; }
+.ft-btn--primary { background: var(--ink); color: var(--on-color); box-shadow: var(--shadow-cta); }
+.ft-btn--soft { background: var(--raised); border-color: var(--line-soft); color: var(--ink); }
+.ft-btn--soft:hover { background: var(--canvas); }
+.ft-btn--cta, .ft-btn--accent { height: var(--button-h-lg); min-width: var(--button-w-lg); padding: 0 28px; font-size: 18px; line-height: 24px; color: var(--on-color); }
+.ft-btn--cta { background: var(--grad-coral); box-shadow: inset 0 1px 0 #FFFFFF47, var(--shadow-coral); }
+.ft-btn--accent { background: var(--grad-violet); box-shadow: inset 0 1px 0 #FFFFFF59, var(--shadow-violet); }
+.ft-btn--primary:hover, .ft-btn--cta:hover, .ft-btn--accent:hover { filter: brightness(1.06); }
+.ft-round { display: inline-grid; place-items: center; width: var(--arrow); height: var(--arrow); padding: 0; border: 1px solid var(--line); border-radius: var(--radius-round); background: var(--canvas); color: var(--ink); cursor: pointer; }
+.ft-round .ft-icon { width: 20px; height: 20px; }
+.ft-round:hover { background: var(--raised); }
+
+/* Nav */
+.ft-nav { display: inline-flex; align-items: center; height: var(--nav-h); padding: 0 var(--space-10) 0 var(--space-20); background: var(--canvas); border: 1px solid var(--line-soft); border-radius: var(--radius-nav); }
+.ft-nav--sticky { position: sticky; top: var(--space-34); z-index: 10; }
+.ft-nav__brand { margin-right: 44px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.ft-nav__links { display: flex; gap: var(--space-24); }
+.ft-nav__links a { color: var(--ink); text-decoration: none; font: 500 16px/20px var(--font-text); }
+.ft-nav__actions { display: flex; gap: var(--space-8); margin-left: 40px; }
+@media (max-width: 860px) { .ft-nav__links { display: none; } .ft-nav__brand { margin-right: 24px; } .ft-nav__actions { margin-left: auto; } }
+
+/* Icon tile */
+.ft-tile { --size: var(--tile-md); --r: var(--radius-tile-md); position: relative; display: inline-grid; place-items: center; flex: none; width: var(--size); height: var(--size); border-radius: var(--r); color: var(--on-color); box-shadow: var(--shadow-gloss), var(--shadow-tile); }
+.ft-tile > .ft-icon { width: 44%; height: 44%; }
+.ft-tile--xl { --size: var(--tile-xl); --r: var(--radius-tile-xl); }
+.ft-tile--lg { --size: var(--tile-lg); --r: var(--radius-tile-lg); }
+.ft-tile--sm { --size: var(--tile-sm); --r: var(--radius-tile-sm); }
+.ft-tile--xs { --size: var(--tile-xs); --r: var(--radius-tile-xs); }
+.ft-tile--violet { background: var(--grad-violet-tile); }
+.ft-tile--coral { background: var(--grad-coral-tile); }
+.ft-tile--sun { background: var(--grad-sun); color: var(--ink); }
+.ft-tile--sky { background: var(--grad-sky); }
+.ft-tile--white { background: var(--raised); color: var(--violet-500); border: 1px solid var(--line-soft); box-shadow: var(--shadow-tile); }
+.ft-tile--photo { padding: 3px; background: var(--canvas); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-tile--photo > img, .ft-tile--photo > .ft-wash { width: 100%; height: 100%; object-fit: cover; border-radius: calc(var(--r) - 3px); }
+
+/* Hero threads: lay out at 1248 x 380, scale as one piece below that */
+.ft-threads { position: relative; width: var(--content); height: 380px; margin: 0 auto; }
+.ft-threads__lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ft-threads__lines path { fill: none; stroke: var(--thread); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ft-threads__lines circle { fill: var(--violet-500); stroke: var(--canvas); stroke-width: 2; }
+.ft-threads__item { position: absolute; left: calc(50% + var(--x, 0px)); top: calc(50% + var(--y, 0px)); transform: translate(-50%, -50%); }
+
+/* Section header */
+.ft-section-head { display: flex; flex-direction: column; align-items: center; max-width: 760px; margin: 0 auto; text-align: center; }
+.ft-section-head > .ft-tile { margin-bottom: var(--space-48); }
+.ft-section-head__title { color: var(--ink); text-wrap: balance; }
+.ft-section-head__lead { max-width: 460px; margin-top: var(--space-20); color: var(--ink-muted); }
+.ft-section-head > .ft-btn { margin-top: var(--space-32); }
+.ft-section-head--compact > .ft-tile { margin-bottom: var(--space-28); }
+.ft-section-head--compact .ft-section-head__title { max-width: 560px; }
+
+/* Photo tile */
+.ft-photo { position: relative; display: block; flex: none; width: var(--photo-w); height: var(--photo-h); overflow: hidden; border: 3px solid var(--canvas); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-soft); }
+.ft-photo > img, .ft-photo > .ft-wash { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ft-photo::after { content: ""; position: absolute; inset: 0; background: var(--grad-fade); pointer-events: none; }
+.ft-photos { display: flex; align-items: center; justify-content: center; gap: 36px; padding: 24px 0; }
+
+/* Feature card */
+.ft-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-20); width: var(--content); max-width: 100%; margin: 0 auto; }
+.ft-card { position: relative; display: flex; flex-direction: column; min-height: 360px; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.ft-card--wide { grid-column: span 2; }
+.ft-card__art { position: relative; flex: 1; min-height: 220px; }
+.ft-card__text { position: relative; padding: 0 var(--space-28) var(--space-28); }
+.ft-card__title { margin-bottom: var(--space-8); color: var(--ink); }
+.ft-card__copy { max-width: 340px; color: var(--ink-muted); }
+
+/* Card art kit */
+.ft-mini { position: absolute; background: var(--canvas); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow-soft); color: var(--ink); font-family: var(--font-text); }
+.ft-mini__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ft-mini__title { font: 600 10px/12px var(--font-display); letter-spacing: -0.01em; }
+.ft-mini__pill { display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border: 1px solid var(--line-soft); border-radius: 5px; font: 500 8px/10px var(--font-text); }
+.ft-mini__pill .ft-icon { width: 8px; height: 8px; stroke-width: 3; }
+.ft-report__body { display: flex; gap: 10px; margin-top: 10px; }
+.ft-report__days { display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-bars { position: relative; flex: 1; display: flex; align-items: flex-end; justify-content: space-around; height: 96px; }
+.ft-bars__avg { position: absolute; left: 0; right: 0; top: 20px; border-top: 1px dashed var(--ink-muted); opacity: .45; }
+.ft-bars__pair { position: relative; display: flex; align-items: flex-end; gap: 3px; }
+.ft-bars__pair > .ft-tip { position: absolute; left: -1px; bottom: calc(100% + 4px); }
+.ft-bar { display: block; width: 20px; height: var(--h); border-radius: 3px 3px 0 0; background: linear-gradient(to top, var(--base) 0 var(--split, 55%), var(--top) var(--split, 55%) 100%); }
+.ft-bar--violet { --base: var(--violet-600); --top: var(--violet-300); }
+.ft-bar--coral { --base: var(--coral-600); --top: var(--coral-300); }
+.ft-tip, .ft-count { display: inline-block; padding: 2px 4px; border-radius: var(--radius-tooltip); background: var(--ink); color: var(--on-color); font: 600 8px/10px var(--font-display); text-align: center; white-space: nowrap; }
+.ft-count { min-width: 15px; padding: 1px 4px; }
+.ft-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--surface); }
+.ft-seg > span { padding: 2px 6px; border-radius: 4px; font: 500 8px/10px var(--font-text); color: var(--ink-muted); }
+.ft-seg > .is-active { background: var(--ink-muted); color: var(--on-color); }
+.ft-tabs { display: flex; gap: 12px; margin: 10px 0 2px; border-bottom: 1px solid var(--line-soft); font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-tabs > span { display: inline-flex; align-items: center; gap: 4px; padding-bottom: 5px; margin-bottom: -1px; }
+.ft-tabs > .is-active { color: var(--ink); border-bottom: 1.5px solid var(--ink); }
+.ft-person { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+.ft-person + .ft-person { border-top: 1px solid var(--line-soft); }
+.ft-person__face { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--wash, var(--surface)); }
+.ft-person__who { display: grid; }
+.ft-person__name { font: 600 9px/11px var(--font-display); }
+.ft-person__role { font: 500 7.5px/10px var(--font-text); color: var(--ink-muted); }
+.ft-person__act { display: grid; place-items: center; width: 20px; height: 20px; margin-left: auto; border: 1px solid var(--line-soft); border-radius: 5px; }
+.ft-person__act .ft-icon { width: 11px; height: 11px; }
+.ft-chart { position: relative; display: flex; align-items: flex-end; gap: 10px; height: 118px; margin-top: 12px; background: repeating-linear-gradient(180deg, transparent 0 28px, var(--line-soft) 28px 29px); }
+.ft-chart__bar { position: relative; flex: 1; height: var(--h); border-radius: 3px 3px 0 0; background: var(--surface); }
+.ft-chart__bar.is-hot { background: linear-gradient(180deg, var(--violet-600) 0%, var(--violet-300) 70%, #B18AFB00 100%); }
+.ft-chart__bar > .ft-tip { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); }
+.ft-chip { display: inline-flex; align-items: center; gap: 14px; height: 60px; padding: 0 22px 0 9px; background: var(--canvas); border: 1px solid var(--line-soft); border-radius: var(--radius-chip); box-shadow: var(--shadow-soft); color: var(--ink); font: 500 17px/24px var(--font-text); white-space: nowrap; }
+.ft-chip > .ft-tile { --size: 42px; --r: 10px; box-shadow: var(--shadow-gloss); }
+.ft-chipstack { position: absolute; left: 50%; top: 70px; display: grid; transform: translateX(-50%); }
+.ft-chipstack > .ft-chip { grid-area: 1 / 1; }
+.ft-chipstack > .ft-chip.is-back { transform: translateY(24px) scale(.93); opacity: .45; }
+.ft-rings { position: absolute; left: 50%; top: 96px; width: 260px; height: 260px; margin: -130px 0 0 -130px; border: 1px solid var(--line-soft); border-radius: 50%; }
+.ft-rings::after { content: ""; position: absolute; inset: 48px; border: 1px solid var(--line-soft); border-radius: 50%; }
+.ft-ghost { position: absolute; border-radius: 12px; background: var(--surface); opacity: .8; }
+.ft-guides { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 37px, var(--line-soft) 37px 38px); -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%); mask-image: linear-gradient(180deg, #000 0%, transparent 85%); }
+.ft-doc { position: absolute; width: 112px; height: 84px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--canvas); box-shadow: var(--shadow-soft); }
+.ft-doc::before { content: ""; position: absolute; left: 14px; top: 14px; width: 26px; height: 26px; border-radius: 6px; background: var(--surface); }
+.ft-doc::after { content: ""; position: absolute; left: 14px; right: 14px; top: 50px; height: 6px; border-radius: 3px; background: var(--surface); box-shadow: 0 12px 0 var(--surface); }
+.ft-orbit { position: absolute; left: 50%; top: 120px; width: 0; height: 0; }
+.ft-orbit__hub { position: absolute; left: -46px; top: -46px; display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; background: var(--canvas); color: var(--ink); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-orbit__hub .ft-icon { width: 32px; height: 32px; }
+.ft-orbit__face { position: absolute; left: -19px; top: -19px; width: 38px; height: 38px; border: 2px solid var(--canvas); border-radius: 10px; background: var(--wash, var(--surface)); box-shadow: var(--shadow-soft); transform: rotate(var(--a)) translateY(-92px) rotate(calc(var(--a) * -1)) rotate(var(--tilt, 0deg)); }
+
+/* Integration arc */
+.ft-panel { position: relative; width: var(--content); max-width: 100%; margin: 0 auto; padding: 36px 32px 40px; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.ft-arc { position: relative; height: 330px; margin-top: 64px; }
+.ft-arc__tile { position: absolute; left: 50%; top: 0; display: grid; place-items: center; width: var(--integration-tile); height: var(--integration-tile); margin-left: calc(var(--integration-tile) / -2); border-radius: var(--radius-integration); background: var(--surface); transform: translate(var(--x, 0px), var(--y, 0px)) rotate(var(--rot, 0deg)); }
+.ft-arc__tile > .ft-icon { width: 38%; height: 38%; stroke-width: 1.8; }
+.ft-arc__caption { position: absolute; left: 50%; top: calc(var(--integration-tile) + 40px); text-align: center; white-space: nowrap; transform: translateX(-50%); }
+.ft-arc__caption > .copy-sm { margin-top: 8px; color: var(--ink-muted); }
+
+/* Testimonial card */
+.ft-quote { display: flex; flex-direction: column; align-items: center; width: 380px; min-height: 424px; padding: 40px 44px; text-align: center; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.ft-avatar { display: block; flex: none; width: calc(var(--avatar) + 6px); height: calc(var(--avatar) + 6px); padding: 3px; border-radius: var(--radius-avatar); background: var(--canvas); box-shadow: 0 0 0 1px var(--line-soft), var(--shadow-soft); }
+.ft-avatar > img, .ft-avatar > .ft-wash { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 9px; }
+.ft-quote__name { margin-top: var(--space-24); color: var(--ink); }
+.ft-quote__role { margin-top: var(--space-8); color: var(--ink-muted); }
+.ft-stars { display: flex; align-items: center; gap: var(--space-6); margin-top: var(--space-40); color: var(--star); }
+.ft-stars .ft-icon { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+.ft-stars__score { margin-left: 6px; color: var(--ink); font: 500 16px/20px var(--font-text); }
+.ft-quote__text { margin-top: 20px; color: var(--ink-muted); }
+.ft-fan { position: relative; height: 440px; }
+.ft-fan > .ft-quote { position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+.ft-fan > .ft-quote.is-back-l { transform: translateX(calc(-50% - 310px)) translateY(22px) rotate(-8deg); opacity: .45; }
+.ft-fan > .ft-quote.is-back-r { transform: translateX(calc(-50% + 310px)) translateY(22px) rotate(6deg); opacity: .45; }
+.ft-carousel-nav { display: flex; justify-content: center; gap: var(--space-16); margin-top: 28px; }
+
+/* Footer */
+.ft-footer { position: relative; width: var(--content); max-width: 100%; margin: 0 auto; padding: var(--space-96) var(--space-64) 0; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.ft-footer__top { display: grid; grid-template-columns: 402px auto 1fr; align-items: start; }
+.ft-footer__statement { max-width: 300px; color: var(--ink); }
+.ft-footer__cols { display: flex; gap: 60px; }
+.ft-footer__col h3 { margin-bottom: 14px; color: var(--ink); }
+.ft-footer__col h3 a { color: inherit; text-decoration: none; }
+.ft-footer__col ul { display: grid; gap: 12px; }
+.ft-footer__col li a { color: var(--ink-muted); text-decoration: none; font: 400 16px/22px var(--font-text); }
+.ft-footer__follow { justify-self: end; }
+.ft-footer__social { display: flex; gap: var(--space-6); margin-top: 16px; }
+.ft-social { display: grid; place-items: center; width: var(--social); height: var(--social); border-radius: var(--radius-social); background: var(--surface); color: var(--ink); }
+.ft-social .ft-icon { width: 22px; height: 22px; }
+.ft-wordmark { display: block; margin: 110px 0 0 -12px; font-family: var(--font-display); font-weight: 500; font-size: 212px; line-height: .73; letter-spacing: -0.045em; font-variation-settings: 'opsz' 32; white-space: nowrap; background: var(--grad-wordmark); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+@media (prefers-reduced-motion: reduce) { .ft-btn { transition: none; } }
+
+/* ---------- Page layout (for full pages built with this skill) ---------- */
+.ft-page { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-text); -webkit-font-smoothing: antialiased; }
+.ft-page *, .ft-page *::before, .ft-page *::after { box-sizing: border-box; }
+.ft-page img { max-width: 100%; }
+.ft-navbar { position: sticky; top: var(--space-34); z-index: 20; display: flex; justify-content: center; height: 0; overflow: visible; }
+.ft-hero { padding: 132px var(--space-96) var(--space-96); background: var(--canvas); text-align: center; }
+.ft-hero__title { margin: var(--space-40) auto 0; max-width: 760px; text-wrap: balance; }
+.ft-hero__lead { margin: var(--space-28) auto 0; max-width: 400px; color: var(--ink-muted); }
+.ft-hero .ft-btn--cta { margin-top: var(--space-40); }
+.ft-section { padding: var(--space-96) var(--space-96); }
+.ft-section__body { margin-top: var(--space-58); }
+.ft-photo-band { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 48px; max-width: var(--content); margin: 0 auto; }
+.ft-photo-stack { display: grid; grid-template-columns: repeat(2, var(--photo-w)); gap: 20px 24px; }
+.ft-photo-stack > :nth-child(odd) { transform: translateY(-28px); }
+.ft-photo-stack > :nth-child(even) { transform: translateY(28px); }
+.ft-fan-wrap { max-width: 1100px; margin: 0 auto; overflow: hidden; }
+@media (max-width: 1340px) { .ft-threads, .ft-arc { zoom: .78; } .ft-photo-stack { grid-template-columns: var(--photo-w); } .ft-photo-stack > :nth-child(n+3) { display: none; } }
+@media (max-width: 1080px) { .ft-grid { grid-template-columns: 1fr 1fr; } .ft-card--wide { grid-column: span 2; } .ft-photo-band { grid-template-columns: 1fr; } .ft-photo-stack { display: none; } .ft-footer__top { grid-template-columns: 1fr; gap: 40px; } .ft-footer__follow { justify-self: start; } .ft-wordmark { font-size: 16vw; } }
+@media (max-width: 860px) { .ft-threads { zoom: .5; } .ft-arc { zoom: .55; } .ft-hero, .ft-section { padding-left: 20px; padding-right: 20px; } .ft-hero__title { font-size: 52px; line-height: 54px; } .ft-section-head__title.display-l { font-size: 44px; line-height: 48px; } .ft-fan > .ft-quote.is-back-l, .ft-fan > .ft-quote.is-back-r { display: none; } }
+@media (max-width: 640px) { .ft-nav { padding-left: 14px; } .ft-nav__brand { margin-right: 12px; font-size: 17px; } .ft-nav .ft-btn--soft { display: none; } .ft-threads { zoom: .27 !important; } .ft-hero { padding-top: 112px; } .ft-footer { padding: 56px 24px 0; } .ft-wordmark { font-size: 12.5vw; margin-top: 64px; } .ft-panel { padding-left: 16px; padding-right: 16px; } .ft-grid { grid-template-columns: 1fr; } .ft-card--wide { grid-column: auto; } .ft-threads { zoom: .3; } .ft-arc { zoom: .35; } .ft-quote { width: 100%; } .ft-footer__cols { flex-wrap: wrap; gap: 28px; } }
+
+
+:root { --logo: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTQ0NS42MCAxNjMxLjIwIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Ikdvb2QgUXVlc3Rpb25zIj48ZyBmaWxsPSIjMDgwODA4IiBmaWxsLXJ1bGU9Im5vbnplcm8iIHRyYW5zZm9ybT0idHJhbnNsYXRlKC01Mi4wMCAxNTE0LjAwKSBzY2FsZSgxIC0xKSI+PHBhdGggZD0iTTc3MS43NjAwMDk3NjU2MjUgLTI0UTU1NS41MTk3NzUzOTA2MjUgLTI0IDM5My42NTk2Njc5Njg3NSA3MS4wNzk5NTYwNTQ2ODc1UTIzMS43OTk1NjA1NDY4NzUgMTY2LjE1OTkxMjEwOTM3NSAxNDEuODk5NTM2MTMyODEyNSAzMzguODk5OTAyMzQzNzVRNTEuOTk5NTExNzE4NzUgNTExLjYzOTg5MjU3ODEyNSA1MS45OTk1MTE3MTg3NSA3NDRRNTEuOTk5NTExNzE4NzUgOTg3LjQ4MDIyNDYwOTM3NSAxNDUuOTU5NTk0NzI2NTYyNSAxMTU5Ljg0MDIwOTk2MDkzNzVRMjM5LjkxOTY3NzczNDM3NSAxMzMyLjIwMDE5NTMxMjUgNDAxLjg5OTc4MDI3MzQzNzUgMTQyMy4xMDAwOTc2NTYyNVE1NjMuODc5ODgyODEyNSAxNTE0IDc2NS42Nzk5MzE2NDA2MjUgMTUxNFE4OTcuNjAwMDk3NjU2MjUgMTUxNCAxMDEzLjc2MDI1MzkwNjI1IDE0NzYuMjM5OTkwMjM0Mzc1UTExMjkuOTIwNDEwMTU2MjUgMTQzOC40Nzk5ODA0Njg3NSAxMjE5LjkwMDUxMjY5NTMxMjUgMTM2Ny45Mzk5NDE0MDYyNVExMzA5Ljg4MDYxNTIzNDM3NSAxMjk3LjM5OTkwMjM0Mzc1IDEzNjYuNDAwNjM0NzY1NjI1IDEyMDAuMzM5ODQzNzVRMTQyMi45MjA2NTQyOTY4NzUgMTEwMy4yNzk3ODUxNTYyNSAxNDM1LjA4MDU2NjQwNjI1IDk4My42Nzk2ODc1SDEwNjkuMTU4MjAzMTI1UTEwNTguOTk4MjkxMDE1NjI1IDEwMzMuNTk5MzY1MjM0Mzc1IDEwMzUuMDc4NDkxMjEwOTM3NSAxMDczLjU1OTA4MjAzMTI1UTEwMTEuMTU4NjkxNDA2MjUgMTExMy41MTg3OTg4MjgxMjUgOTc0LjA1ODk1OTk2MDkzNzUgMTE0MS43OTg1ODM5ODQzNzVROTM2Ljk1OTIyODUxNTYyNSAxMTcwLjA3ODM2OTE0MDYyNSA4ODguMTM5NTI2MzY3MTg3NSAxMTg1LjA3ODI0NzA3MDMxMjVRODM5LjMxOTgyNDIxODc1IDEyMDAuMDc4MTI1IDc3OC42MDAwOTc2NTYyNSAxMjAwLjA3ODEyNVE2NjMuMDQwNTI3MzQzNzUgMTIwMC4wNzgxMjUgNTgxLjU4MDkzMjYxNzE4NzUgMTE0NS42MTg0MDgyMDMxMjVRNTAwLjEyMTMzNzg5MDYyNSAxMDkxLjE1ODY5MTQwNjI1IDQ1Ny4yNjE1OTY2Nzk2ODc1IDk4OS40NzkxMjU5NzY1NjI1UTQxNC40MDE4NTU0Njg3NSA4ODcuNzk5NTYwNTQ2ODc1IDQxNC40MDE4NTU0Njg3NSA3NDRRNDE0LjQwMTg1NTQ2ODc1IDYwMS4yMDA0Mzk0NTMxMjUgNDU3LjY0MTYwMTU2MjUgNDk5LjY0MDg2OTE0MDYyNVE1MDAuODgxMzQ3NjU2MjUgMzk4LjA4MTI5ODgyODEyNSA1ODMuNDgwOTU3MDMxMjUgMzQ0LjAwMTU4NjkxNDA2MjVRNjY2LjA4MDU2NjQwNjI1IDI4OS45MjE4NzUgNzgzLjE2MDE1NjI1IDI4OS45MjE4NzVRODc5LjI3OTc4NTE1NjI1IDI4OS45MjE4NzUgOTQ4Ljk3OTM3MDExNzE4NzUgMzIzLjEyMTU4MjAzMTI1UTEwMTguNjc4OTU1MDc4MTI1IDM1Ni4zMjEyODkwNjI1IDEwNTYuNDk4NjU3MjI2NTYyNSA0MTUuNjYwNzY2NjAxNTYyNVExMDk0LjMxODM1OTM3NSA0NzUuMDAwMjQ0MTQwNjI1IDEwOTQuMzE4MzU5Mzc1IDU1My43OTk1NjA1NDY4NzVMMTE3My41OTg2MzI4MTI1IDU0Ni45OTk1MTE3MTg3NUg3OTUuNTE5NTMxMjVWODExLjEyMDg0OTYwOTM3NUgxNDQ1LjYwMDU4NTkzNzVWNjA5LjA4MDMyMjI2NTYyNVExNDQ1LjYwMDU4NTkzNzUgNDE5Ljg4MDEyNjk1MzEyNSAxMzYwLjIwMDU2MTUyMzQzNzUgMjc3LjQ0MDA2MzQ3NjU2MjVRMTI3NC44MDA1MzcxMDkzNzUgMTM1IDExMjMuMzAwNDE1MDM5MDYyNSA1NS41UTk3MS44MDAyOTI5Njg3NSAtMjQgNzcxLjc2MDAwOTc2NTYyNSAtMjRaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwIDAuMDApIi8+PHBhdGggZD0iTTYwNy42MDA1ODU5Mzc1IC0yNFE0NDIuNjAwMzQxNzk2ODc1IC0yNCAzMTcuMjgwMTUxMzY3MTg3NSA0NC4yMTk5NzA3MDMxMjVRMTkxLjk1OTk2MDkzNzUgMTEyLjQzOTk0MTQwNjI1IDEyMi4wOTk4NTM1MTU2MjUgMjM2LjQzOTk0MTQwNjI1UTUyLjIzOTc0NjA5Mzc1IDM2MC40Mzk5NDE0MDYyNSA1Mi4yMzk3NDYwOTM3NSA1MjcuNTIwMDE5NTMxMjVRNTIuMjM5NzQ2MDkzNzUgNjk0Ljg0MDA4Nzg5MDYyNSAxMjIuMDk5ODUzNTE1NjI1IDgxOC43MDAwNzMyNDIxODc1UTE5MS45NTk5NjA5Mzc1IDk0Mi41NjAwNTg1OTM3NSAzMTcuMjgwMTUxMzY3MTg3NSAxMDExLjI4MDAyOTI5Njg3NVE0NDIuNjAwMzQxNzk2ODc1IDEwODAgNjA3LjYwMDU4NTkzNzUgMTA4MFE3NzMuNjAwODMwMDc4MTI1IDEwODAgODk4LjQyMTAyMDUwNzgxMjUgMTAxMS4yODAwMjkyOTY4NzVRMTAyMy4yNDEyMTA5Mzc1IDk0Mi41NjAwNTg1OTM3NSAxMDkzLjEwMTMxODM1OTM3NSA4MTguNzAwMDczMjQyMTg3NVExMTYyLjk2MTQyNTc4MTI1IDY5NC44NDAwODc4OTA2MjUgMTE2Mi45NjE0MjU3ODEyNSA1MjcuNTIwMDE5NTMxMjVRMTE2Mi45NjE0MjU3ODEyNSAzNjAuNDM5OTQxNDA2MjUgMTA5My4xMDEzMTgzNTkzNzUgMjM2LjQzOTk0MTQwNjI1UTEwMjMuMjQxMjEwOTM3NSAxMTIuNDM5OTQxNDA2MjUgODk4LjQyMTAyMDUwNzgxMjUgNDQuMjE5OTcwNzAzMTI1UTc3My42MDA4MzAwNzgxMjUgLTI0IDYwNy42MDA1ODU5Mzc1IC0yNFpNNjA3LjYwMDU4NTkzNzUgMjUwLjA4MTU0Mjk2ODc1UTY2OC4wODAwNzgxMjUgMjUwLjA4MTU0Mjk2ODc1IDcxNC43NTk3NjU2MjUgMjgyLjM2MTMyODEyNVE3NjEuNDM5NDUzMTI1IDMxNC42NDExMTMyODEyNSA3ODguMDM5MzA2NjQwNjI1IDM3Ni43ODA3NjE3MTg3NVE4MTQuNjM5MTYwMTU2MjUgNDM4LjkyMDQxMDE1NjI1IDgxNC42MzkxNjAxNTYyNSA1MjcuNTIwMDE5NTMxMjVRODE0LjYzOTE2MDE1NjI1IDYxNy4zNTk2MTkxNDA2MjUgNzg4LjAzOTMwNjY0MDYyNSA2NzkuMTE5MjYyNjk1MzEyNVE3NjEuNDM5NDUzMTI1IDc0MC44Nzg5MDYyNSA3MTQuNzU5NzY1NjI1IDc3My4zOTg2ODE2NDA2MjVRNjY4LjA4MDA3ODEyNSA4MDUuOTE4NDU3MDMxMjUgNjA3LjYwMDU4NTkzNzUgODA1LjkxODQ1NzAzMTI1UTU0OC4xMjEwOTM3NSA4MDUuOTE4NDU3MDMxMjUgNTAwLjk0MTQwNjI1IDc3My41MTg2NzY3NTc4MTI1UTQ1My43NjE3MTg3NSA3NDEuMTE4ODk2NDg0Mzc1IDQyNy4xNjE4NjUyMzQzNzUgNjc5LjIzOTI1NzgxMjVRNDAwLjU2MjAxMTcxODc1IDYxNy4zNTk2MTkxNDA2MjUgNDAwLjU2MjAxMTcxODc1IDUyNy41MjAwMTk1MzEyNVE0MDAuNTYyMDExNzE4NzUgNDM4LjY4MDQxOTkyMTg3NSA0MjcuMTYxODY1MjM0Mzc1IDM3Ni42NjA3NjY2MDE1NjI1UTQ1My43NjE3MTg3NSAzMTQuNjQxMTEzMjgxMjUgNTAwLjgyMTQxMTEzMjgxMjUgMjgyLjM2MTMyODEyNVE1NDcuODgxMTAzNTE1NjI1IDI1MC4wODE1NDI5Njg3NSA2MDcuNjAwNTg1OTM3NSAyNTAuMDgxNTQyOTY4NzVaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNTExLjAwIDAuMDApIi8+PHBhdGggZD0iTTYwNy42MDA1ODU5Mzc1IC0yNFE0NDIuNjAwMzQxNzk2ODc1IC0yNCAzMTcuMjgwMTUxMzY3MTg3NSA0NC4yMTk5NzA3MDMxMjVRMTkxLjk1OTk2MDkzNzUgMTEyLjQzOTk0MTQwNjI1IDEyMi4wOTk4NTM1MTU2MjUgMjM2LjQzOTk0MTQwNjI1UTUyLjIzOTc0NjA5Mzc1IDM2MC40Mzk5NDE0MDYyNSA1Mi4yMzk3NDYwOTM3NSA1MjcuNTIwMDE5NTMxMjVRNTIuMjM5NzQ2MDkzNzUgNjk0Ljg0MDA4Nzg5MDYyNSAxMjIuMDk5ODUzNTE1NjI1IDgxOC43MDAwNzMyNDIxODc1UTE5MS45NTk5NjA5Mzc1IDk0Mi41NjAwNTg1OTM3NSAzMTcuMjgwMTUxMzY3MTg3NSAxMDExLjI4MDAyOTI5Njg3NVE0NDIuNjAwMzQxNzk2ODc1IDEwODAgNjA3LjYwMDU4NTkzNzUgMTA4MFE3NzMuNjAwODMwMDc4MTI1IDEwODAgODk4LjQyMTAyMDUwNzgxMjUgMTAxMS4yODAwMjkyOTY4NzVRMTAyMy4yNDEyMTA5Mzc1IDk0Mi41NjAwNTg1OTM3NSAxMDkzLjEwMTMxODM1OTM3NSA4MTguNzAwMDczMjQyMTg3NVExMTYyLjk2MTQyNTc4MTI1IDY5NC44NDAwODc4OTA2MjUgMTE2Mi45NjE0MjU3ODEyNSA1MjcuNTIwMDE5NTMxMjVRMTE2Mi45NjE0MjU3ODEyNSAzNjAuNDM5OTQxNDA2MjUgMTA5My4xMDEzMTgzNTkzNzUgMjM2LjQzOTk0MTQwNjI1UTEwMjMuMjQxMjEwOTM3NSAxMTIuNDM5OTQxNDA2MjUgODk4LjQyMTAyMDUwNzgxMjUgNDQuMjE5OTcwNzAzMTI1UTc3My42MDA4MzAwNzgxMjUgLTI0IDYwNy42MDA1ODU5Mzc1IC0yNFpNNjA3LjYwMDU4NTkzNzUgMjUwLjA4MTU0Mjk2ODc1UTY2OC4wODAwNzgxMjUgMjUwLjA4MTU0Mjk2ODc1IDcxNC43NTk3NjU2MjUgMjgyLjM2MTMyODEyNVE3NjEuNDM5NDUzMTI1IDMxNC42NDExMTMyODEyNSA3ODguMDM5MzA2NjQwNjI1IDM3Ni43ODA3NjE3MTg3NVE4MTQuNjM5MTYwMTU2MjUgNDM4LjkyMDQxMDE1NjI1IDgxNC42MzkxNjAxNTYyNSA1MjcuNTIwMDE5NTMxMjVRODE0LjYzOTE2MDE1NjI1IDYxNy4zNTk2MTkxNDA2MjUgNzg4LjAzOTMwNjY0MDYyNSA2NzkuMTE5MjYyNjk1MzEyNVE3NjEuNDM5NDUzMTI1IDc0MC44Nzg5MDYyNSA3MTQuNzU5NzY1NjI1IDc3My4zOTg2ODE2NDA2MjVRNjY4LjA4MDA3ODEyNSA4MDUuOTE4NDU3MDMxMjUgNjA3LjYwMDU4NTkzNzUgODA1LjkxODQ1NzAzMTI1UTU0OC4xMjEwOTM3NSA4MDUuOTE4NDU3MDMxMjUgNTAwLjk0MTQwNjI1IDc3My41MTg2NzY3NTc4MTI1UTQ1My43NjE3MTg3NSA3NDEuMTE4ODk2NDg0Mzc1IDQyNy4xNjE4NjUyMzQzNzUgNjc5LjIzOTI1NzgxMjVRNDAwLjU2MjAxMTcxODc1IDYxNy4zNTk2MTkxNDA2MjUgNDAwLjU2MjAxMTcxODc1IDUyNy41MjAwMTk1MzEyNVE0MDAuNTYyMDExNzE4NzUgNDM4LjY4MDQxOTkyMTg3NSA0MjcuMTYxODY1MjM0Mzc1IDM3Ni42NjA3NjY2MDE1NjI1UTQ1My43NjE3MTg3NSAzMTQuNjQxMTEzMjgxMjUgNTAwLjgyMTQxMTEzMjgxMjUgMjgyLjM2MTMyODEyNVE1NDcuODgxMTAzNTE1NjI1IDI1MC4wODE1NDI5Njg3NSA2MDcuNjAwNTg1OTM3NSAyNTAuMDgxNTQyOTY4NzVaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzI2LjAwIDAuMDApIi8+PHBhdGggZD0iTTUwOC43MTk3MjY1NjI1IC0yMy4wNDAwMzkwNjI1UTM3MC45NTk3MTY3OTY4NzUgLTIzLjA0MDAzOTA2MjUgMjY4LjIxOTcyNjU2MjUgNDUuNjk5OTUxMTcxODc1UTE2NS40Nzk3MzYzMjgxMjUgMTE0LjQzOTk0MTQwNjI1IDEwOC44NTk3NDEyMTA5Mzc1IDIzOC42OTk5NTExNzE4NzVRNTIuMjM5NzQ2MDkzNzUgMzYyLjk1OTk2MDkzNzUgNTIuMjM5NzQ2MDkzNzUgNTI5LjUyMDAxOTUzMTI1UTUyLjIzOTc0NjA5Mzc1IDY5MS43NjAwMDk3NjU2MjUgMTA5Ljk5OTc1NTg1OTM3NSA4MTUuNjQwMDE0NjQ4NDM3NVExNjcuNzU5NzY1NjI1IDkzOS41MjAwMTk1MzEyNSAyNzAuMTE5NzUwOTc2NTYyNSAxMDA5LjI4MDAyOTI5Njg3NVEzNzIuNDc5NzM2MzI4MTI1IDEwNzkuMDQwMDM5MDYyNSA1MDUuNjc5Njg3NSAxMDc5LjA0MDAzOTA2MjVRNTc0LjY3OTY4NzUgMTA3OS4wNDAwMzkwNjI1IDYzMC43MTk2MDQ0OTIxODc1IDEwNjEuMDYwMDU4NTkzNzVRNjg2Ljc1OTUyMTQ4NDM3NSAxMDQzLjA4MDA3ODEyNSA3MzEuMjk5NDM4NDc2NTYyNSAxMDA2Ljc0MDExMjMwNDY4NzVRNzc1LjgzOTM1NTQ2ODc1IDk3MC40MDAxNDY0ODQzNzUgODA5LjA3OTM0NTcwMzEyNSA5MTMuNjgwMTc1NzgxMjVIODEwLjMxOTMzNTkzNzVWMTQ5MEgxMTU1LjEyMTU4MjAzMTI1VjBIODE0LjMxOTMzNTkzNzVWMTYzLjA0MDAzOTA2MjVIODEzLjA3OTM0NTcwMzEyNVE3ODUuNzE5NDgyNDIxODc1IDEwMS4yODAwMjkyOTY4NzUgNzQwLjkzOTU3NTE5NTMxMjUgNTkuNzYwMDA5NzY1NjI1UTY5Ni4xNTk2Njc5Njg3NSAxOC4yMzk5OTAyMzQzNzUgNjM3LjMxOTcwMjE0ODQzNzUgLTIuNDAwMDI0NDE0MDYyNVE1NzguNDc5NzM2MzI4MTI1IC0yMy4wNDAwMzkwNjI1IDUwOC43MTk3MjY1NjI1IC0yMy4wNDAwMzkwNjI1Wk02MDUuNDAwNjM0NzY1NjI1IDI1Mi4zMjE1MzMyMDMxMjVRNjcwLjcyMDIxNDg0Mzc1IDI1Mi4zMjE1MzMyMDMxMjUgNzE5LjkxOTkyMTg3NSAyODYuNTAxMzQyNzczNDM3NVE3NjkuMTE5NjI4OTA2MjUgMzIwLjY4MTE1MjM0Mzc1IDc5Ni43MTk0ODI0MjE4NzUgMzgzLjA4MDgxMDU0Njg3NVE4MjQuMzE5MzM1OTM3NSA0NDUuNDgwNDY4NzUgODI0LjMxOTMzNTkzNzUgNTI5LjUyMDAxOTUzMTI1UTgyNC4zMTkzMzU5Mzc1IDYxMy43OTk1NjA1NDY4NzUgNzk2LjcxOTQ4MjQyMTg3NSA2NzUuNDM5MjA4OTg0Mzc1UTc2OS4xMTk2Mjg5MDYyNSA3MzcuMDc4ODU3NDIxODc1IDcxOS45MTk5MjE4NzUgNzcxLjI1ODY2Njk5MjE4NzVRNjcwLjcyMDIxNDg0Mzc1IDgwNS40Mzg0NzY1NjI1IDYwNS40MDA2MzQ3NjU2MjUgODA1LjQzODQ3NjU2MjVRNTQyLjUyMDk5NjA5Mzc1IDgwNS40Mzg0NzY1NjI1IDQ5Ni4zNDEzMDg1OTM3NSA3NzIuMjE4NjI3OTI5Njg3NVE0NTAuMTYxNjIxMDkzNzUgNzM4Ljk5ODc3OTI5Njg3NSA0MjUuMzYxODE2NDA2MjUgNjc3LjU5OTEyMTA5Mzc1UTQwMC41NjIwMTE3MTg3NSA2MTYuMTk5NDYyODkwNjI1IDQwMC41NjIwMTE3MTg3NSA1MjkuNTIwMDE5NTMxMjVRNDAwLjU2MjAxMTcxODc1IDQ0My4wODA1NjY0MDYyNSA0MjUuMzYxODE2NDA2MjUgMzgwLjkyMDg5ODQzNzVRNDUwLjE2MTYyMTA5Mzc1IDMxOC43NjEyMzA0Njg3NSA0OTYuMzQxMzA4NTkzNzUgMjg1LjU0MTM4MTgzNTkzNzVRNTQyLjUyMDk5NjA5Mzc1IDI1Mi4zMjE1MzMyMDMxMjUgNjA1LjQwMDYzNDc2NTYyNSAyNTIuMzIxNTMzMjAzMTI1WiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzk0MS4wMCAwLjAwKSIvPjxwYXRoIGQ9Ik02MjcuNjc5MTk5MjE4NzUgNTMxLjM2MDgzOTg0Mzc1SDkxMy44NDAzMzIwMzEyNUwxMDQwLjMxOTgyNDIxODc1IDM3MS4xMjE1ODIwMzEyNUwxMTk2LjMyMTI4OTA2MjUgMTkxLjUyMDAxOTUzMTI1TDE0NTEuOTIxMzg2NzE4NzUgLTExNy4xOTk3MDcwMzEyNUgxMTM4LjM5OTkwMjM0Mzc1TDk3MC4zMTk4MjQyMTg3NSA5MS42ODAxNzU3ODEyNUw4NTIuMzE4ODQ3NjU2MjUgMjM1Ljg0MTMwODU5Mzc1Wk03NjQuNzE5OTcwNzAzMTI1IC0yNFE1NjMuMTU5OTEyMTA5Mzc1IC0yNCA0MDEuNDE5Nzk5ODA0Njg3NSA2Ny4zOTk5MDIzNDM3NVEyMzkuNjc5Njg3NSAxNTguNzk5ODA0Njg3NSAxNDUuODM5NTk5NjA5Mzc1IDMzMC43Nzk3ODUxNTYyNVE1MS45OTk1MTE3MTg3NSA1MDIuNzU5NzY1NjI1IDUxLjk5OTUxMTcxODc1IDc0NFE1MS45OTk1MTE3MTg3NSA5ODcuMjQwMjM0Mzc1IDE0NS44Mzk1OTk2MDkzNzUgMTE1OS42MDAyMTk3MjY1NjI1UTIzOS42Nzk2ODc1IDEzMzEuOTYwMjA1MDc4MTI1IDQwMS40MTk3OTk4MDQ2ODc1IDE0MjIuOTgwMTAyNTM5MDYyNVE1NjMuMTU5OTEyMTA5Mzc1IDE1MTQgNzY0LjcxOTk3MDcwMzEyNSAxNTE0UTk2Ni41MjAwMTk1MzEyNSAxNTE0IDExMjcuNzYwMTMxODM1OTM3NSAxNDIyLjk4MDEwMjUzOTA2MjVRMTI4OS4wMDAyNDQxNDA2MjUgMTMzMS45NjAyMDUwNzgxMjUgMTM4My4yMjAzMzY5MTQwNjI1IDExNTkuNjAwMjE5NzI2NTYyNVExNDc3LjQ0MDQyOTY4NzUgOTg3LjI0MDIzNDM3NSAxNDc3LjQ0MDQyOTY4NzUgNzQ0UTE0NzcuNDQwNDI5Njg3NSA1MDEuOTk5NzU1ODU5Mzc1IDEzODMuMjIwMzM2OTE0MDYyNSAzMzAuMDE5Nzc1MzkwNjI1UTEyODkuMDAwMjQ0MTQwNjI1IDE1OC4wMzk3OTQ5MjE4NzUgMTEyNy43NjAxMzE4MzU5Mzc1IDY3LjAxOTg5NzQ2MDkzNzVROTY2LjUyMDAxOTUzMTI1IC0yNCA3NjQuNzE5OTcwNzAzMTI1IC0yNFpNNzY0LjcxOTk3MDcwMzEyNSAyODkuOTIxODc1UTg3MS41OTk2MDkzNzUgMjg5LjkyMTg3NSA5NTAuMzk5MTY5OTIxODc1IDM0My40NjE2Njk5MjE4NzVRMTAyOS4xOTg3MzA0Njg3NSAzOTcuMDAxNDY0ODQzNzUgMTA3Mi4xMTg0MDgyMDMxMjUgNDk4LjcwMTA0OTgwNDY4NzVRMTExNS4wMzgwODU5Mzc1IDYwMC40MDA2MzQ3NjU2MjUgMTExNS4wMzgwODU5Mzc1IDc0NFExMTE1LjAzODA4NTkzNzUgODg4LjU5OTM2NTIzNDM3NSAxMDcyLjExODQwODIwMzEyNSA5OTAuNzk4OTUwMTk1MzEyNVExMDI5LjE5ODczMDQ2ODc1IDEwOTIuOTk4NTM1MTU2MjUgOTUwLjM5OTE2OTkyMTg3NSAxMTQ2LjUzODMzMDA3ODEyNVE4NzEuNTk5NjA5Mzc1IDEyMDAuMDc4MTI1IDc2NC43MTk5NzA3MDMxMjUgMTIwMC4wNzgxMjVRNjU4LjYwMDM0MTc5Njg3NSAxMjAwLjA3ODEyNSA1NzkuODAwNzgxMjUgMTE0Ni41MzgzMzAwNzgxMjVRNTAxLjAwMTIyMDcwMzEyNSAxMDkyLjk5ODUzNTE1NjI1IDQ1Ny43MDE1MzgwODU5Mzc1IDk5MC43OTg5NTAxOTUzMTI1UTQxNC40MDE4NTU0Njg3NSA4ODguNTk5MzY1MjM0Mzc1IDQxNC40MDE4NTU0Njg3NSA3NDRRNDE0LjQwMTg1NTQ2ODc1IDYwMC40MDA2MzQ3NjU2MjUgNDU3LjcwMTUzODA4NTkzNzUgNDk4LjcwMTA0OTgwNDY4NzVRNTAxLjAwMTIyMDcwMzEyNSAzOTcuMDAxNDY0ODQzNzUgNTc5LjgwMDc4MTI1IDM0My40NjE2Njk5MjE4NzVRNjU4LjYwMDM0MTc5Njg3NSAyODkuOTIxODc1IDc2NC43MTk5NzA3MDMxMjUgMjg5LjkyMTg3NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU2MDEuMDAgMC4wMCkiLz48cGF0aCBkPSJNNDU5LjI3OTI5Njg3NSAtMjMuMDQwMDM5MDYyNVEzNDQuOTE5MTg5NDUzMTI1IC0yMy4wNDAwMzkwNjI1IDI2My4yNTkyNzczNDM3NSAyNi41UTE4MS41OTkzNjUyMzQzNzUgNzYuMDQwMDM5MDYyNSAxMzguNTk5NDg3MzA0Njg3NSAxNjkuMTYwMDM0MTc5Njg3NVE5NS41OTk2MDkzNzUgMjYyLjI4MDAyOTI5Njg3NSA5NS41OTk2MDkzNzUgMzkyLjM5OTkwMjM0Mzc1VjEwNTZINDQwLjQwMTg1NTQ2ODc1VjQ2My42ODA2NjQwNjI1UTQ0MC40MDE4NTU0Njg3NSAzNzAuNzYxMjMwNDY4NzUgNDg1LjUwMTU4NjkxNDA2MjUgMzIxLjAyMTQ4NDM3NVE1MzAuNjAxMzE4MzU5Mzc1IDI3MS4yODE3MzgyODEyNSA2MTIuMTIwODQ5NjA5Mzc1IDI3MS4yODE3MzgyODEyNVE2NjYuMzIwNTU2NjQwNjI1IDI3MS4yODE3MzgyODEyNSA3MDYuNTIwMjYzNjcxODc1IDI5My45MjE2MzA4NTkzNzVRNzQ2LjcxOTk3MDcwMzEyNSAzMTYuNTYxNTIzNDM3NSA3NjguNjM5NzcwNTA3ODEyNSAzNjMuNDIxMjY0NjQ4NDM3NVE3OTAuNTU5NTcwMzEyNSA0MTAuMjgxMDA1ODU5Mzc1IDc5MC41NTk1NzAzMTI1IDQ4Mi4wODA1NjY0MDYyNVYxMDU2SDExMzUuMzYxODE2NDA2MjVWMEg3OTUuMzE5NTgwMDc4MTI1VjI4Mi42MDAzNDE3OTY4NzVIODQ2LjM1OTYxOTE0MDYyNVE3OTYuNjM5NjQ4NDM3NSAxNDMuNjQwMzgwODU5Mzc1IDcwNC4xMzk2NDg0Mzc1IDYwLjMwMDE3MDg5ODQzNzVRNjExLjYzOTY0ODQzNzUgLTIzLjA0MDAzOTA2MjUgNDU5LjI3OTI5Njg3NSAtMjMuMDQwMDM5MDYyNVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDcxMzAuMDAgMC4wMCkiLz48cGF0aCBkPSJNNTk2LjIwMDQzOTQ1MzEyNSAtMjRRNDM0LjM2MDM1MTU2MjUgLTI0IDMxMS41NjAxODA2NjQwNjI1IDQ2LjYxOTk5NTExNzE4NzVRMTg4Ljc2MDAwOTc2NTYyNSAxMTcuMjM5OTkwMjM0Mzc1IDEyMC40OTk4Nzc5Mjk2ODc1IDI0Mi4xMTk5OTUxMTcxODc1UTUyLjIzOTc0NjA5Mzc1IDM2NyA1Mi4yMzk3NDYwOTM3NSA1MjcuNTIwMDE5NTMxMjVRNTIuMjM5NzQ2MDkzNzUgNjg5LjI4MDAyOTI5Njg3NSAxMjAuODM5ODQzNzUgODEzLjkwMDAyNDQxNDA2MjVRMTg5LjQzOTk0MTQwNjI1IDkzOC41MjAwMTk1MzEyNSAzMDkuOTgwMTAyNTM5MDYyNSAxMDA5LjI2MDAwOTc2NTYyNVE0MzAuNTIwMjYzNjcxODc1IDEwODAgNTg3LjI0MDQ3ODUxNTYyNSAxMDgwUTcwNi4zNjA1OTU3MDMxMjUgMTA4MCA4MDQuMzYwNzE3NzczNDM3NSAxMDQwLjM4MDAwNDg4MjgxMjVROTAyLjM2MDgzOTg0Mzc1IDEwMDAuNzYwMDA5NzY1NjI1IDk3My43MjA5NDcyNjU2MjUgOTI3LjkwMDAyNDQxNDA2MjVRMTA0NS4wODEwNTQ2ODc1IDg1NS4wNDAwMzkwNjI1IDEwODMuOTAxMTIzMDQ2ODc1IDc1NS40NDAwNjM0NzY1NjI1UTExMjIuNzIxMTkxNDA2MjUgNjU1Ljg0MDA4Nzg5MDYyNSAxMTIyLjcyMTE5MTQwNjI1IDUzNS44ODAxMjY5NTMxMjVWNDQzLjI3OTU0MTAxNTYyNUgxNjMuNTIwMDE5NTMxMjVWNjQ4LjU2MDMwMjczNDM3NUg5NjEuNjAwMzQxNzk2ODc1TDgwNC4yMzkyNTc4MTI1IDYwNi42ODA0MTk5MjE4NzVRODA0LjIzOTI1NzgxMjUgNjc1LjE1OTkxMjEwOTM3NSA3NzkuMDM5NDI4NzEwOTM3NSA3MjQuMjU5NTIxNDg0Mzc1UTc1My44Mzk1OTk2MDkzNzUgNzczLjM1OTEzMDg1OTM3NSA3MDcuMzk5OTAyMzQzNzUgNzk5Ljc1ODkxMTEzMjgxMjVRNjYwLjk2MDIwNTA3ODEyNSA4MjYuMTU4NjkxNDA2MjUgNTk1LjYwMDU4NTkzNzUgODI2LjE1ODY5MTQwNjI1UTUzMS4yNDA5NjY3OTY4NzUgODI2LjE1ODY5MTQwNjI1IDQ4NC41NDEyNTk3NjU2MjUgNzk5Ljc1ODkxMTEzMjgxMjVRNDM3Ljg0MTU1MjczNDM3NSA3NzMuMzU5MTMwODU5Mzc1IDQxMi42NDE3MjM2MzI4MTI1IDcyNC4yNTk1MjE0ODQzNzVRMzg3LjQ0MTg5NDUzMTI1IDY3NS4xNTk5MTIxMDkzNzUgMzg3LjQ0MTg5NDUzMTI1IDYwNi42ODA0MTk5MjE4NzVWNDU0Ljg3OTM5NDUzMTI1UTM4Ny40NDE4OTQ1MzEyNSAzODQuNjM5ODkyNTc4MTI1IDQxMy41NDE3NDgwNDY4NzUgMzMyLjU2MDMwMjczNDM3NVE0MzkuNjQxNjAxNTYyNSAyODAuNDgwNzEyODkwNjI1IDQ4OS4yMjEzMTM0NzY1NjI1IDI1Mi4zNjA5NjE5MTQwNjI1UTUzOC44MDEwMjUzOTA2MjUgMjI0LjI0MTIxMDkzNzUgNjA4LjM2MDU5NTcwMzEyNSAyMjQuMjQxMjEwOTM3NVE2NTkuMDQwMjgzMjAzMTI1IDIyNC4yNDEyMTA5Mzc1IDY5OC45NDAwNjM0NzY1NjI1IDIzOC4yNDEwODg4NjcxODc1UTczOC44Mzk4NDM3NSAyNTIuMjQwOTY2Nzk2ODc1IDc2Ni4wNzk3MTE5MTQwNjI1IDI3Ny45MDA3NTY4MzU5Mzc1UTc5My4zMTk1ODAwNzgxMjUgMzAzLjU2MDU0Njg3NSA4MDUuNTE5NTMxMjUgMzM4LjA0MDI4MzIwMzEyNUgxMTE1LjM2MTMyODEyNVExMDk2LjEyMTMzNzg5MDYyNSAyMzEuNzIwMjE0ODQzNzUgMTAyMy4yNDEyMTA5Mzc1IDE1MC4yODAxNTEzNjcxODc1UTk1MC4zNjEwODM5ODQzNzUgNjguODQwMDg3ODkwNjI1IDgzOS45MDA4Nzg5MDYyNSAyMi40MjAwNDM5NDUzMTI1UTcyOS40NDA2NzM4MjgxMjUgLTI0IDU5Ni4yMDA0Mzk0NTMxMjUgLTI0WiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODM2MS4wMCAwLjAwKSIvPjxwYXRoIGQ9Ik01NjIuNDAwODc4OTA2MjUgLTI2LjI4MDAyOTI5Njg3NVE0MTUuOTYwNDQ5MjE4NzUgLTI2LjI4MDAyOTI5Njg3NSAzMDMuMDYwMTgwNjY0MDYyNSAxNy45NDAwNjM0NzY1NjI1UTE5MC4xNTk5MTIxMDkzNzUgNjIuMTYwMTU2MjUgMTIyLjg5OTc4MDI3MzQzNzUgMTQ0LjEyMDIzOTI1NzgxMjVRNTUuNjM5NjQ4NDM3NSAyMjYuMDgwMzIyMjY1NjI1IDQ1LjU5OTYwOTM3NSAzMzguMDQwMjgzMjAzMTI1SDM4NS4zNjE4MTY0MDYyNVEzOTIuODQxNzk2ODc1IDI3OS43NjA3NDIxODc1IDQzNy4yMjE1NTc2MTcxODc1IDI0NS4zNDA5NDIzODI4MTI1UTQ4MS42MDEzMTgzNTkzNzUgMjEwLjkyMTE0MjU3ODEyNSA1NTYuODgwODU5Mzc1IDIxMC45MjExNDI1NzgxMjVRNjI4LjEyMDM2MTMyODEyNSAyMTAuOTIxMTQyNTc4MTI1IDY2OC4wNjAwNTg1OTM3NSAyMzYuMDIwODc0MDIzNDM3NVE3MDcuOTk5NzU1ODU5Mzc1IDI2MS4xMjA2MDU0Njg3NSA3MDcuOTk5NzU1ODU5Mzc1IDMwMS40ODAyMjQ2MDkzNzVRNzA3Ljk5OTc1NTg1OTM3NSAzMzUuNjM5ODkyNTc4MTI1IDY3NS4zOTk5MDIzNDM3NSAzNTcuMTk5NzA3MDMxMjVRNjQyLjgwMDA0ODgyODEyNSAzNzguNzU5NTIxNDg0Mzc1IDU4MC4xNjAxNTYyNSAzOTAuMTk5NDYyODkwNjI1TDM4OC44Nzk4ODI4MTI1IDQyNC4xMTkzODQ3NjU2MjVRMjMyLjc1OTc2NTYyNSA0NTIuMjc5Mjk2ODc1IDE1MS4xNzk2ODc1IDUzMS4wNzkzNDU3MDMxMjVRNjkuNTk5NjA5Mzc1IDYwOS44NzkzOTQ1MzEyNSA2OS41OTk2MDkzNzUgNzM0Ljc1OTUyMTQ4NDM3NVE2OS41OTk2MDkzNzUgODM5LjE5OTcwNzAzMTI1IDEyNi40NTk3MTY3OTY4NzUgOTE2LjI5OTgwNDY4NzVRMTgzLjMxOTgyNDIxODc1IDk5My4zOTk5MDIzNDM3NSAyODkuNTgwMDc4MTI1IDEwMzUuNTU5OTM2NTIzNDM3NVEzOTUuODQwMzMyMDMxMjUgMTA3Ny43MTk5NzA3MDMxMjUgNTQzLjA0MDc3MTQ4NDM3NSAxMDc3LjcxOTk3MDcwMzEyNVE2OTEuMDQxMjU5NzY1NjI1IDEwNzcuNzE5OTcwNzAzMTI1IDc5OS4wNjE1MjM0Mzc1IDEwMzMuMTc5OTMxNjQwNjI1UTkwNy4wODE3ODcxMDkzNzUgOTg4LjYzOTg5MjU3ODEyNSA5NjcuMzIxODk5NDE0MDYyNSA5MDcuMzE5ODI0MjE4NzVRMTAyNy41NjIwMTE3MTg3NSA4MjUuOTk5NzU1ODU5Mzc1IDEwMzAuNTYyMDExNzE4NzUgNzEzLjM5OTY1ODIwMzEyNUg3MTQuMDgwMDc4MTI1UTcxMy4wODAwNzgxMjUgNzY4LjUxOTI4NzEwOTM3NSA2NjguNDIwMjg4MDg1OTM3NSA4MDUuMjc5MDUyNzM0Mzc1UTYyMy43NjA0OTgwNDY4NzUgODQyLjAzODgxODM1OTM3NSA1NTUuMjAwOTI3NzM0Mzc1IDg0Mi4wMzg4MTgzNTkzNzVRNDg3Ljg0MTMwODU5Mzc1IDg0Mi4wMzg4MTgzNTkzNzUgNDUwLjM2MTU3MjI2NTYyNSA4MTUuOTM5MDg2OTE0MDYyNVE0MTIuODgxODM1OTM3NSA3ODkuODM5MzU1NDY4NzUgNDEyLjg4MTgzNTkzNzUgNzUxLjQ3OTczNjMyODEyNVE0MTIuODgxODM1OTM3NSA3MTguMDgwMDc4MTI1IDQ0Mi44MjE2NTUyNzM0Mzc1IDY5Ni4wMjAyNjM2NzE4NzVRNDcyLjc2MTQ3NDYwOTM3NSA2NzMuOTYwNDQ5MjE4NzUgNTI2LjcyMTE5MTQwNjI1IDY2My41NjA1NDY4NzVMNzM5LjI4MTczODI4MTI1IDYyNS4wODA1NjY0MDYyNVE5MDIuNjgxODg0NzY1NjI1IDU5NS4xNjA2NDQ1MzEyNSA5ODAuMTQxOTY3NzczNDM3NSA1MjUuMTgwNjY0MDYyNVExMDU3LjYwMjA1MDc4MTI1IDQ1NS4yMDA2ODM1OTM3NSAxMDU3LjYwMjA1MDc4MTI1IDMzNy40MDA2MzQ3NjU2MjVRMTA1Ny42MDIwNTA3ODEyNSAyMjguNzYwNDk4MDQ2ODc1IDk5NS40ODE5MzM1OTM3NSAxNDYuOTgwMzQ2Njc5Njg3NVE5MzMuMzYxODE2NDA2MjUgNjUuMjAwMTk1MzEyNSA4MjEuNzIxNTU3NjE3MTg3NSAxOS40NjAwODMwMDc4MTI1UTcxMC4wODEyOTg4MjgxMjUgLTI2LjI4MDAyOTI5Njg3NSA1NjIuNDAwODc4OTA2MjUgLTI2LjI4MDAyOTI5Njg3NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDk1MzIuMDAgMC4wMCkiLz48cGF0aCBkPSJNNzYxLjA0MjIzNjMyODEyNSAxMDU2Vjc4OS45MTg0NTcwMzEyNUgxOC44MDAwNDg4MjgxMjVWMTA1NlpNMTk5LjE5OTk1MTE3MTg3NSAxMzQ0SDU0NC4wMDIxOTcyNjU2MjVWMzU0LjgwMTI2OTUzMTI1UTU0NC4wMDIxOTcyNjU2MjUgMzA0LjQ0MTQwNjI1IDU2NC4xODIxMjg5MDYyNSAyODUuMjYxNDc0NjA5Mzc1UTU4NC4zNjIwNjA1NDY4NzUgMjY2LjA4MTU0Mjk2ODc1IDY0MS43NjE5NjI4OTA2MjUgMjY2LjA4MTU0Mjk2ODc1UTY2Ny44MDIwMDE5NTMxMjUgMjY2LjA4MTU0Mjk2ODc1IDcwNS43MDIxNDg0Mzc1IDI2Ni4wODE1NDI5Njg3NVE3NDMuNjAyMjk0OTIxODc1IDI2Ni4wODE1NDI5Njg3NSA3NjEuMDQyMjM2MzI4MTI1IDI2Ni4wODE1NDI5Njg3NVYwUTczNC4yODIyMjY1NjI1IDAgNjc5LjM0MTkxODk0NTMxMjUgMC4wUTYyNC40MDE2MTEzMjgxMjUgMCA1NjYuNDgxMjAxMTcxODc1IDBRMzc1Ljc2MDQ5ODA0Njg3NSAwIDI4Ny40ODAyMjQ2MDkzNzUgNzEuNjYwMTU2MjVRMTk5LjE5OTk1MTE3MTg3NSAxNDMuMzIwMzEyNSAxOTkuMTk5OTUxMTcxODc1IDI5Ny4yODA3NjE3MTg3NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEwNjU1LjAwIDAuMDApIi8+PHBhdGggZD0iTTk1LjU5OTYwOTM3NSAwVjEwNTZINDQwLjQwMTg1NTQ2ODc1VjBaTTI2Ny4yNDA3MjI2NTYyNSAxMTU4LjYzODY3MTg3NVExODQuMjgwMjczNDM3NSAxMTU4LjYzODY3MTg3NSAxMzAuOTAwMDI0NDE0MDYyNSAxMjA3Ljk5Njk4ODEzOTE2NzZRNzcuNTE5Nzc1MzkwNjI1IDEyNTcuMzU1MzA0NDAzMzM1IDc3LjUxOTc3NTM5MDYyNSAxMzMyLjk5MzAzMTE1NzU0NDVRNzcuNTE5Nzc1MzkwNjI1IDE0MDguNTE5Nzc1MzkwNjI1IDEzMC45MDAwMjQ0MTQwNjI1IDE0NTcuMzM5OTY1ODIwMzEyNVExODQuMjgwMjczNDM3NSAxNTA2LjE2MDE1NjI1IDI2Ni43NzQ3MDMyMzg3NzQzIDE1MDYuMTYwMTU2MjVRMzQ5Ljk4NDAyNjIyNzY3ODU2IDE1MDYuMTYwMTU2MjUgNDAzLjQ3Mjg0ODA3NDc3NjggMTQ1Ny40MjEzOTU0MzgwNThRNDU2Ljk2MTY2OTkyMTg3NSAxNDA4LjY4MjYzNDYyNjExNjIgNDU2Ljk2MTY2OTkyMTg3NSAxMzMyLjU0NzkwNzA0OTAwNTdRNDU2Ljk2MTY2OTkyMTg3NSAxMjU3LjAzOTA2MjUgNDAzLjQwOTM1NjAxMTI4NDczIDEyMDcuODM4ODY3MTg3NVEzNDkuODU3MDQyMTAwNjk0NDYgMTE1OC42Mzg2NzE4NzUgMjY3LjI0MDcyMjY1NjI1IDExNTguNjM4NjcxODc1WiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTE0NTguMDAgMC4wMCkiLz48cGF0aCBkPSJNNjA3LjYwMDU4NTkzNzUgLTI0UTQ0Mi42MDAzNDE3OTY4NzUgLTI0IDMxNy4yODAxNTEzNjcxODc1IDQ0LjIxOTk3MDcwMzEyNVExOTEuOTU5OTYwOTM3NSAxMTIuNDM5OTQxNDA2MjUgMTIyLjA5OTg1MzUxNTYyNSAyMzYuNDM5OTQxNDA2MjVRNTIuMjM5NzQ2MDkzNzUgMzYwLjQzOTk0MTQwNjI1IDUyLjIzOTc0NjA5Mzc1IDUyNy41MjAwMTk1MzEyNVE1Mi4yMzk3NDYwOTM3NSA2OTQuODQwMDg3ODkwNjI1IDEyMi4wOTk4NTM1MTU2MjUgODE4LjcwMDA3MzI0MjE4NzVRMTkxLjk1OTk2MDkzNzUgOTQyLjU2MDA1ODU5Mzc1IDMxNy4yODAxNTEzNjcxODc1IDEwMTEuMjgwMDI5Mjk2ODc1UTQ0Mi42MDAzNDE3OTY4NzUgMTA4MCA2MDcuNjAwNTg1OTM3NSAxMDgwUTc3My42MDA4MzAwNzgxMjUgMTA4MCA4OTguNDIxMDIwNTA3ODEyNSAxMDExLjI4MDAyOTI5Njg3NVExMDIzLjI0MTIxMDkzNzUgOTQyLjU2MDA1ODU5Mzc1IDEwOTMuMTAxMzE4MzU5Mzc1IDgxOC43MDAwNzMyNDIxODc1UTExNjIuOTYxNDI1NzgxMjUgNjk0Ljg0MDA4Nzg5MDYyNSAxMTYyLjk2MTQyNTc4MTI1IDUyNy41MjAwMTk1MzEyNVExMTYyLjk2MTQyNTc4MTI1IDM2MC40Mzk5NDE0MDYyNSAxMDkzLjEwMTMxODM1OTM3NSAyMzYuNDM5OTQxNDA2MjVRMTAyMy4yNDEyMTA5Mzc1IDExMi40Mzk5NDE0MDYyNSA4OTguNDIxMDIwNTA3ODEyNSA0NC4yMTk5NzA3MDMxMjVRNzczLjYwMDgzMDA3ODEyNSAtMjQgNjA3LjYwMDU4NTkzNzUgLTI0Wk02MDcuNjAwNTg1OTM3NSAyNTAuMDgxNTQyOTY4NzVRNjY4LjA4MDA3ODEyNSAyNTAuMDgxNTQyOTY4NzUgNzE0Ljc1OTc2NTYyNSAyODIuMzYxMzI4MTI1UTc2MS40Mzk0NTMxMjUgMzE0LjY0MTExMzI4MTI1IDc4OC4wMzkzMDY2NDA2MjUgMzc2Ljc4MDc2MTcxODc1UTgxNC42MzkxNjAxNTYyNSA0MzguOTIwNDEwMTU2MjUgODE0LjYzOTE2MDE1NjI1IDUyNy41MjAwMTk1MzEyNVE4MTQuNjM5MTYwMTU2MjUgNjE3LjM1OTYxOTE0MDYyNSA3ODguMDM5MzA2NjQwNjI1IDY3OS4xMTkyNjI2OTUzMTI1UTc2MS40Mzk0NTMxMjUgNzQwLjg3ODkwNjI1IDcxNC43NTk3NjU2MjUgNzczLjM5ODY4MTY0MDYyNVE2NjguMDgwMDc4MTI1IDgwNS45MTg0NTcwMzEyNSA2MDcuNjAwNTg1OTM3NSA4MDUuOTE4NDU3MDMxMjVRNTQ4LjEyMTA5Mzc1IDgwNS45MTg0NTcwMzEyNSA1MDAuOTQxNDA2MjUgNzczLjUxODY3Njc1NzgxMjVRNDUzLjc2MTcxODc1IDc0MS4xMTg4OTY0ODQzNzUgNDI3LjE2MTg2NTIzNDM3NSA2NzkuMjM5MjU3ODEyNVE0MDAuNTYyMDExNzE4NzUgNjE3LjM1OTYxOTE0MDYyNSA0MDAuNTYyMDExNzE4NzUgNTI3LjUyMDAxOTUzMTI1UTQwMC41NjIwMTE3MTg3NSA0MzguNjgwNDE5OTIxODc1IDQyNy4xNjE4NjUyMzQzNzUgMzc2LjY2MDc2NjYwMTU2MjVRNDUzLjc2MTcxODc1IDMxNC42NDExMTMyODEyNSA1MDAuODIxNDExMTMyODEyNSAyODIuMzYxMzI4MTI1UTU0Ny44ODExMDM1MTU2MjUgMjUwLjA4MTU0Mjk2ODc1IDYwNy42MDA1ODU5Mzc1IDI1MC4wODE1NDI5Njg3NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDExOTk0LjAwIDAuMDApIi8+PHBhdGggZD0iTTQ0MC40MDE4NTU0Njg3NSA1NzMuOTE5NDMzNTkzNzVWMEg5NS41OTk2MDkzNzVWMTA1Nkg0MzUuNjQxODQ1NzAzMTI1Vjc3My4zOTk2NTgyMDMxMjVIMzg0LjYwMTgwNjY0MDYyNVE0MzQuMzIxNzc3MzQzNzUgOTEyLjU5OTYwOTM3NSA1MjcuMjAxNzgyMjI2NTYyNSA5OTUuODE5ODI0MjE4NzVRNjIwLjA4MTc4NzEwOTM3NSAxMDc5LjA0MDAzOTA2MjUgNzcxLjY4MjEyODkwNjI1IDEwNzkuMDQwMDM5MDYyNVE4ODcuMDQyMjM2MzI4MTI1IDEwNzkuMDQwMDM5MDYyNSA5NjguMjAyMTQ4NDM3NSAxMDI5LjVRMTA0OS4zNjIwNjA1NDY4NzUgOTc5Ljk1OTk2MDkzNzUgMTA5Mi4zNjE5Mzg0NzY1NjI1IDg4Ni45NTk5NjA5Mzc1UTExMzUuMzYxODE2NDA2MjUgNzkzLjk1OTk2MDkzNzUgMTEzNS4zNjE4MTY0MDYyNSA2NjMuNjAwMDk3NjU2MjVWMEg3OTAuNTU5NTcwMzEyNVY1OTIuMzE5MzM1OTM3NVE3OTAuNTU5NTcwMzEyNSA2ODUuOTk4Nzc5Mjk2ODc1IDc0NS45NTk4Mzg4NjcxODc1IDczNS4zNTg1MjA1MDc4MTI1UTcwMS4zNjAxMDc0MjE4NzUgNzg0LjcxODI2MTcxODc1IDYxOC44NDA1NzYxNzE4NzUgNzg0LjcxODI2MTcxODc1UTU2NC42NDA4NjkxNDA2MjUgNzg0LjcxODI2MTcxODc1IDUyNC40NDExNjIxMDkzNzUgNzYyLjA3ODM2OTE0MDYyNVE0ODQuMjQxNDU1MDc4MTI1IDczOS40Mzg0NzY1NjI1IDQ2Mi4zMjE2NTUyNzM0Mzc1IDY5Mi42OTg3MzA0Njg3NVE0NDAuNDAxODU1NDY4NzUgNjQ1Ljk1ODk4NDM3NSA0NDAuNDAxODU1NDY4NzUgNTczLjkxOTQzMzU5Mzc1WiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTMyMDkuMDAgMC4wMCkiLz48cGF0aCBkPSJNNTYyLjQwMDg3ODkwNjI1IC0yNi4yODAwMjkyOTY4NzVRNDE1Ljk2MDQ0OTIxODc1IC0yNi4yODAwMjkyOTY4NzUgMzAzLjA2MDE4MDY2NDA2MjUgMTcuOTQwMDYzNDc2NTYyNVExOTAuMTU5OTEyMTA5Mzc1IDYyLjE2MDE1NjI1IDEyMi44OTk3ODAyNzM0Mzc1IDE0NC4xMjAyMzkyNTc4MTI1UTU1LjYzOTY0ODQzNzUgMjI2LjA4MDMyMjI2NTYyNSA0NS41OTk2MDkzNzUgMzM4LjA0MDI4MzIwMzEyNUgzODUuMzYxODE2NDA2MjVRMzkyLjg0MTc5Njg3NSAyNzkuNzYwNzQyMTg3NSA0MzcuMjIxNTU3NjE3MTg3NSAyNDUuMzQwOTQyMzgyODEyNVE0ODEuNjAxMzE4MzU5Mzc1IDIxMC45MjExNDI1NzgxMjUgNTU2Ljg4MDg1OTM3NSAyMTAuOTIxMTQyNTc4MTI1UTYyOC4xMjAzNjEzMjgxMjUgMjEwLjkyMTE0MjU3ODEyNSA2NjguMDYwMDU4NTkzNzUgMjM2LjAyMDg3NDAyMzQzNzVRNzA3Ljk5OTc1NTg1OTM3NSAyNjEuMTIwNjA1NDY4NzUgNzA3Ljk5OTc1NTg1OTM3NSAzMDEuNDgwMjI0NjA5Mzc1UTcwNy45OTk3NTU4NTkzNzUgMzM1LjYzOTg5MjU3ODEyNSA2NzUuMzk5OTAyMzQzNzUgMzU3LjE5OTcwNzAzMTI1UTY0Mi44MDAwNDg4MjgxMjUgMzc4Ljc1OTUyMTQ4NDM3NSA1ODAuMTYwMTU2MjUgMzkwLjE5OTQ2Mjg5MDYyNUwzODguODc5ODgyODEyNSA0MjQuMTE5Mzg0NzY1NjI1UTIzMi43NTk3NjU2MjUgNDUyLjI3OTI5Njg3NSAxNTEuMTc5Njg3NSA1MzEuMDc5MzQ1NzAzMTI1UTY5LjU5OTYwOTM3NSA2MDkuODc5Mzk0NTMxMjUgNjkuNTk5NjA5Mzc1IDczNC43NTk1MjE0ODQzNzVRNjkuNTk5NjA5Mzc1IDgzOS4xOTk3MDcwMzEyNSAxMjYuNDU5NzE2Nzk2ODc1IDkxNi4yOTk4MDQ2ODc1UTE4My4zMTk4MjQyMTg3NSA5OTMuMzk5OTAyMzQzNzUgMjg5LjU4MDA3ODEyNSAxMDM1LjU1OTkzNjUyMzQzNzVRMzk1Ljg0MDMzMjAzMTI1IDEwNzcuNzE5OTcwNzAzMTI1IDU0My4wNDA3NzE0ODQzNzUgMTA3Ny43MTk5NzA3MDMxMjVRNjkxLjA0MTI1OTc2NTYyNSAxMDc3LjcxOTk3MDcwMzEyNSA3OTkuMDYxNTIzNDM3NSAxMDMzLjE3OTkzMTY0MDYyNVE5MDcuMDgxNzg3MTA5Mzc1IDk4OC42Mzk4OTI1NzgxMjUgOTY3LjMyMTg5OTQxNDA2MjUgOTA3LjMxOTgyNDIxODc1UTEwMjcuNTYyMDExNzE4NzUgODI1Ljk5OTc1NTg1OTM3NSAxMDMwLjU2MjAxMTcxODc1IDcxMy4zOTk2NTgyMDMxMjVINzE0LjA4MDA3ODEyNVE3MTMuMDgwMDc4MTI1IDc2OC41MTkyODcxMDkzNzUgNjY4LjQyMDI4ODA4NTkzNzUgODA1LjI3OTA1MjczNDM3NVE2MjMuNzYwNDk4MDQ2ODc1IDg0Mi4wMzg4MTgzNTkzNzUgNTU1LjIwMDkyNzczNDM3NSA4NDIuMDM4ODE4MzU5Mzc1UTQ4Ny44NDEzMDg1OTM3NSA4NDIuMDM4ODE4MzU5Mzc1IDQ1MC4zNjE1NzIyNjU2MjUgODE1LjkzOTA4NjkxNDA2MjVRNDEyLjg4MTgzNTkzNzUgNzg5LjgzOTM1NTQ2ODc1IDQxMi44ODE4MzU5Mzc1IDc1MS40Nzk3MzYzMjgxMjVRNDEyLjg4MTgzNTkzNzUgNzE4LjA4MDA3ODEyNSA0NDIuODIxNjU1MjczNDM3NSA2OTYuMDIwMjYzNjcxODc1UTQ3Mi43NjE0NzQ2MDkzNzUgNjczLjk2MDQ0OTIxODc1IDUyNi43MjExOTE0MDYyNSA2NjMuNTYwNTQ2ODc1TDczOS4yODE3MzgyODEyNSA2MjUuMDgwNTY2NDA2MjVROTAyLjY4MTg4NDc2NTYyNSA1OTUuMTYwNjQ0NTMxMjUgOTgwLjE0MTk2Nzc3MzQzNzUgNTI1LjE4MDY2NDA2MjVRMTA1Ny42MDIwNTA3ODEyNSA0NTUuMjAwNjgzNTkzNzUgMTA1Ny42MDIwNTA3ODEyNSAzMzcuNDAwNjM0NzY1NjI1UTEwNTcuNjAyMDUwNzgxMjUgMjI4Ljc2MDQ5ODA0Njg3NSA5OTUuNDgxOTMzNTkzNzUgMTQ2Ljk4MDM0NjY3OTY4NzVROTMzLjM2MTgxNjQwNjI1IDY1LjIwMDE5NTMxMjUgODIxLjcyMTU1NzYxNzE4NzUgMTkuNDYwMDgzMDA3ODEyNVE3MTAuMDgxMjk4ODI4MTI1IC0yNi4yODAwMjkyOTY4NzUgNTYyLjQwMDg3ODkwNjI1IC0yNi4yODAwMjkyOTY4NzVaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDQ0MC4wMCAwLjAwKSIvPjwvZz48L3N2Zz4="); }
+
+/* ---- Good Questions additions, built only from the Floating Tiles tokens ---- */
+html { scroll-behavior: smooth; }
+.ft-section[id], .ft-panel[id] { scroll-margin-top: 110px; }
+.ft-page a:focus-visible, .ft-page summary:focus-visible, .ft-page button:focus-visible { outline: 2px solid var(--violet-600); outline-offset: 2px; border-radius: 6px; }
+
+/* the wordmark, in the nav and at the foot */
+.gq-logo { display: block; width: 168px; height: 18px; background: var(--ink); -webkit-mask: var(--logo) left center / contain no-repeat; mask: var(--logo) left center / contain no-repeat; }
+.gq-logo--lg { width: 232px; height: 25px; }
+.gq-close { padding-bottom: 56px; }
+.gq-footer { padding: 56px var(--space-64) 32px; }
+.gq-footer__top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 72px; align-items: start; }
+.gq-footer__brand .ft-footer__statement { max-width: 340px; margin-top: 24px; }
+.gq-footer__brand a { display: inline-block; }
+.gq-footer .ft-footer__cols { gap: 72px; }
+.gq-footer .ft-footer__col li a:hover, .gq-footer .ft-footer__col h3 a:hover { color: var(--ink); }
+.gq-footer__base { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; margin-top: 52px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--ink-muted); }
+.gq-footer__base p:first-child { max-width: 780px; }
+.gq-footer__base p:last-child { white-space: nowrap; }
+.gq-powered { margin-top: 10px; color: var(--ink-muted); }
+
+/* the front chip must paint above the faded one behind it */
+.ft-chipstack > .ft-chip:not(.is-back) { position: relative; z-index: 1; }
+/* the stacked chip sat too high, which sliced the card behind it through the middle of its text */
+.ft-chipstack > .ft-chip.is-back { transform: translateY(46px) scale(.93); opacity: .55; }
+
+.gq-panel-next { margin-top: var(--space-20); padding-bottom: 48px; }
+.ft-section-head__lead, .ft-hero__lead, .ft-section-head--compact .ft-section-head__lead { max-width: 560px; }
+.gq-arc-caption { display: none; margin-top: 20px; text-align: center; }
+.gq-arc-caption .copy-sm { margin-top: 8px; color: var(--ink-muted); }
+
+/* the run of the thing: the questions, the score, what to do next */
+.gq-flow { display: grid; grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr) 64px minmax(0, 1fr); row-gap: 28px; padding: 48px 48px 44px; }
+.gq-ui { position: relative; min-height: 286px; padding: 18px; background: var(--canvas); border: 1px solid var(--line-soft); border-radius: 16px; box-shadow: var(--shadow-soft); color: var(--ink); font-family: var(--font-text); }
+.gq-ui b { display: block; font: 600 14px/18px var(--font-display); letter-spacing: -0.01em; }
+.gq-ui i { display: block; font: 400 12px/16px var(--font-text); font-style: normal; color: var(--ink-muted); }
+.gq-ui__head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.gq-ui__head--split { justify-content: space-between; margin-bottom: 10px; }
+.gq-pill { padding: 3px 9px; border: 1px solid var(--line-soft); border-radius: 7px; font: 500 11px/14px var(--font-text); color: var(--ink-muted); }
+.gq-q { margin-bottom: 14px; font: 600 17px/23px var(--font-display); letter-spacing: -0.015em; }
+.gq-opt { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid var(--line-soft); border-radius: 10px; font: 400 14px/19px var(--font-text); color: var(--ink-muted); }
+.gq-opt + .gq-opt { margin-top: 8px; }
+.gq-opt::before { content: ""; flex: none; width: 15px; height: 15px; border: 1.5px solid var(--line); border-radius: 50%; }
+.gq-opt.is-on { border-color: var(--violet-300); background: color-mix(in srgb, var(--violet-300) 14%, var(--canvas)); color: var(--ink); }
+.gq-opt.is-on::before { border: 4.5px solid var(--violet-500); }
+.gq-total { display: flex; align-items: baseline; gap: 8px; margin-bottom: 16px; }
+.gq-total span:first-child { font: 600 46px/46px var(--font-display); letter-spacing: -0.03em; }
+.gq-total span:last-child { font: 400 14px/18px var(--font-text); color: var(--ink-muted); }
+.gq-score { display: grid; grid-template-columns: 96px 1fr 26px; align-items: center; gap: 10px; font: 400 12px/16px var(--font-text); color: var(--ink-muted); }
+.gq-score + .gq-score { margin-top: 9px; }
+.gq-score em { font-style: normal; color: var(--ink); text-align: right; font-weight: 500; }
+.gq-track { height: 8px; border-radius: 4px; background: var(--surface); }
+.gq-track span { display: block; height: 100%; border-radius: 4px; background: var(--grad-violet); }
+.gq-track--low span { background: var(--grad-coral); }
+.gq-next { display: flex; gap: 10px; padding: 10px 0; font: 400 14px/19px var(--font-text); color: var(--ink); }
+.gq-next + .gq-next { border-top: 1px solid var(--line-soft); }
+.gq-next .ft-icon { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--violet-500); }
+.gq-chip { position: absolute; right: -14px; bottom: -18px; height: 52px; font-size: 15px; }
+.gq-chip > .ft-tile { --size: 36px; --r: 9px; }
+.gq-link { position: relative; align-self: center; height: 1px; background: var(--thread); }
+.gq-link::before, .gq-link::after { content: ""; position: absolute; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--violet-500); box-shadow: 0 0 0 2px var(--canvas); }
+.gq-link::before { left: -4px; }
+.gq-link::after { right: -4px; }
+.gq-cap { padding: 0 4px; }
+.gq-cap .copy-sm { margin-top: 6px; color: var(--ink-muted); }
+
+/* for organisations */
+
+/* questions */
+.gq-faq { width: 100%; max-width: 860px; margin: 0 auto; padding: 6px var(--space-32); background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+.gq-faq details + details { border-top: 1px solid var(--line); }
+.gq-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; color: var(--ink); cursor: pointer; list-style: none; }
+.gq-faq summary::-webkit-details-marker { display: none; }
+.gq-faq summary .ft-icon { flex: none; width: 20px; height: 20px; color: var(--ink-muted); transition: transform .2s ease; }
+.gq-faq details[open] summary .ft-icon { transform: rotate(180deg); }
+.gq-faq details > p { max-width: 680px; padding-bottom: 24px; color: var(--ink-muted); }
+
+/* the nav gains a link here, so the links fold away a little earlier; and the hero art crops rather than scrolling the page sideways */
+.ft-hero { overflow: hidden; }
+@media (max-width: 1100px) { .ft-nav__links { display: none; } .ft-nav__brand { margin-right: 24px; } .ft-nav__actions { margin-left: auto; } }
+
+@media (max-width: 1300px) {
+  .gq-flow { grid-template-columns: minmax(0, 1fr); row-gap: 0; max-width: min(560px, 100%); padding: 32px 28px 36px; }
+  .gq-gap { display: none; }
+  .gq-o1 { order: 1; } .gq-o2 { order: 2; } .gq-o3 { order: 3; } .gq-o4 { order: 4; } .gq-o5 { order: 5; } .gq-o6 { order: 6; } .gq-o7 { order: 7; } .gq-o8 { order: 8; }
+  .gq-cap { margin-top: 34px; }
+  .gq-link { justify-self: center; width: 1px; height: 44px; margin: 22px 0; }
+  .gq-link::before { left: -4px; top: -4px; }
+  .gq-link::after { left: -4px; right: auto; top: auto; bottom: -4px; }
+  .gq-chip { right: -8px; }
+}
+@media (max-width: 1080px) {
+  .gq-footer__top { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 860px) {
+  .ft-arc__caption { display: none; }
+  .gq-arc-caption { display: block; }
+  .ft-section-head__title.display-m { font-size: 34px; line-height: 40px; }
+}
+@media (max-width: 640px) {
+  .gq-logo { width: 132px; height: 14px; }
+  .gq-flow { padding: 24px 16px 32px; }
+  .ft-card--wide .ft-mini { left: 104px !important; }
+  .ft-card--wide .ft-mini + .ft-mini { display: none; }
+  .gq-faq { padding: 2px 20px; }
+  .ft-section { padding-top: 64px; padding-bottom: 64px; }
+  .gq-footer { padding: 40px 24px 28px; }
+  .gq-footer .ft-footer__cols { gap: 28px 40px; }
+  .gq-footer__base { flex-direction: column; gap: 12px; margin-top: 40px; }
+}
+
+/* motion: one moment per section, only when the visitor has not asked for less */
+@media (prefers-reduced-motion: no-preference) {
+  .gq-motion [data-rise] { opacity: 0; transform: translateY(16px); transition: opacity .5s ease, transform .5s ease; transition-delay: calc(var(--i, 0) * 60ms); }
+  .gq-motion [data-rise].is-in { opacity: 1; transform: none; }
+  .gq-motion .ft-hero__title { animation: gq-sharpen .9s ease both .15s; }
+  .gq-motion .ft-threads__item > * { animation: gq-pop .6s cubic-bezier(.2, .9, .3, 1.15) both; animation-delay: calc(var(--d, 0) * 70ms); }
+  .gq-motion .ft-threads__lines { animation: gq-fade .9s ease both .2s; }
+  @keyframes gq-sharpen { from { opacity: 0; filter: blur(12px); } to { opacity: 1; filter: blur(0); } }
+  @keyframes gq-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+  @keyframes gq-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+
+<body class="ft-page" id="top">
+<div class="ft-navbar">
+  <nav class="ft-nav" aria-label="Main">
+    <a class="ft-nav__brand" href="#top" aria-label="Good Questions, back to the top"><span class="gq-logo"></span></a>
+    <ul class="ft-nav__links">
+      <li><a href="#assessment">The assessment</a></li>
+      <li><a href="#how">How it works</a></li>
+      
+      <li><a href="#questions">Questions</a></li>
+    </ul>
+    <div class="ft-nav__actions">
+      <a class="ft-btn ft-btn--primary" href="https://goodquestions.co.uk/ai-readiness">Take the assessment</a>
+    </div>
+  </nav>
+</div>
+
+<header class="ft-hero">
+  <div class="ft-threads" role="img" aria-label="A question at the centre, joined by threads to a report, a score, people and findings">
+    <svg class="ft-threads__lines" viewBox="-624 -190 1248 380" aria-hidden="true">
+      <path d="M-479 0H480"/>
+      <path d="M-212 0L-292 -108H-360"/>
+      <path d="M-168 0L-242 84H-306"/>
+      <path d="M170 0L243 -90H306"/>
+      <path d="M211 0L290 104H357"/>
+      <circle cx="-292" cy="-108" r="4"/>
+      <circle cx="-242" cy="84" r="4"/>
+      <circle cx="243" cy="-90" r="4"/>
+      <circle cx="290" cy="104" r="4"/>
+    </svg>
+    <span class="ft-threads__item" style="--x:0px; --y:0px; --d:0"><span class="ft-tile ft-tile--xl ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 9a3.4 3.4 0 1 1 4.9 3c-.9.5-1.5 1.4-1.5 2.4v.6"/><circle cx="12" cy="18.4" r="1.2" fill="currentColor" stroke="none"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:-543px; --y:0px; --d:4"><span class="ft-tile ft-tile--lg ft-tile--photo" style="--size:128px; --r:27px"><span class="ft-wash" style="--wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span></span></span>
+    <span class="ft-threads__item" style="--x:-398px; --y:-108px; --d:2"><span class="ft-tile ft-tile--sm ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5l4 4v13H7z"/><path d="M13.5 3.5v4h4M9.8 12h5M9.8 15.5h5"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:-356px; --y:84px; --d:3"><span class="ft-tile ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="10" r="2.6"/><path d="M3.5 19.5c.7-3.2 2.9-5 5.5-5s4.8 1.8 5.5 5M15 14.8c.5-.2 1-.3 1.5-.3 2.2 0 3.9 1.5 4.5 4.5"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:356px; --y:-90px; --d:2"><span class="ft-tile ft-tile--coral"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:542px; --y:0px; --d:4"><span class="ft-tile ft-tile--lg ft-tile--white" style="color: var(--ink)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0"/><path d="M12 17.5l3.6-5.2"/></svg></span></span>
+    <span class="ft-threads__item" style="--x:395px; --y:104px; --d:3"><span class="ft-tile ft-tile--sm ft-tile--photo"><span class="ft-wash" style="--wash: linear-gradient(165deg, #F0DCD2 0%, #D39F8B 55%, #9A6656 100%)"></span></span></span>
+  </div>
+  <h1 class="display-xl ft-hero__title">Better decisions start with better questions</h1>
+  <p class="lead ft-hero__lead">Good Questions creates short, practical assessments that help UK business leaders see where their organisation stands, and what to improve next.</p>
+  <a class="ft-btn ft-btn--cta" href="https://goodquestions.co.uk/ai-readiness">Take the assessment</a>
+</header>
+
+<main>
+<section class="ft-section" id="assessment">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--white"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 9a3.4 3.4 0 1 1 4.9 3c-.9.5-1.5 1.4-1.5 2.4v.6"/><circle cx="12" cy="18.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
+    <h2 class="display-l ft-section-head__title">How ready is your business for AI?</h2>
+    <p class="lead ft-section-head__lead">Fifteen questions, about three minutes, and a score you get straight away across strategy, leadership, people, data and implementation.</p>
+    <a class="ft-btn ft-btn--accent" href="#what">See what it asks</a>
+  </header>
+  <div class="ft-section__body">
+    <div class="ft-panel gq-flow" data-rise>
+      <div class="gq-ui gq-o1" aria-hidden="true">
+        <div class="gq-ui__head gq-ui__head--split"><b>AI Readiness</b><span class="gq-pill">Question 4 of 15</span></div>
+        <p class="gq-q">Does someone at senior level have responsibility for how AI is introduced into the business?</p>
+        <p class="gq-opt is-on">Yes, it sits with a named person</p>
+        <p class="gq-opt">Informally, between a few of us</p>
+        <p class="gq-opt">Not yet</p>
+      </div>
+      <span class="gq-link gq-o3" aria-hidden="true"></span>
+      <div class="gq-ui gq-o4" aria-hidden="true">
+        <div class="gq-ui__head gq-ui__head--split"><b>Your score</b><span class="gq-pill">Just now</span></div>
+        <p class="gq-total"><span>67</span><span>out of 100</span></p>
+        <p class="gq-score"><span>Leadership</span><span class="gq-track"><span style="width:75%"></span></span><em>75</em></p>
+        <p class="gq-score"><span>Strategy</span><span class="gq-track gq-track--low"><span style="width:55%"></span></span><em>55</em></p>
+        <p class="gq-score"><span>People</span><span class="gq-track"><span style="width:62%"></span></span><em>62</em></p>
+        <p class="gq-score"><span>Data</span><span class="gq-track"><span style="width:71%"></span></span><em>71</em></p>
+        <p class="gq-score"><span>Implementation</span><span class="gq-track"><span style="width:72%"></span></span><em>72</em></p>
+      </div>
+      <span class="gq-link gq-o6" aria-hidden="true"></span>
+      <div class="gq-ui gq-o7" aria-hidden="true">
+        <div class="gq-ui__head gq-ui__head--split"><b>What to do next</b><span class="gq-pill">Strategy first</span></div>
+        <p class="gq-next"><svg class="ft-icon" viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>Write down three tasks where AI would save real time</p>
+        <p class="gq-next"><svg class="ft-icon" viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>Agree what company information stays out of public tools</p>
+        <p class="gq-next"><svg class="ft-icon" viewBox="0 0 24 24"><path d="M5.5 12.5l4.2 4.2 8.8-9.2"/></svg>Turn one experiment into a written, repeatable process</p>
+        <span class="ft-chip gq-chip"><span class="ft-tile ft-tile--coral"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4.5 7.5l7.5 6 7.5-6"/></svg></span>Report in your inbox</span>
+      </div>
+      <div class="gq-cap gq-o2"><p class="label">Fifteen practical questions</p><p class="copy-sm">No jargon, and nothing you would need the IT department to answer.</p></div>
+      <span class="gq-gap"></span>
+      <div class="gq-cap gq-o5"><p class="label">Your score straight away</p><p class="copy-sm">Overall, and across each of the five areas.</p></div>
+      <span class="gq-gap"></span>
+      <div class="gq-cap gq-o8"><p class="label">And what to do about it</p><p class="copy-sm">Practical next steps, written up and sent to you.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="ft-section" id="what">
+  <header class="ft-section-head">
+    <h2 class="display-l ft-section-head__title">What the assessment asks</h2>
+    <p class="lead ft-section-head__lead">Five areas, and the sort of question that makes you stop and think about your own business rather than about technology.</p>
+  </header>
+  <div class="ft-section__body">
+  <div class="ft-grid">
+    <article class="ft-card" data-rise style="--i:0">
+      <div class="ft-card__art" aria-hidden="true">
+        <span class="ft-ghost" style="left:-30px; top:44px; width:70px; height:132px"></span>
+        <span class="ft-ghost" style="right:-30px; top:44px; width:70px; height:132px"></span>
+        <div class="ft-mini" style="left:50%; top:34px; width:218px; margin-left:-109px; padding:10px 12px 12px">
+          <div class="ft-mini__head"><span class="ft-mini__title">Where AI would help</span><span class="ft-mini__pill">Draft <svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></span></div>
+          <div class="ft-report__body">
+            <div class="ft-report__days"><span>Quotes</span><span>Admin</span><span>Reports</span><span>Support</span><span>Sales</span></div>
+            <div class="ft-bars">
+              <span class="ft-bars__avg"></span>
+              <div class="ft-bars__pair"><span class="ft-bar ft-bar--violet" style="--h:64px; --split:52%"></span><span class="ft-bar ft-bar--coral" style="--h:48px; --split:58%"></span></div>
+              <div class="ft-bars__pair"><span class="ft-tip">Most time</span><span class="ft-bar ft-bar--violet" style="--h:78px; --split:42%"></span><span class="ft-bar ft-bar--coral" style="--h:62px; --split:52%"></span></div>
+              <div class="ft-bars__pair"><span class="ft-bar ft-bar--violet" style="--h:46px; --split:56%"></span><span class="ft-bar ft-bar--coral" style="--h:32px; --split:62%"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ft-card__text">
+        <h3 class="card-title ft-card__title">Strategy</h3>
+        <p class="copy ft-card__copy">Have you identified three or more specific activities where AI could save time or improve performance?</p>
+      </div>
+    </article>
+    <article class="ft-card" data-rise style="--i:1">
+      <div class="ft-card__art" aria-hidden="true">
+        <span class="ft-rings"></span>
+        <div class="ft-chipstack">
+          <span class="ft-chip is-back"><span class="ft-tile ft-tile--sun"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="10" r="2.6"/><path d="M3.5 19.5c.7-3.2 2.9-5 5.5-5s4.8 1.8 5.5 5M15 14.8c.5-.2 1-.3 1.5-.3 2.2 0 3.9 1.5 4.5 4.5"/></svg></span>Nobody owns it</span>
+          <span class="ft-chip"><span class="ft-tile ft-tile--sky"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.6" r="4.3"/><path d="M4.4 20c.8-3.8 3.9-6.1 7.6-6.1s6.8 2.3 7.6 6.1"/></svg></span>Named at board level</span>
+        </div>
+      </div>
+      <div class="ft-card__text">
+        <h3 class="card-title ft-card__title">Leadership</h3>
+        <p class="copy ft-card__copy">Does someone at senior level have responsibility for how AI is introduced into the business?</p>
+      </div>
+    </article>
+    <article class="ft-card" data-rise style="--i:2">
+      <div class="ft-card__art" aria-hidden="true">
+        <span class="ft-guides"></span>
+        <span class="ft-doc" style="left:92px; top:74px"></span>
+        <span class="ft-doc" style="left:196px; top:54px"></span>
+        <span class="ft-tile ft-tile--xs ft-tile--violet" style="position:absolute; left:50%; top:92px; margin-left:-32px"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5l4 4v13H7z"/><path d="M13.5 3.5v4h4M9.8 12.5h5M9.8 16h5"/></svg></span>
+      </div>
+      <div class="ft-card__text">
+        <h3 class="card-title ft-card__title">People</h3>
+        <p class="copy ft-card__copy">Have employees had practical guidance about what they can and cannot use AI for?</p>
+      </div>
+    </article>
+    <article class="ft-card ft-card--wide" data-rise style="--i:0">
+      <div class="ft-card__art" aria-hidden="true">
+        <span class="ft-tile ft-tile--xs ft-tile--white" style="position:absolute; left:28px; top:28px; color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></span>
+        <div class="ft-mini" style="left:300px; top:34px; width:236px; padding:10px 12px 4px">
+          <div class="ft-mini__head"><span class="ft-mini__title">Company information</span><span class="ft-mini__pill">Review</span></div>
+          <div class="ft-tabs"><span class="is-active">Never share <b class="ft-count">6</b></span><span>Ask first <b class="ft-count">4</b></span><span>Fine <b class="ft-count">9</b></span></div>
+          <div class="ft-person"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Client contracts</span><span class="ft-person__role">Never share</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l3.6 3.6 8-8.4"/></svg></span></div>
+          <div class="ft-person"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Staff records</span><span class="ft-person__role">Never share</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l3.6 3.6 8-8.4"/></svg></span></div>
+          <div class="ft-person"><span class="ft-person__face" style="--wash: linear-gradient(165deg, #F0DCD2 0%, #D39F8B 55%, #9A6656 100%)"></span><span class="ft-person__who"><span class="ft-person__name">Price lists</span><span class="ft-person__role">Ask first</span></span><span class="ft-person__act"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12.5l3.6 3.6 8-8.4"/></svg></span></div>
+        </div>
+        <div class="ft-mini" style="left:552px; top:34px; width:300px; padding:10px 12px 12px">
+          <div class="ft-mini__head"><span class="ft-mini__title">Policy in place</span><span class="ft-seg"><span>Drafted</span><span>Circulated</span><span class="is-active">Agreed</span></span></div>
+          <div class="ft-chart">
+            <span class="ft-chart__bar" style="--h:38%"></span>
+            <span class="ft-chart__bar" style="--h:52%"></span>
+            <span class="ft-chart__bar" style="--h:48%"></span>
+            <span class="ft-chart__bar is-hot" style="--h:70%"></span>
+            <span class="ft-chart__bar" style="--h:30%"></span>
+            <span class="ft-chart__bar" style="--h:24%"></span>
+          </div>
+        </div>
+      </div>
+      <div class="ft-card__text">
+        <h3 class="card-title ft-card__title">Data</h3>
+        <p class="copy ft-card__copy">Could you say which company information should never be entered into a public AI system?</p>
+      </div>
+    </article>
+    <article class="ft-card" data-rise style="--i:1">
+      <div class="ft-card__art" aria-hidden="true">
+        <div class="ft-orbit"><span class="ft-orbit__hub"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 1 2.6 5.7"/><path d="M4.2 8.2v4h4"/></svg></span><span class="ft-orbit__face" style="--a:0deg; --tilt:-6deg; --wash: linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span><span class="ft-orbit__face" style="--a:36deg; --tilt:8deg; --wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span><span class="ft-orbit__face" style="--a:72deg; --tilt:-4deg; --wash: linear-gradient(165deg, #E1E6D9 0%, #A6B39A 55%, #6E7D64 100%)"></span><span class="ft-orbit__face" style="--a:108deg; --tilt:6deg; --wash: linear-gradient(165deg, #F0DCD2 0%, #D39F8B 55%, #9A6656 100%)"></span><span class="ft-orbit__face" style="--a:144deg; --tilt:-8deg; --wash: linear-gradient(165deg, #D9E4EC 0%, #93AABB 55%, #5F7788 100%)"></span><span class="ft-orbit__face" style="--a:180deg; --tilt:4deg; --wash: linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span><span class="ft-orbit__face" style="--a:216deg; --tilt:-6deg; --wash: linear-gradient(165deg, #E1E6D9 0%, #A6B39A 55%, #6E7D64 100%)"></span><span class="ft-orbit__face" style="--a:252deg; --tilt:8deg; --wash: linear-gradient(165deg, #F0DCD2 0%, #D39F8B 55%, #9A6656 100%)"></span><span class="ft-orbit__face" style="--a:288deg; --tilt:-4deg; --wash: linear-gradient(165deg, #EADBCB 0%, #C49A7A 55%, #8E6A52 100%)"></span><span class="ft-orbit__face" style="--a:324deg; --tilt:6deg; --wash: linear-gradient(165deg, #E1E6D9 0%, #A6B39A 55%, #6E7D64 100%)"></span></div>
+      </div>
+      <div class="ft-card__text">
+        <h3 class="card-title ft-card__title">Implementation</h3>
+        <p class="copy ft-card__copy">Is AI part of a documented recurring process, rather than occasional experimentation?</p>
+      </div>
+    </article>
+  </div>
+  </div>
+</section>
+
+<section class="ft-section" id="how">
+  <section class="ft-panel">
+    <header class="ft-section-head ft-section-head--compact">
+      <span class="ft-tile ft-tile--xs ft-tile--white" style="color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+      <h2 class="display-m ft-section-head__title">From one question to a market you can see</h2>
+      <p class="lead ft-section-head__lead">You answer, you get your score and your report, and your answers join thousands of others. What comes back becomes published research about how UK businesses are really doing.</p>
+    </header>
+    <div class="ft-arc">
+      <div class="ft-arc__tile" style="--x:-463px; --y:130px; --rot:-30deg; color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4.5 7.5l7.5 6 7.5-6"/></svg></div>
+      <div class="ft-arc__tile" style="--x:-244px; --y:36px; --rot:-15deg; color: var(--violet-500)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 9a3.4 3.4 0 1 1 4.9 3c-.9.5-1.5 1.4-1.5 2.4v.6"/><circle cx="12" cy="18.4" r="1.2" fill="currentColor" stroke="none"/></svg></div>
+      <div class="ft-arc__tile" style="--x:0px; --y:0px; --rot:0deg; color: var(--ink)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0"/><path d="M12 17.5l3.6-5.2"/></svg></div>
+      <div class="ft-arc__tile" style="--x:244px; --y:36px; --rot:15deg; color: var(--violet-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h6.5l4 4v13H7z"/><path d="M13.5 3.5v4h4M9.8 12.5h5M9.8 16h5"/></svg></div>
+      <div class="ft-arc__tile" style="--x:463px; --y:130px; --rot:30deg; color: var(--coral-600)"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg></div>
+      <div class="ft-arc__caption"><p class="label">Your score</p><p class="copy-sm">On screen the moment you finish, with your five area scores</p></div>
+    </div>
+    <div class="gq-arc-caption"><p class="label">An invitation, the questions, your score, your report, the research</p><p class="copy-sm">Your score is on screen the moment you finish.</p></div>
+  </section>
+  <section class="ft-panel gq-panel-next">
+    <header class="ft-section-head ft-section-head--compact">
+      <span class="ft-tile ft-tile--xs ft-tile--white"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5.2c0 4.6-3 8-7 9.8-4-1.8-7-5.2-7-9.8V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg></span>
+      <h2 class="display-m ft-section-head__title">Taking part is not an enquiry</h2>
+      <p class="lead ft-section-head__lead">Answering fifteen questions about your business is not a request to be sold to, and it is not treated as one. At the end you are asked, separately, whether you would like help improving your score. Say no and you keep your report and hear nothing further.</p>
+    </header>
+  </section>
+</section>
+
+<section class="ft-section" id="questions">
+  <header class="ft-section-head">
+    <h2 class="display-l ft-section-head__title">Questions people ask</h2>
+  </header>
+  <div class="ft-section__body">
+    <div class="gq-faq">
+      <details open>
+        <summary class="label">How long does the assessment take?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">Fifteen questions and about three minutes. Your score appears on screen as soon as you finish, and the written version follows by email.</p>
+      </details>
+      <details>
+        <summary class="label">What happens to my answers?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">They produce your own score and report, and they are combined with everybody else's to show how UK businesses are doing as a whole. Published findings are reported as totals and percentages, never as named businesses.</p>
+      </details>
+      <details>
+        <summary class="label">Will somebody ring me afterwards?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">Only if you ask. The last question is whether you would like help improving your score. Say no and you keep your report and hear nothing further.</p>
+      </details>
+      <details>
+        <summary class="label">Is this useful if we have barely started with AI?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">That is often when it is most useful. A low score is not a verdict, it is a list of the three or four things worth doing first, in an order that makes sense.</p>
+      </details>
+      <details>
+        <summary class="label">Can our organisation sponsor an assessment?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">Yes. We design the questions with you, put them to UK business decision-makers, and write up what comes back. Each campaign is quoted on the audience, the research and the reporting involved, so the sensible first step is a conversation.</p>
+      </details>
+      <details>
+        <summary class="label">What are the assessments built on?<svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg></summary>
+        <p class="copy">ScoreApp runs the questionnaires and the scoring. The questions, the audience, the research and the reporting are ours.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="ft-section gq-close" id="start">
+  <header class="ft-section-head">
+    <span class="ft-tile ft-tile--coral"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 9a3.4 3.4 0 1 1 4.9 3c-.9.5-1.5 1.4-1.5 2.4v.6"/><circle cx="12" cy="18.4" r="1.2" fill="currentColor" stroke="none"/></svg></span>
+    <h2 class="display-l ft-section-head__title">Start with one good question</h2>
+    <p class="lead ft-section-head__lead">Fifteen questions, three minutes, and a score you can actually do something with.</p>
+    <a class="ft-btn ft-btn--cta" href="https://goodquestions.co.uk/ai-readiness">Take the assessment</a>
+  </header>
+  <div class="ft-section__body">
+  <footer class="ft-footer gq-footer">
+    <div class="gq-footer__top">
+      <div class="gq-footer__brand">
+        <a href="#top" aria-label="Good Questions, back to the top"><span class="gq-logo gq-logo--lg"></span></a>
+        <p class="statement ft-footer__statement">Good Questions helps business leaders make better decisions by asking better questions.</p>
+        <p class="copy-sm gq-powered">Assessments powered by ScoreApp.</p>
+      </div>
+      <nav class="ft-footer__cols" aria-label="Footer">
+        <div class="ft-footer__col"><h3 class="column-head">The assessment</h3><ul><li><a href="#assessment">AI readiness</a></li><li><a href="#what">What it asks</a></li><li><a href="#how">How it works</a></li><li><a href="#questions">Questions</a></li></ul></div>
+        
+        
+      </nav>
+    </div>
+    <div class="gq-footer__base">
+      <p class="copy-sm">Good Questions is a trading name of Emailfirst Limited, registered in England and Wales, company number 14162647. Registered office: The Lewis Building, c/o Bi Platforms, 35 Bull Street, Birmingham B4 6AF.</p>
+      <p class="copy-sm">&copy; 2026 Good Questions</p>
+    </div>
+  </footer>
+  </div>
+</section>
+</main>
+<script>
+(function () {
+  if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('gq-motion');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('[data-rise]').forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>
