@@ -1,0 +1,18 @@
+# Sends one example "call me" request to the Make webhook so Make can learn
+# its fields. The example uses a made-up name and a number reserved for drama
+# (Ofcom 07700 900xxx), so no real call can be placed to anyone.
+name: Test Make call webhook
+on:
+  workflow_dispatch:
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send example
+        env:
+          URL: ${{ secrets.MAKE_CALL_WEBHOOK_URL }}
+        run: |
+          test -n "$URL" || { echo "MAKE_CALL_WEBHOOK_URL is not set"; exit 1; }
+          curl -s -X POST "$URL" -H "Content-Type: application/json" \
+            -d '{"phone":"+447700900123","name":"Test Person","first_name":"Test","email":"test@example.com","business":"Test Plumbing","call_time":"As soon as possible","lead_id":"0","product":"onlinebusinessbuilder"}'
+          echo
