@@ -73,7 +73,22 @@ let generatedPassword;
 if (process.env.ADMIN_PASSWORD) values.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (process.env.STRIPE_SECRET_KEY) values.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 if (process.env.HQ_ANTHROPIC_API_KEY) values.ANTHROPIC_API_KEY = process.env.HQ_ANTHROPIC_API_KEY;
-if (process.env.MAIL_ADDRESS && process.env.MAIL_APP_PASSWORD) {
+// Sending through Resend (each product from its own verified domain).
+if (process.env.RESEND_API_KEY) values.SMTP_URL = `smtps://resend:${encodeURIComponent(process.env.RESEND_API_KEY)}@smtp.resend.com:465`;
+// Replies: info+hq@ lands in the owner's Gmail under the "HQ Replies" label, which is all the app reads.
+if (process.env.GMAIL_APP_PASSWORD) {
+  const user = process.env.REPLY_MAILBOX || "info@felixclarke.com";
+  const [local, domain] = user.split("@");
+  values.IMAP_URL = `imaps://${encodeURIComponent(user)}:${encodeURIComponent(process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, ""))}@imap.gmail.com:993`;
+  values.IMAP_FOLDER = process.env.REPLY_LABEL || "HQ Replies";
+  values.REPLY_TO = `${local}+hq@${domain}`;
+}
+// Tool keys passed straight through to the app.
+for (const k of ["NETLIFY_AUTH_TOKEN", "GODADDY_API_KEY", "GODADDY_API_SECRET", "MAILWIZZ_API_URL", "MAILWIZZ_API_KEY",
+  "AWAZ_API_KEY", "FEEDBOSS_API_KEY", "SCOREAPP_API_KEY", "SBL_API_KEY", "SBL_COMPANY_ID"]) {
+  if (process.env[k]) values[k] = process.env[k];
+}
+if (!process.env.RESEND_API_KEY && process.env.MAIL_ADDRESS && process.env.MAIL_APP_PASSWORD) {
   const u = encodeURIComponent(process.env.MAIL_ADDRESS);
   const p = encodeURIComponent(process.env.MAIL_APP_PASSWORD.replace(/\s+/g, ""));
   values.SMTP_URL = `smtps://${u}:${p}@smtp.gmail.com:465`;

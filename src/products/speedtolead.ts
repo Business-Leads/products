@@ -13,7 +13,7 @@ export const speedToLead: Product = {
   entity: `Speed to Lead is a trading name of ${AIFT}`,
   siteUrls: ["https://speedtolead-1rg1.netlify.app"],
   bookingUrl: BOOKING_URL,
-  email: { from: fromAddress("speedtolead", "hello@business-leads.co.uk"), fromName: "Speed to Lead" },
+  email: { from: fromAddress("speedtolead", "hello@speedtolead.co.uk"), fromName: "Speed to Lead" },
   voice: `${HOUSE_VOICE} Speak to a busy tradesperson; be practical and brief.`,
   plans: [
     {

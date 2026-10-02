@@ -25,6 +25,8 @@ export const config = {
     password: str("ADMIN_PASSWORD"),
     // Where the daily digest and urgent alerts go.
     alertEmail: str("ALERT_EMAIL", "info@felixclarke.com"),
+    // Sender for the digest and alerts; must be on a domain verified for sending.
+    fromEmail: str("OPERATOR_FROM", "hello@onlinebusinessbuilder.co.uk"),
   },
 
   stripe: {
@@ -43,6 +45,8 @@ export const config = {
   imap: {
     // e.g. imaps://replies%40example.com:password@imap.example.com:993
     url: str("IMAP_URL"),
+    // Only this folder/label is read (e.g. a Gmail label), never the whole inbox.
+    folder: str("IMAP_FOLDER", "INBOX"),
   },
 
   anthropic: {

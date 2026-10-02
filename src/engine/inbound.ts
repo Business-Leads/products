@@ -202,7 +202,7 @@ export async function processInbound(): Promise<string> {
   await client.connect();
   let handled = 0;
   try {
-    const lock = await client.getMailboxLock("INBOX");
+    const lock = await client.getMailboxLock(config.imap.folder);
     try {
       const seen: number[] = [];
       for await (const m of client.fetch({ seen: false }, { uid: true, source: true })) {

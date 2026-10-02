@@ -17,7 +17,7 @@ export const onlineBusinessBuilder: Product = {
   siteUrls: ["https://onlinebusinessbuilder.netlify.app"],
   bookingUrl: BOOKING_URL,
   bookingAfterPurchase: true,
-  email: { from: fromAddress("onlinebusinessbuilder", "hello@business-leads.co.uk"), fromName: "Online Business Builder" },
+  email: { from: fromAddress("onlinebusinessbuilder", "hello@onlinebusinessbuilder.co.uk"), fromName: "Online Business Builder" },
   voice: `${HOUSE_VOICE} Speak to a busy local business owner. Never promise rankings or outcomes.`,
   plans: [
     {

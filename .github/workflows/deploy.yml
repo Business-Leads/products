@@ -37,6 +37,16 @@ jobs:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          MAILWIZZ_API_URL: ${{ secrets.MAILWIZZ_API_URL }}
+          MAILWIZZ_API_KEY: ${{ secrets.MAILWIZZ_API_KEY }}
+          AWAZ_API_KEY: ${{ secrets.AWAZ_API_KEY }}
+          FEEDBOSS_API_KEY: ${{ secrets.FEEDBOSS_API_KEY }}
+          SCOREAPP_API_KEY: ${{ secrets.SCOREAPP_API_KEY }}
+          SBL_API_KEY: ${{ secrets.SBL_API_KEY }}
+          SBL_COMPANY_ID: ${{ secrets.SBL_COMPANY_ID }}
           GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
           GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
         run: node scripts/deploy.mjs

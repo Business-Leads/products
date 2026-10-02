@@ -50,6 +50,39 @@ services:
       - key: REPLY_TO
         scope: RUN_TIME
         type: SECRET
+      - key: IMAP_FOLDER
+        scope: RUN_TIME
+        type: SECRET
+      - key: NETLIFY_AUTH_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+      - key: GODADDY_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: GODADDY_API_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: MAILWIZZ_API_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: MAILWIZZ_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: AWAZ_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: FEEDBOSS_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SCOREAPP_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SBL_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SBL_COMPANY_ID
+        scope: RUN_TIME
+        type: SECRET
       - key: ANTHROPIC_API_KEY
         scope: RUN_TIME
         type: SECRET
