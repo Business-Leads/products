@@ -1,6 +1,6 @@
 # DigitalOcean App Platform spec, sized for minimum cost:
 #   web: apps-s-1vcpu-0.5gb (about $5/month)
-#   db:  dev database (about $7/month)
+#   db:  managed Postgres, smallest size (about $15/month)
 # Deployed by scripts/deploy.sh, which fills in the secrets from the environment.
 name: products-hq
 region: lon
@@ -57,7 +57,10 @@ services:
         scope: RUN_TIME
         value: "20"
 databases:
+  # A small managed cluster (created by scripts/deploy.mjs if missing). The
+  # cheaper "dev database" doesn't let the app create tables on Postgres 15+.
   - name: db
     engine: PG
     version: "16"
-    production: false
+    production: true
+    cluster_name: products-hq-db

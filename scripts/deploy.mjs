@@ -40,6 +40,31 @@ async function stripe(method, path, form) {
 }
 
 const spec = parse(await readFile(new URL("../.do/app.yaml", import.meta.url), "utf8"));
+
+// Make sure the managed database cluster exists and is online before the app needs it.
+for (const db of spec.databases ?? []) {
+  if (!db.production || !db.cluster_name) continue;
+  const { databases = [] } = await doApi("GET", "/databases");
+  let cluster = databases.find((d) => d.name === db.cluster_name);
+  if (!cluster) {
+    console.log(`Creating database cluster ${db.cluster_name} (smallest size)…`);
+    cluster = (await doApi("POST", "/databases", {
+      name: db.cluster_name,
+      engine: "pg",
+      version: db.version ?? "16",
+      region: "lon1",
+      size: "db-s-1vcpu-1gb",
+      num_nodes: 1,
+    })).database;
+  }
+  for (let i = 0; i < 90 && cluster.status !== "online"; i++) {
+    process.stdout.write(`  database ${cluster.status}\r`);
+    await new Promise((r) => setTimeout(r, 10_000));
+    cluster = (await doApi("GET", `/databases/${cluster.id}`)).database;
+  }
+  if (cluster.status !== "online") throw new Error(`Database ${db.cluster_name} did not come online`);
+  console.log(`Database ${db.cluster_name} is online.`);
+}
 const service = spec.services[0];
 
 // Values to set. Anything not given here keeps its current value on the existing app.
