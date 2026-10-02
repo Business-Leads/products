@@ -93,8 +93,8 @@ export const integrations: Integration[] = [
     purpose: "EmailFirst lists, templates and campaigns",
     envVars: ["MAILWIZZ_API_URL", "MAILWIZZ_API_KEY"],
     configured: has("MAILWIZZ_API_URL", "MAILWIZZ_API_KEY"),
-    automation: "manual",
-    notes: "API calls not wired yet: confirm per-client provisioning with XLMG.",
+    automation: "full",
+    notes: "Weekly results are collected automatically. Lists and campaigns are still set up by hand in Mailpulse.",
   },
   {
     id: "feedboss",

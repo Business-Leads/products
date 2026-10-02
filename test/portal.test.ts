@@ -417,4 +417,33 @@ describe("client account areas", () => {
     const step = await one(`SELECT status FROM onboarding_steps WHERE customer_id = $1 AND key = 'website_design'`, [c.id]);
     assert.notEqual(step.status, "done");
   });
+
+  it("collects EmailFirst weekly figures from Mailpulse", async () => {
+    await handleStripeEvent(checkoutEvent("evt_ef", "emailfirst", "weekly"));
+    const c = await one(`SELECT * FROM customers`);
+    await query(`UPDATE customers SET data = data || '{"mailwizz_campaigns": "camp1, camp2"}' WHERE id = $1`, [c.id]);
+    const d = await one(`INSERT INTO deliveries (customer_id, product, routine, period) VALUES ($1, 'emailfirst', 'weekly_summary', '2026-10-05') RETURNING *`, [c.id]);
+    process.env.MAILWIZZ_API_URL = "https://mw.example.com/api/index.php";
+    process.env.MAILWIZZ_API_KEY = "k";
+    const realFetch = globalThis.fetch;
+    const seen: string[] = [];
+    globalThis.fetch = (async (url: string, init: any) => {
+      seen.push(`${url} ${init?.headers?.["X-Api-Key"]}`);
+      return new Response(JSON.stringify({ status: "success", data: { delivery_success_count: 1500, unique_opens_count: 300, unique_clicks_count: 21 } }));
+    }) as typeof fetch;
+    try {
+      const { getHandler } = await import("../src/engine/handlers.js");
+      const fresh = await one(`SELECT * FROM customers WHERE id = $1`, [c.id]);
+      const { requireProduct: rp } = await import("../src/products/index.js");
+      await assert.rejects(getHandler("ef_weekly_summary")({ product: rp("emailfirst"), customer: fresh, delivery: d }), /ANTHROPIC|anthropic|budget|not connected|not set/i);
+    } finally {
+      globalThis.fetch = realFetch;
+      delete process.env.MAILWIZZ_API_URL;
+      delete process.env.MAILWIZZ_API_KEY;
+    }
+    assert.equal(seen.length, 2);
+    assert.match(seen[0]!, /campaigns\/camp1\/stats k$/);
+    const after = await one(`SELECT data FROM customers WHERE id = $1`, [c.id]);
+    assert.deepEqual(after.data.metrics_history.at(-1).values, { emails_sent: 3000, human_clicks: 42 });
+  });
 });

@@ -5,8 +5,9 @@ import { bookingLink, getPlan } from "../products/index.js";
 import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
+import { campaignStats } from "../integrations/mailwizz.js";
 import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
-import { postUpdate } from "./clients.js";
+import { postUpdate, saveMetrics } from "./clients.js";
 import { portalUrl, setupLink } from "../portal/accounts.js";
 import type { Handler, HandlerContext, Outcome } from "./types.js";
 
@@ -350,12 +351,50 @@ const handlers: Record<string, Handler> = {
     };
   },
 
-  async ef_provision_sending() {
+  async ef_provision_sending(ctx) {
     requireAutomation("mailwizz");
-    return { type: "done" };
+    if (ctx.input) return { type: "done", note: "Campaigns recorded" };
+    return {
+      type: "manual",
+      title: `Set up sending for ${customerLabel(ctx)} in Mailpulse`,
+      instructions:
+        "Create their list, template and campaigns in Mailpulse using the approved copy, then paste the campaign " +
+        "IDs below (separated by commas). From then on their weekly results are collected and sent automatically.",
+      inputLabel: "Campaign IDs (for example ab12cd34ef56, xy98wv76ut54)",
+      saveAs: "mailwizz_campaigns",
+      rerun: true,
+    };
   },
 
+  /** Weekly results from Mailpulse: this week's figures are the change in each campaign's running totals. */
   async ef_weekly_summary(ctx) {
+    const uids = String(ctx.customer.data.mailwizz_campaigns ?? "").split(/[\s,]+/).filter(Boolean);
+    if (!ctx.input && uids.length) {
+      requireAutomation("mailwizz");
+      const totals = { sent: 0, opens: 0, clicks: 0 };
+      for (const uid of uids) {
+        const s = await campaignStats(uid);
+        totals.sent += s.sent;
+        totals.opens += s.opens;
+        totals.clicks += s.clicks;
+      }
+      const last = (await previousDelivery(ctx))?.totals ?? { sent: 0, opens: 0, clicks: 0 };
+      const week = {
+        sent: Math.max(0, totals.sent - last.sent),
+        clicks: Math.max(0, totals.clicks - last.clicks),
+        opens: Math.max(0, totals.opens - last.opens),
+      };
+      if (ctx.delivery) {
+        await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [ctx.delivery.id, JSON.stringify({ totals, week })]);
+        await saveMetrics(ctx.customer.id, ctx.delivery.period, { emails_sent: week.sent, human_clicks: week.clicks });
+      }
+      const draft = await draftCustomerEmail(
+        ctx,
+        "Write a short weekly results summary email. Use only the figures given. Clicks are people who clicked through to the landing page.",
+        `This week: ${week.sent} emails delivered, ${week.opens} people opened, ${week.clicks} people clicked.`,
+      );
+      return { type: "email", approval: false, ...draft };
+    }
     if (!ctx.input) {
       return needData(
         ctx,
