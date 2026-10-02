@@ -152,7 +152,7 @@ describe("client account areas", () => {
     assert.equal(dash.statusCode, 200);
     assert.match(dash.body, /Hello Sam/);
     assert.match(dash.body, /Onboarding call/);
-    assert.match(dash.body, /Your website being designed/);
+    assert.match(dash.body, /Your website built/);
     assert.match(dash.body, /£99\/mo/);
     assert.doesNotMatch(dash.body.replace(/online business builder/gi, "").replace(/calendly/gi, ""), VENDORS);
 
@@ -400,5 +400,21 @@ describe("client account areas", () => {
     await post({ _type: "assessment", ref: "r2", scores, email: "keen@firm.co.uk", wants_help: true });
     assert.ok(await one(`SELECT 1 FROM tasks WHERE title LIKE '%would like help%'`));
     assert.equal((await post({ _type: "assessment", scores: { strategy: 500 } })).statusCode, 400);
+  });
+
+  it("rebuilds the Online Business Builder website when the client asks for changes", async () => {
+    await handleStripeEvent(checkoutEvent("evt_w", "onlinebusinessbuilder", "monthly"));
+    const c = await one(`SELECT * FROM customers`);
+    // Pretend the site was built and the client is looking at the preview.
+    await query(`UPDATE onboarding_steps SET status = 'done' WHERE customer_id = $1 AND key = 'website_design'`, [c.id]);
+    await query(`UPDATE onboarding_steps SET status = 'waiting' WHERE customer_id = $1 AND key = 'design_approved'`, [c.id]);
+    const u = await one(`INSERT INTO client_updates (customer_id, title, approval_step) VALUES ($1, 'Your website is ready', 'design_approved') RETURNING id`, [c.id]);
+    const fresh = await one(`SELECT * FROM customers WHERE id = $1`, [c.id]);
+    const { respondToUpdate } = await import("../src/engine/clients.js");
+    await respondToUpdate(fresh, u.id, false, "Make the phone number bigger");
+    const after = await one(`SELECT data FROM customers WHERE id = $1`, [c.id]);
+    assert.deepEqual(after.data.site_changes, ["Make the phone number bigger"]);
+    const step = await one(`SELECT status FROM onboarding_steps WHERE customer_id = $1 AND key = 'website_design'`, [c.id]);
+    assert.notEqual(step.status, "done");
   });
 });

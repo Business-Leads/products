@@ -4,6 +4,9 @@ import { draftJson, emailSchema, type EmailDraft } from "../lib/claude.js";
 import { bookingLink, getPlan } from "../products/index.js";
 import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
+import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
+import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
+import { postUpdate } from "./clients.js";
 import { portalUrl, setupLink } from "../portal/accounts.js";
 import type { Handler, HandlerContext, Outcome } from "./types.js";
 
@@ -365,6 +368,152 @@ const handlers: Record<string, Handler> = {
   },
 
   // ------------------------------------------------ Online Business Builder
+
+  /**
+   * Claude writes the client's website from their onboarding answers and call
+   * notes, it's published to Netlify, and the client gets a preview to approve
+   * in their account. Requested changes come back here as notes and it rebuilds.
+   */
+  async obb_build_site(ctx) {
+    requireAutomation("netlify");
+    if (!ctx.customer.data.intake_completed_at) return { type: "waiting", note: "Waiting for the onboarding form" };
+    const intake = ctx.customer.data.intake ?? {};
+    const changes: string[] = ctx.customer.data.site_changes ?? [];
+    const site = await draftJson<{ html: string; summary: string }>({
+      system:
+        "You build fast, accessible, single-page websites for UK local businesses. Output one complete HTML " +
+        "document with all CSS inline in a <style> tag and no external scripts. Requirements: mobile-first and " +
+        "responsive; semantic HTML; WCAG AA contrast; a clear call-to-action to phone (tel: link) near the top and " +
+        "again at the end; sections for services, the area served, opening hours if given, and contact; a " +
+        "LocalBusiness JSON-LD block using only the facts given; a <title> and meta description written for local " +
+        "search (business type + town); system font stack or one Google Font. Use the brand colours or notes if " +
+        "given, otherwise a calm palette suited to the trade. British English. Never invent reviews, prices, awards, " +
+        "years in business, qualifications or anything not in the details. No placeholder text and no lorem ipsum: " +
+        "if a detail is missing, leave that section out.",
+      prompt:
+        `Business details:\n${intakeSummary(ctx)}\n\n` +
+        (ctx.customer.data.call_notes ? `Notes from the onboarding call:\n${ctx.customer.data.call_notes}\n\n` : "") +
+        (changes.length ? `The client asked for these changes to the last version (apply all of them):\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` : "") +
+        "Write the website. In `summary`, say in one or two plain sentences what the page contains.",
+      schema: {
+        type: "object",
+        properties: { html: { type: "string" }, summary: { type: "string" } },
+        required: ["html", "summary"],
+        additionalProperties: false,
+      },
+      maxTokens: 32000,
+    });
+    if (!/^\s*<!doctype html>/i.test(site.html) || site.html.length < 1500) throw new Error("The generated page doesn't look like a complete website");
+
+    let siteId: string | undefined = ctx.customer.data.netlify_site_id;
+    let host: string | undefined = ctx.customer.data.netlify_host;
+    if (!siteId) {
+      const slug = (ctx.customer.business || intake.business || "client").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+      const created = await createSite(`obb-${slug}-${Math.random().toString(36).slice(2, 6)}`);
+      siteId = created.id;
+      host = `${created.name}.netlify.app`;
+    }
+    await deployFiles(siteId, {
+      "/index.html": site.html,
+      "/robots.txt": "User-agent: *\nAllow: /\n",
+    });
+    const version = (ctx.customer.data.site_version ?? 0) + 1;
+    await query(
+      `UPDATE customers SET data = data || jsonb_build_object('netlify_site_id', $2::text, 'netlify_host', $3::text,
+         'site_version', $4::int, 'site_summary', $5::text, 'site_changes', '[]'::jsonb), updated_at = now() WHERE id = $1`,
+      [ctx.customer.id, siteId, host, version, site.summary],
+    );
+    await postUpdate(ctx.customer, {
+      title: version === 1 ? "Your website is ready to look at" : `Your updated website (version ${version})`,
+      body:
+        `${site.summary}\n\nHave a look on your phone and computer. If you're happy, press Approve and we'll ` +
+        "connect your web address and put it live. If you'd like anything changed, press Ask for changes and tell us what, in your own words.",
+      link: `https://${host}`,
+      approvalStep: "design_approved",
+    });
+    return { type: "done", note: `Version ${version} published to ${host}` };
+  },
+
+  async obb_call_notes(ctx) {
+    return {
+      type: "manual",
+      title: `Onboarding call with ${customerLabel(ctx)}`,
+      instructions:
+        "Hold the onboarding call: confirm their services, area and the look they want, and how we'll get access to " +
+        "their Google Business Profile. Then type your notes below. They're used to write the website, which is " +
+        "built and sent to the client as soon as you save.",
+      inputLabel: "Notes from the call (what they want on the site, colours, anything to avoid)",
+      saveAs: "call_notes",
+    };
+  },
+
+  async await_client_approval() {
+    // Completed when the client presses Approve in their account (engine/clients.ts).
+    return { type: "waiting", note: "Waiting for the client to approve the website" };
+  },
+
+  /**
+   * Connect a web address. If it's in our GoDaddy account it's pointed at the
+   * site automatically; a client's own domain gets simple instructions. With no
+   * domain yet, available names are checked and Felix decides whether to buy.
+   */
+  async obb_domain(ctx) {
+    requireAutomation("netlify");
+    const siteId: string | undefined = ctx.customer.data.netlify_site_id;
+    const host: string | undefined = ctx.customer.data.netlify_host;
+    if (!siteId || !host) throw new Error("The website hasn't been built yet");
+    const raw = (ctx.input || ctx.customer.data.domain || ctx.customer.data.intake?.website || "").trim().toLowerCase();
+    const domain = raw.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
+
+    if (!domain || !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain)) {
+      requireAutomation("godaddy");
+      const ideas = domainIdeas(ctx.customer.business || ctx.customer.data.intake?.business || "", ctx.customer.data.intake?.area);
+      const checked = [];
+      for (const d of ideas) {
+        try {
+          checked.push(await checkAvailable(d));
+        } catch {
+          // skip names GoDaddy can't check
+        }
+      }
+      const free = checked.filter((c) => c.available);
+      return {
+        type: "manual",
+        title: `Choose a web address for ${customerLabel(ctx)}`,
+        instructions:
+          "They don't have a web address yet. Nothing is bought automatically.\n\n" +
+          (free.length
+            ? `Free right now:\n${free.map((f) => `- ${f.domain}${f.price ? ` (about £${f.price.toFixed(2)} a year)` : ""}`).join("\n")}\n\n`
+            : "None of the obvious names are free; pick another.\n\n") +
+          "Buy the one you want in GoDaddy (https://www.godaddy.com/domains), then type it below. " +
+          "It's then connected to their website automatically.",
+        inputLabel: "Web address you bought (for example ownerplumbing.co.uk)",
+        saveAs: "domain",
+        rerun: true,
+      };
+    }
+
+    await setCustomDomain(siteId, domain);
+    if (await inOurAccount(domain).catch(() => false)) {
+      await pointAtNetlify(domain, host);
+      await query(`UPDATE customers SET data = data || jsonb_build_object('domain', $2::text, 'domain_connected', true) WHERE id = $1`, [ctx.customer.id, domain]);
+      return { type: "done", note: `${domain} pointed at the website` };
+    }
+    await query(`UPDATE customers SET data = data || jsonb_build_object('domain', $2::text) WHERE id = $1`, [ctx.customer.id, domain]);
+    return {
+      type: "email",
+      approval: false,
+      subject: `One small step to put your website on ${domain}`,
+      body:
+        `Hello ${firstName(ctx)},\n\nYour website is approved and ready. To show it at ${domain}, whoever looks after ` +
+        `your web address (often the company you bought it from) needs to change two settings:\n\n` +
+        `1. An "A" record for ${domain} pointing to ${NETLIFY_IP}\n` +
+        `2. A "CNAME" record for www pointing to ${host}\n\n` +
+        `If you forward this email to them, they'll know exactly what to do. Your email keeps working as it is. ` +
+        `Once it's done the site appears within an hour or so, with the padlock (https) added automatically.\n\n` +
+        `If you'd rather we did it, reply and we'll talk you through it.\n\nFelix`,
+    };
+  },
 
   async obb_weekly_post(ctx) {
     const last = await previousDelivery(ctx);

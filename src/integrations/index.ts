@@ -54,6 +54,22 @@ export const integrations: Integration[] = [
     automation: "full",
   },
   {
+    id: "netlify",
+    name: "Netlify",
+    purpose: "Hosting the websites built for Online Business Builder clients",
+    envVars: ["NETLIFY_AUTH_TOKEN"],
+    configured: has("NETLIFY_AUTH_TOKEN"),
+    automation: "full",
+  },
+  {
+    id: "godaddy",
+    name: "GoDaddy",
+    purpose: "Checking domain names and pointing them at client websites",
+    envVars: ["GODADDY_API_KEY", "GODADDY_API_SECRET"],
+    configured: has("GODADDY_API_KEY", "GODADDY_API_SECRET"),
+    automation: "full",
+  },
+  {
     id: "awaz",
     name: "Awaz.ai",
     purpose: "Speed to Lead voice assistants and numbers",

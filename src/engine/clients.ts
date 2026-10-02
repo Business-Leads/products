@@ -183,6 +183,19 @@ export async function respondToUpdate(customer: CustomerRow, updateId: string, a
       await completeStep(step.id, "approved by the client");
     }
     await alert(customer, product, `${customerLabel(customer)} approved "${update.title}"`, note || "No comments.", "client_activity");
+  } else if (update.approval_step === "design_approved" && product.onboarding.some((s) => s.handler === "obb_build_site")) {
+    // Website changes go straight back to the builder with the client's notes.
+    await query(
+      `UPDATE customers SET data = jsonb_set(data, '{site_changes}', COALESCE(data->'site_changes', '[]'::jsonb) || to_jsonb($2::text)), updated_at = now() WHERE id = $1`,
+      [customer.id, note || "Please improve it"],
+    );
+    await query(
+      `UPDATE onboarding_steps SET status = 'pending', completed_at = NULL, task_id = NULL, attempts = 0
+       WHERE customer_id = $1 AND key IN ('website_design', 'design_approved')`,
+      [customer.id],
+    );
+    await alert(customer, product, `${customerLabel(customer)} asked for website changes`, `${note}\n\nThe site is being rebuilt with these changes and they'll be sent the new version automatically.`, "client_activity");
+    await advanceOnboarding(customer.id);
   } else {
     await createTask({
       kind: "manual",

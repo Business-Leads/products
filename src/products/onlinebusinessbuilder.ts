@@ -46,10 +46,11 @@ export const onlineBusinessBuilder: Product = {
       key: "onboarding_call",
       title: "Onboarding call with Felix booked and held",
       kind: "manual",
+      handler: "obb_call_notes",
       instructions:
         "The customer was sent the booking link straight after paying. Hold the onboarding call: confirm " +
         "services, area and the look they want, and agree how to get manager access to their Google " +
-        "Business Profile (or create one). Mark done after the call.",
+        "Business Profile (or create one).",
     },
     {
       key: "gbp_access",
@@ -61,17 +62,23 @@ export const onlineBusinessBuilder: Product = {
     },
     {
       key: "website_design",
-      title: "Build the website design and send it for approval",
-      kind: "manual",
-      instructions:
-        "Build the site from the intake answers and the call notes, set it up for Google and AI search, and send " +
-        "the customer the preview link to approve.",
+      title: "Website written and published for the client to see",
+      kind: "auto",
+      handler: "obb_build_site",
+      instructions: "Build the site from the intake answers and call notes, publish it, and send the client the preview.",
     },
     {
       key: "design_approved",
-      title: "Customer approves the design; site goes live",
-      kind: "manual",
-      instructions: "When the customer approves (or after their changes are made), publish the site and mark this done.",
+      title: "Client approves the website",
+      kind: "customer",
+      handler: "await_client_approval",
+    },
+    {
+      key: "domain",
+      title: "Web address connected",
+      kind: "auto",
+      handler: "obb_domain",
+      instructions: "Connect the client's web address to their site (theirs, or one bought with your approval).",
     },
     goLiveStep,
   ],
@@ -99,7 +106,7 @@ export const onlineBusinessBuilder: Product = {
       approval: true,
     },
   ],
-  tools: ["anthropic", "smtp", "stripe"],
+  tools: ["anthropic", "smtp", "stripe", "netlify", "godaddy"],
   leadBrief:
     "Thank them, answer what they asked using only the facts given, and invite them to start: it's £99 a " +
     "month with no setup fee, and straight after signing up they book an onboarding call with Felix.",
@@ -110,7 +117,7 @@ export const onlineBusinessBuilder: Product = {
     accent: "#D42A19",
     resultsTitle: "Your website and Google profile",
     resultsIntro: "Your site, your Google profile and how local customers are finding you.",
-    steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Access to your Google Business Profile", website_design: "Your website being designed", design_approved: "Design approved and website launched" },
+    steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Access to your Google Business Profile", website_design: "Your website built", design_approved: "You approve your website", domain: "Your web address connected" },
     routines: { weekly_post: "Weekly Google post", reviews: "Google reviews answered", monthly_report: "Monthly report" },
     metrics: [
       { key: "profile_views", label: "Google profile views" },
