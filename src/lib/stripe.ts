@@ -81,13 +81,8 @@ export function buildCheckoutParams(
     line_items: lineItems,
     customer_email: opts.email || undefined,
     allow_promotion_codes: true,
-    // The Stripe account is shared, so each checkout shows the product's own name, not the account's.
-    branding_settings: {
-      display_name: product.name,
-      button_color: product.portal.accent,
-      border_style: "rounded",
-      ...(product.slug === "onlinebusinessbuilder" && config.baseUrl.startsWith("https://") ? { icon: { type: "url", url: `${config.baseUrl}/static/logo.png` } } : {}),
-    },
+    // The Stripe account is shared, so each checkout shows the product's own name, icon and colours.
+    branding_settings: checkoutBranding(product),
     metadata,
     subscription_data: {
       metadata,
@@ -96,6 +91,29 @@ export function buildCheckoutParams(
     // The client comes back to their new account on the product's own site.
     success_url: `${portalUrl(product)}/welcome?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: product.siteUrls[0] ?? config.baseUrl,
+  };
+}
+
+// Light page colour and button colour for each product's checkout.
+const CHECKOUT_COLOURS: Record<string, [string, string]> = {
+  firstpagelocal: ["#FFF0F5", "#D63B74"],
+  linkn: ["#EEF5FF", "#2A6FD9"],
+  speedtolead: ["#FFF4E8", "#E2661A"],
+  emailfirst: ["#FDF0F8", "#B9459A"],
+  goodquestions: ["#F0F1FF", "#4E52D6"],
+  onlinebusinessbuilder: ["#FFF3EE", "#E5484D"],
+};
+
+export function checkoutBranding(product: Product): Stripe.Checkout.SessionCreateParams.BrandingSettings {
+  const [background, button] = CHECKOUT_COLOURS[product.slug] ?? ["#FFFDF9", product.portal.accent];
+  const iconPath = product.slug === "onlinebusinessbuilder" ? "/static/logo.png" : `/static/products/${product.slug}.png`;
+  return {
+    display_name: product.name,
+    background_color: background,
+    button_color: button,
+    border_style: "rounded",
+    // Stripe fetches the icon itself, so it needs the public address.
+    ...(config.baseUrl.startsWith("https://") ? { icon: { type: "url", url: `${config.baseUrl}${iconPath}` } } : {}),
   };
 }
 

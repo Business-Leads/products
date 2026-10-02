@@ -52,8 +52,8 @@ const PRODUCT_ICONS: Record<string, string> = {
   linkn: `<circle cx="16.2" cy="13.5" r="6.3" fill="#D8E9FF"/><circle cx="8.6" cy="11" r="7" fill="#fff"/><path d="M12.4 15.6a6.3 6.3 0 0 0 3.8 4.2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>${face(8.6, 10.4)}`,
   // a phone that answers in a flash
   speedtolead: `<rect x="5" y="2" width="12.5" height="20" rx="3.5" fill="#fff"/><rect x="9" y="3.6" width="4.5" height="1.3" rx=".65" fill="#FFD9B8"/><path d="M20.4 2.5l-2.6 4.6h2.4l-1.8 4" fill="none" stroke="#FFF3A6" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>${face(11.25, 12)}`,
-  // a paper plane on its way
-  emailfirst: `<path d="M21.6 2.6 2.8 10.2a.8.8 0 0 0 0 1.5l6.4 2.6 2.6 6.6a.8.8 0 0 0 1.5 0z" fill="#fff"/><path d="M9.2 14.3 21.6 2.6l-8 13.2" fill="#FFD6EE"/><path d="M1.5 18.5h3M2.5 21.5h4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>${face(9.6, 9.6)}`,
+  // a letter popping out of its envelope
+  emailfirst: `<rect x="5.5" y="2.5" width="13" height="12" rx="2.5" fill="#FFE6F4"/>${face(12, 7.6)}<path d="M2 11.5 12 17l10-5.5V19a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z" fill="#fff"/><path d="M12 20.6c-.9-.8-2.6-1.9-2.6-3.1a1.3 1.3 0 0 1 2.6-.4 1.3 1.3 0 0 1 2.6.4c0 1.2-1.7 2.3-2.6 3.1z" fill="#FF8FA3"/>`,
   // a bright idea
   goodquestions: `<path d="M12 1.8a7.6 7.6 0 0 0-4.4 13.8V18h8.8v-2.4A7.6 7.6 0 0 0 12 1.8z" fill="#fff"/><rect x="8.4" y="19" width="7.2" height="3.2" rx="1.6" fill="#FFE08A"/>${face(12, 9.4)}`,
   // a happy little website

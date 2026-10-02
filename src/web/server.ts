@@ -1,7 +1,7 @@
 import cookie from "@fastify/cookie";
 import formbody from "@fastify/formbody";
 import Fastify from "fastify";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isProduction } from "../config.js";
@@ -51,6 +51,10 @@ export async function buildServer() {
   }
   const logoPng = await readFile(path.join(here, "static", "logo.png"));
   app.get("/static/logo.png", async (_req, reply) => reply.type("image/png").header("Cache-Control", "public, max-age=86400").send(logoPng));
+  for (const file of await readdir(path.join(here, "static", "products"))) {
+    const png = await readFile(path.join(here, "static", "products", file));
+    app.get(`/static/products/${file}`, async (_req, reply) => reply.type("image/png").header("Cache-Control", "public, max-age=86400").send(png));
+  }
   const logo = await readFile(path.join(here, "static", "logo.svg"), "utf8");
   for (const route of ["/static/logo.svg", "/favicon.ico"]) {
     app.get(route, async (_req, reply) => reply.type("image/svg+xml").header("Cache-Control", "public, max-age=86400").send(logo));
