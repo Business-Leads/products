@@ -312,13 +312,6 @@ export async function adminRoutes(app: FastifyInstance) {
       </div>
 
       <div class="grid-2">
-        <div class="panel"><h2>Steps for each new customer</h2>
-          <table>${product.onboarding.map((s) => {
-            const n = pipeline.find((p) => p.key === s.key)?.n ?? 0;
-            return html`<tr><td>${s.title}${s.plans ? html` <span class="chip">${s.plans.join(", ")}</span>` : ""}</td>
-              <td>${chip(s.kind)}</td><td class="num">${n ? html`<strong>${n}</strong> ${n === 1 ? "customer" : "customers"} here` : ""}</td></tr>`;
-          })}</table>
-        </div>
         <div class="panel"><h2>Connections and website</h2>
           <table>${tools.map((i) => html`<tr><td>${i.name}</td><td>${i.configured()
             ? i.automation === "full" ? html`<span class="chip ok">Connected</span>` : html`<span class="chip warn">Key added, not automatic yet</span>`
@@ -326,6 +319,21 @@ export async function adminRoutes(app: FastifyInstance) {
           ${sites.map((s) => html`<tr><td><a href="${s.url}">${s.url}</a></td><td><span class="chip ${s.ok ? "ok" : "bad"}">${s.ok ? "Working" : "Not responding"}</span> <span class="small muted">checked ${ago(s.at)}</span></td></tr>`)}
           </table>
         </div>
+      </div>
+
+      <div class="panel"><h2>Onboarding checklist</h2>
+        <p class="small muted">What happens for every new ${product.name} customer, in order. Steps marked "You" or "Your OK" come to your to-do list with these instructions.</p>
+        <table class="checklist"><tr><th>#</th><th>Step</th><th>Who</th><th class="num">Customers here now</th></tr>
+        ${product.onboarding.map((s, i) => {
+          const n = pipeline.find((p) => p.key === s.key)?.n ?? 0;
+          const who = s.kind === "auto" ? (s.guide ? "You, for now" : "Automatic") : s.kind === "manual" ? "You" : s.kind === "customer" ? "Client" : "Your OK";
+          return html`<tr><td class="mark">${i + 1}</td>
+            <td><strong>${s.title}</strong>${s.plans ? html` <span class="chip">${s.plans.join(", ")} only</span>` : ""}
+              ${s.guide ? html`<details><summary class="small">How to do it (about ${s.guide.minutes} min)</summary>
+                <p class="small"><strong>Why it needs you:</strong> ${s.guide.why}</p>
+                <ol class="small">${s.guide.steps.map((x) => html`<li>${x}</li>`)}</ol></details>` : ""}</td>
+            <td>${who}</td><td class="num">${n ? html`<strong>${n}</strong>` : "0"}</td></tr>`;
+        })}</table>
       </div>
 
       <div class="panel"><div class="spread"><h2>Customers</h2>
@@ -462,8 +470,8 @@ export async function adminRoutes(app: FastifyInstance) {
             <td>${s.title}</td><td>${who}</td><td>${chip(s.status)}</td>
             <td class="small">${s.completed_at ? fmtDate(s.completed_at, true) : s.started_at ? `started ${ago(s.started_at)}` : ""}</td>
             <td class="small">${s.last_error ? html`<span style="color:var(--bad)">${s.last_error}</span>` : s.note ?? (s.status === "waiting" && s.task_id ? html`<a href="/inbox#t${s.task_id}">On your to-do list</a>` : "")}</td>
-            <td class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}
-              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step? It won\'t be done for this customer.')"><button class="small">Skip</button></form>` : ""}</td></tr>`;
+            <td><div class="row">${s.status === "failed" ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/retry" class="inline"><button class="small">Try again</button></form>` : ""}
+              ${["pending", "waiting", "failed"].includes(s.status) ? html`<form method="post" action="/customers/${c.id}/steps/${s.id}/skip" class="inline" onsubmit="return confirm('Skip this step? It won\'t be done for this customer.')"><button class="small">Skip</button></form>` : ""}</div></td></tr>`;
         })}</table>
         <p class="small" style="margin-top:10px"><strong>${steps.filter((s) => s.status === "done" || s.status === "skipped").length} of ${steps.length}</strong> steps complete.</p>
       </div>
