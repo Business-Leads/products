@@ -1,5 +1,6 @@
 # Read-only: lists the MailWizz (Mailpulse) lists, their sizes and fields, so
-# EmailFirst can be set up to pick contacts from them. Changes nothing.
+# EmailFirst can be set up to pick contacts from them. Changes nothing, and
+# never prints any contact's details (this repository's logs are public).
 name: MailWizz check
 on:
   workflow_dispatch:
@@ -31,6 +32,3 @@ jobs:
           done < lists.tsv
           echo "== Recent campaigns"
           get "/campaigns?page=1&per_page=10" | jq -r '.data.records[]? | "- \(.name) [\(.campaign_uid)] \(.status) list=\(.list.name // .list.list_uid // "?")"'
-          echo "== Sample subscriber fields (first list, 3 records, emails masked)"
-          first=$(head -1 lists.tsv | cut -f1)
-          get "/lists/$first/subscribers?page=1&per_page=3" | jq -r '.data.records[]? | with_entries(select(.key != "EMAIL" and .key != "email")) | tostring' | head -3
