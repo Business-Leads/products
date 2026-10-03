@@ -4,6 +4,8 @@ import type { Task } from "../lib/tasks.js";
 import type { DeliveryRow, StepRow } from "./types.js";
 import { requireProduct } from "../products/index.js";
 import { extractMetrics } from "./clients.js";
+import { errorMessage } from "../lib/util.js";
+import { runPublisher } from "./publishers.js";
 import { advanceOnboarding, completeStep, executeStep, loadCustomer, runDelivery, saveCustomerData } from "./workflow.js";
 
 export type Decision = "approve" | "reject" | "done" | "dismiss";
@@ -76,6 +78,21 @@ export async function decideTask(taskId: string, decision: Decision, form: Decis
       const customerId = await customerIdFor(p);
       if (customerId && p.saveAs) await saveCustomerData(customerId, p.saveAs, form.body || task.body);
       await carryOn(p, undefined, "Approved by you");
+      return;
+    }
+    case "publish": {
+      const customerId = await customerIdFor(p);
+      const customer = customerId ? await loadCustomer(customerId) : undefined;
+      if (!customer) return;
+      try {
+        const note = await runPublisher(p.publisher, customer, p.data ?? {}, form.body);
+        if (p.deliveryId) await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [p.deliveryId, JSON.stringify({ body: form.body ?? task.body, published: note })]);
+        await carryOn(p, undefined, `Approved by you. ${note}`);
+      } catch (err) {
+        // Put the task back so nothing is lost, with the reason.
+        await query(`UPDATE tasks SET status = 'open', resolution = $2, resolved_at = NULL WHERE id = $1`, [task.id, `Couldn't publish: ${errorMessage(err)}`]);
+        await logEvent({ type: "publish.failed", level: "error", message: `${task.title}: ${errorMessage(err)}`, product: task.product, customerId: task.customer_id });
+      }
       return;
     }
     case "complete_manual": {

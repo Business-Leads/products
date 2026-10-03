@@ -1,12 +1,13 @@
 import { one, query } from "../db/index.js";
 import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
-import { isProductPaused } from "../lib/settings.js";
+import { autonomyFor, isProductPaused } from "../lib/settings.js";
 import { createTask } from "../lib/tasks.js";
 import { NotConfiguredError, daysInMonth, errorMessage, londonParts } from "../lib/util.js";
 import { requireProduct, type Product } from "../products/index.js";
 import type { Cadence, RoutineDef } from "../products/types.js";
 import { getHandler } from "./handlers.js";
+import { runPublisher } from "./publishers.js";
 import type { CustomerRow, DeliveryRow, HandlerContext, Outcome, StepRow } from "./types.js";
 
 const MAX_ATTEMPTS = 3;
@@ -263,6 +264,27 @@ export async function applyOutcome(outcome: Outcome, ctx: HandlerContext): Promi
       }
       if (queued.held) return wait(queued.taskId, "awaiting_approval");
       return finish("sent");
+    }
+
+    case "publish": {
+      const autonomyKey = step ? `step:${step.key}` : `routine:${delivery!.routine}`;
+      const autonomy = await autonomyFor(product.slug, autonomyKey, outcome.approval ? "approve" : "auto");
+      if (autonomy === "approve") {
+        const task = await createTask({
+          kind: "approval",
+          title: outcome.title,
+          body: outcome.body,
+          product: product.slug,
+          customerId: customer.id,
+          action: "publish",
+          payload: { ...ref, publisher: outcome.publisher, data: outcome.data },
+          dedupeKey: `publish:${step ? `step:${step.id}` : `delivery:${delivery!.id}`}`,
+        });
+        return wait(task.id, "awaiting_approval");
+      }
+      const note = await runPublisher(outcome.publisher, customer, outcome.data);
+      if (delivery) await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [delivery.id, JSON.stringify({ body: outcome.body, published: note })]);
+      return finish(note);
     }
 
     case "review": {

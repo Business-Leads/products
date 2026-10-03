@@ -81,11 +81,11 @@ export const integrations: Integration[] = [
   {
     id: "localfalcon",
     name: "Local Falcon",
-    purpose: "FirstPageLocal Maps grid scans and AI visibility checks",
+    purpose: "Online Business Builder's Google profiles: posts, review replies, ranking scans, figures and monitoring",
     envVars: ["LOCALFALCON_API_KEY"],
     configured: has("LOCALFALCON_API_KEY"),
-    automation: "manual",
-    notes: "API calls not wired yet: confirm the plan includes API access and credits.",
+    automation: "full",
+    notes: "Basic plan or above. Felix's Google account is connected in Local Falcon; each client's profile is imported there once.",
   },
   {
     id: "mailwizz",

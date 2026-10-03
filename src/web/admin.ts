@@ -87,6 +87,17 @@ async function taskCard(t: any): Promise<Raw> {
         <input name="note" aria-label="Why not? (optional)" placeholder="Why not? (optional)" style="max-width:260px">
         <button name="decision" value="reject" class="danger">Don't send</button>
       </div></form>`;
+  } else if (t.action === "publish") {
+    form = html`<form method="post" action="/tasks/${t.id}">
+      ${t.resolution ? html`<p class="flash">${t.resolution}</p>` : ""}
+      <label for="body${t.id}" class="sr-only">What will be published</label>
+      <textarea name="body" id="body${t.id}" style="min-height:220px">${t.body}</textarea>
+      <div class="help">You can edit this. Approving publishes it straight away; nothing else to do.</div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" name="decision" value="approve">Looks good, publish it</button>
+        <input name="note" aria-label="What's wrong with it? (optional)" placeholder="What's wrong with it? (optional)" style="max-width:260px">
+        <button name="decision" value="reject" class="danger">Don't publish</button>
+      </div></form>`;
   } else if (t.action === "approve_review") {
     form = html`<form method="post" action="/tasks/${t.id}">
       <label for="body${t.id}" class="sr-only">Draft</label>

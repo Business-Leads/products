@@ -66,6 +66,11 @@ export type Outcome =
   | { type: "waiting"; note?: string }
   /** An email to the customer. With approval it waits in the inbox first. */
   | { type: "email"; subject: string; body: string; to?: string; approval: boolean }
+  /**
+   * Something HQ publishes for the client (e.g. a Google post) through a publisher in
+   * publishers.ts. With approval it waits in the inbox, editable, and is published on approval.
+   */
+  | { type: "publish"; title: string; body: string; publisher: string; data: Record<string, unknown>; approval: boolean }
   /** An internal document a person reviews; on approval it is saved to customer.data[saveAs]. */
   | { type: "review"; title: string; body: string; saveAs: string }
   /**

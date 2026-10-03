@@ -44,6 +44,8 @@ jobs:
           MAILWIZZ_API_KEY: ${{ secrets.MAILWIZZ_API_KEY }}
           AWAZ_API_KEY: ${{ secrets.AWAZ_API_KEY }}
           FEEDBOSS_API_KEY: ${{ secrets.FEEDBOSS_API_KEY }}
+          LOCALFALCON_API_KEY: ${{ secrets.LOCALFALCON_API_KEY }}
+          GBP_MANAGER_EMAIL: ${{ secrets.GBP_MANAGER_EMAIL }}
           SCOREAPP_API_KEY: ${{ secrets.SCOREAPP_API_KEY }}
           SBL_API_KEY: ${{ secrets.SBL_API_KEY }}
           SBL_COMPANY_ID: ${{ secrets.SBL_COMPANY_ID }}

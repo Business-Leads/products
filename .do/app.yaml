@@ -83,6 +83,12 @@ services:
       - key: AWAZ_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: LOCALFALCON_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: GBP_MANAGER_EMAIL
+        scope: RUN_TIME
+        type: SECRET
       - key: FEEDBOSS_API_KEY
         scope: RUN_TIME
         type: SECRET

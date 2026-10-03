@@ -6,6 +6,8 @@ import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
 import { campaignStats } from "../integrations/mailwizz.js";
+import { addGuard, campaignSummary, createMonthlyCampaign, guardChanges, linkedLocations, profileMetrics, unansweredReviews } from "../integrations/localfalcon.js";
+import { queueEmail } from "../lib/email.js";
 import { generatePost, recentPosts } from "../integrations/feedboss.js";
 import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
 import { postUpdate, saveMetrics } from "./clients.js";
@@ -712,6 +714,69 @@ const handlers: Record<string, Handler> = {
     };
   },
 
+  /**
+   * Connect the client's Google Business Profile in Local Falcon, then set up the monthly ranking
+   * scans and profile monitoring. The client adds Felix as a manager (they're emailed how); Felix
+   * accepts and imports it in Local Falcon (the one click Google needs a person for); this step
+   * finds it by itself and carries on.
+   */
+  async obb_gbp_connect(ctx) {
+    requireAutomation("localfalcon");
+    const intake = ctx.customer.data.intake ?? {};
+    const manager = process.env.GBP_MANAGER_EMAIL?.trim() || config.admin.alertEmail;
+    let placeId: string | undefined = ctx.customer.data.gbp_place_id;
+    if (!placeId) {
+      const names = [intake.gbp_name, intake.business, ctx.customer.business].filter(Boolean).map((x: string) => x.toLowerCase());
+      const found = (await linkedLocations()).find((l) => names.some((nm) => l.name.toLowerCase().includes(nm) || nm.includes(l.name.toLowerCase())));
+      if (found) {
+        placeId = found.place_id;
+        await query(`UPDATE customers SET data = data || jsonb_build_object('gbp_place_id', $2::text, 'gbp_location_name', $3::text) WHERE id = $1`, [ctx.customer.id, placeId, found.name]);
+      }
+    }
+    if (!placeId) {
+      if (!ctx.customer.data.gbp_invite_sent) {
+        await queueEmail({
+          product: ctx.product.slug,
+          customerId: ctx.customer.id,
+          kind: "gbp_invite",
+          to: ctx.customer.email,
+          subject: "One quick thing: access to your Google Business Profile",
+          body:
+            `Hello ${firstName(ctx)},\n\nSo we can look after your Google profile (weekly posts, answering reviews and your monthly ` +
+            `report), please add us as a manager. It takes about two minutes:\n\n` +
+            `1. Go to business.google.com and sign in.\n2. Open your profile and choose "Business Profile settings", then "Managers".\n` +
+            `3. Choose "Add" and enter ${manager}, with the role Manager.\n4. Choose "Invite".\n\n` +
+            `If you don't have a Google Business Profile yet, just reply and we'll set one up for you.\n\nThank you,\nFelix`,
+        });
+        await query(`UPDATE customers SET data = data || '{"gbp_invite_sent": true}'::jsonb WHERE id = $1`, [ctx.customer.id]);
+      }
+      return {
+        type: "manual",
+        title: `Connect ${customerLabel(ctx)}'s Google profile in Local Falcon`,
+        instructions: `The client has been emailed how to add ${manager} as a manager on their Google Business Profile.`,
+        rerun: true,
+        guide: {
+          why: "Google needs a person to accept a manager invite; Local Falcon can't do that step for us.",
+          minutes: 3,
+          steps: [
+            `Accept the Google email inviting ${manager} to manage "${intake.gbp_name || customerLabel(ctx)}".`,
+            "In Local Falcon, open Saved Locations and choose Import From Google Account.",
+            "Press Done below. HQ finds the profile and sets up scans, monitoring and weekly posts by itself.",
+          ],
+        },
+      };
+    }
+    if (!ctx.customer.data.lf_campaign_key) {
+      const area = intake.area || "";
+      const type = intake.business_type || ctx.customer.business || "";
+      const keywords = [`${type} ${area}`.trim(), `${type} near me`.trim(), `best ${type} ${area}`.trim()];
+      const key = await createMonthlyCampaign({ name: `OBB ${customerLabel(ctx)}`, placeId, keywords, start: new Date(Date.now() + 864e5) });
+      await addGuard(placeId).catch(() => undefined);
+      await query(`UPDATE customers SET data = data || jsonb_build_object('lf_campaign_key', $2::text, 'lf_keywords', $3::jsonb) WHERE id = $1`, [ctx.customer.id, key, JSON.stringify(keywords)]);
+    }
+    return { type: "done", note: "Google profile connected; monthly scans and monitoring set up" };
+  },
+
   async obb_weekly_post(ctx) {
     const last = await previousDelivery(ctx);
     const post = await draftJson<{ body: string }>({
@@ -720,46 +785,120 @@ const handlers: Record<string, Handler> = {
         "Under 120 words, one clear call to action (call, book or visit). No prices, offers or claims that " +
         "aren't in the business details.",
       prompt:
-        `Business details:\n${intakeSummary(ctx)}\n\nLast week's post (don't repeat its angle):\n${last?.post ?? "(none)"}\n\n` +
+        `Business details:\n${intakeSummary(ctx)}\n\nLast week's post (don't repeat its angle):\n${last?.body ?? last?.post ?? "(none)"}\n\n` +
         "Write this week's post.",
       schema: { type: "object", properties: { body: { type: "string" } }, required: ["body"], additionalProperties: false },
       maxTokens: 4000,
     });
-    if (ctx.delivery) {
-      await query(`UPDATE deliveries SET content = content || $2::jsonb WHERE id = $1`, [ctx.delivery.id, JSON.stringify({ post: post.body })]);
+    if (!ctx.customer.data.gbp_place_id || !getIntegration("localfalcon")?.configured()) {
+      return {
+        type: "manual",
+        title: `Publish this week's Google post for ${customerLabel(ctx)}`,
+        instructions: `Their Google profile isn't connected to Local Falcon yet. Publish this on their Google Business Profile:\n\n${post.body}`,
+      };
     }
+    const d = ctx.customer.data;
+    const site: string | undefined = d.domain_connected && d.domain ? `https://${d.domain}` : d.netlify_host ? `https://${d.netlify_host}` : undefined;
     return {
-      type: "manual",
-      title: `Publish this week's Google post for ${customerLabel(ctx)}`,
-      instructions: `Check it, then publish it on their Google Business Profile:\n\n${post.body}`,
+      type: "publish",
+      title: `This week's Google post for ${customerLabel(ctx)}`,
+      body: post.body,
+      publisher: "gbp_post",
+      data: { body: post.body, link: site },
+      approval: true,
     };
   },
 
   async obb_reviews(ctx) {
+    requireAutomation("localfalcon");
+    const placeId: string | undefined = ctx.customer.data.gbp_place_id;
+    if (!placeId) return { type: "done", note: "Google profile not connected yet" };
+    const reviews = await unansweredReviews(placeId);
+    if (!reviews.length) return { type: "done", note: "No new reviews to answer" };
+    const drafted = await draftJson<{ replies: { n: number; reply: string }[] }>({
+      system:
+        `You reply to Google reviews on behalf of a local business. ${ctx.product.voice} Thank the person by first name, ` +
+        "keep it to two or three short sentences, mention something specific they said, never argue or admit liability, " +
+        "and for a poor review apologise, and invite them to get in touch directly.",
+      prompt:
+        `Business details:\n${intakeSummary(ctx)}\n\nReviews:\n` +
+        reviews.map((r, i) => `#${i + 1} (${r.rating} stars, ${r.author}): ${r.text || "(no text)"}`).join("\n"),
+      schema: {
+        type: "object",
+        properties: { replies: { type: "array", items: { type: "object", properties: { n: { type: "integer" }, reply: { type: "string" } }, required: ["n", "reply"], additionalProperties: false } } },
+        required: ["replies"],
+        additionalProperties: false,
+      },
+      maxTokens: 4000,
+    });
+    const replies = reviews.map((r, i) => ({ reviewId: r.id, reply: drafted.replies.find((x) => x.n === i + 1)?.reply ?? "" }));
+    const body = reviews
+      .map((r, i) => `Review #${i + 1} (${r.rating} stars, ${r.author}): ${r.text || "(no text)"}\nReply #${i + 1}:\n${replies[i]!.reply}`)
+      .join("\n\n");
     return {
-      type: "manual",
-      title: `Answer new Google reviews for ${customerLabel(ctx)}`,
-      instructions: "Open their Google Business Profile and reply to any new reviews, thanking people by name and keeping replies short.",
+      type: "publish",
+      title: `Replies to ${reviews.length} Google review${reviews.length === 1 ? "" : "s"} for ${customerLabel(ctx)}`,
+      body,
+      publisher: "gbp_review_replies",
+      data: { replies },
+      approval: true,
     };
   },
 
   async obb_monthly_report(ctx) {
-    if (!ctx.input) {
+    const placeId: string | undefined = ctx.customer.data.gbp_place_id;
+    let figures = ctx.input ?? "";
+    if (!figures && placeId && getIntegration("localfalcon")?.configured()) {
+      const end = new Date();
+      const start = new Date(end.getTime() - 30 * 864e5);
+      const metrics = await profileMetrics(placeId, start, end).catch(() => ({} as Record<string, number>));
+      const ranking = ctx.customer.data.lf_campaign_key ? await campaignSummary(ctx.customer.data.lf_campaign_key).catch(() => ({} as Record<string, any>)) : {};
+      const period = end.toISOString().slice(0, 7);
+      await saveMetrics(ctx.customer.id, period, { ...metrics });
+      const kw: string[] = ctx.customer.data.lf_keywords ?? [];
+      figures =
+        `Last 30 days from Google: ${metrics.profile_views ?? "?"} profile views, ${metrics.calls ?? "?"} calls, ` +
+        `${metrics.website_clicks ?? "?"} website clicks, ${metrics.direction_requests ?? "?"} direction requests.\n` +
+        (ranking.averagePosition !== undefined
+          ? `Google Maps ranking scan (searches: ${kw.join(", ")}): average position ${ranking.averagePosition}` +
+            `${ranking.positionChange !== undefined ? ` (change ${ranking.positionChange})` : ""}, shows in ${ranking.shareOfVoice ?? "?"}% of the area` +
+            `${ranking.shareChange !== undefined ? ` (change ${ranking.shareChange})` : ""}.\n`
+          : "") +
+        (ranking.reportUrl ? `Full ranking map: ${ranking.reportUrl}\n` : "");
+    }
+    if (!figures) {
       return needData(
         ctx,
         "This month's ranking figures",
-        "Paste this month's figures: Maps positions for their main searches, profile views, calls and direction " +
-          "requests from Google Business Profile, website visits, and new reviews.",
+        "Their Google profile isn't connected to Local Falcon yet, so paste this month's figures: Maps positions, profile views, calls, direction requests, website visits and new reviews.",
       );
     }
     const last = await previousDelivery(ctx);
     const draft = await draftCustomerEmail(
       ctx,
       "Write this month's progress report as an email: how they're showing on Google and Maps, what we did " +
-        "(posts, reviews answered, site updates), what changed since last month, and what's next. Use only the figures given.",
-      `This month:\n${ctx.input}\n\nLast month's report:\n${last?.body ?? "(none)"}`,
+        "(posts, reviews answered, site updates), what changed since last month, and what's next. Use only the figures given. " +
+        "If a ranking map link is given, include it.",
+      `This month:\n${figures}\n\nLast month's report:\n${last?.body ?? "(none)"}`,
     );
-    return { type: "email", approval: true, ...draft };
+    return { type: "email", approval: false, ...draft };
+  },
+
+  /** Falcon Guard watches the profile; any change someone else made comes to Felix. */
+  async obb_profile_check(ctx) {
+    requireAutomation("localfalcon");
+    const placeId: string | undefined = ctx.customer.data.gbp_place_id;
+    if (!placeId) return { type: "done", note: "Google profile not connected yet" };
+    const changes = await guardChanges(placeId);
+    const seen: string[] = ctx.customer.data.gbp_changes_seen ?? [];
+    const fresh = changes.filter((c) => !seen.includes(c));
+    if (!fresh.length) return { type: "done", note: "No changes to their Google profile" };
+    await query(`UPDATE customers SET data = data || jsonb_build_object('gbp_changes_seen', $2::jsonb) WHERE id = $1`, [ctx.customer.id, JSON.stringify([...seen, ...fresh].slice(-50))]);
+    return {
+      type: "manual",
+      title: `${customerLabel(ctx)}'s Google profile was changed`,
+      instructions: `Local Falcon spotted these changes to their Google Business Profile:\n\n${fresh.map((c) => `- ${c}`).join("\n")}\n\nIf anything looks wrong (for example a changed phone number or opening hours), check with the client.`,
+    };
   },
 
   // -------------------------------------------------------- Good Questions

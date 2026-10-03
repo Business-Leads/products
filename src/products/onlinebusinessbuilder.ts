@@ -64,20 +64,12 @@ export const onlineBusinessBuilder: Product = {
     },
     {
       key: "gbp_access",
-      title: "Manager access to the Google Business Profile",
-      kind: "manual",
+      title: "Google Business Profile connected (scans and monitoring set up)",
+      kind: "auto",
+      handler: "obb_gbp_connect",
       instructions:
-        "Request or accept manager access to the customer's Google Business Profile (or create and verify a new " +
-        "profile). Record the profile name on the customer. Start weekly posting once access is in place.",
-      guide: {
-        why: "Google only lets the business owner give access to their profile.",
-        minutes: 10,
-        steps: [
-          "Look for the Google email inviting you to manage their profile and accept it (or go to business.google.com).",
-          "If they have no profile, create one at business.google.com and request verification.",
-          "Mark this done. Weekly Google posts start by themselves.",
-        ],
-      },
+        "The client is emailed how to add us as a manager. Once Felix accepts the invite and imports the profile in " +
+        "Local Falcon, HQ finds it, sets up monthly ranking scans and profile monitoring, and starts the weekly posts.",
     },
     {
       key: "website_design",
@@ -107,17 +99,8 @@ export const onlineBusinessBuilder: Product = {
       title: "Weekly Google Business Profile post",
       cadence: { every: "week", weekday: 2 },
       handler: "obb_weekly_post",
+      // Written by AI; approving it publishes it through Local Falcon (switch to automatic on the product page).
       approval: true,
-      guide: {
-        why: "Google doesn't let other systems post to Business Profiles yet.",
-        minutes: 5,
-        steps: [
-          "Read the post below.",
-          "Open the client's profile at business.google.com and choose Add update.",
-          "Paste the post, add a photo if you have one, and publish.",
-          "Mark this done.",
-        ],
-      },
     },
     {
       key: "reviews",
@@ -125,26 +108,23 @@ export const onlineBusinessBuilder: Product = {
       cadence: { every: "week", weekday: 4 },
       handler: "obb_reviews",
       approval: true,
-      instructions: "Open the customer's Google Business Profile and reply to any new reviews in their voice.",
-      guide: {
-        why: "Google doesn't let other systems answer reviews yet.",
-        minutes: 10,
-        steps: [
-          "Open the client's profile at business.google.com and go to Reviews.",
-          "Reply to each new review: thank them by name, keep it short, and never argue.",
-          "Mark this done.",
-        ],
-      },
+    },
+    {
+      key: "profile_check",
+      title: "Check their Google profile for changes",
+      cadence: { every: "week", weekday: 1 },
+      handler: "obb_profile_check",
+      approval: false,
     },
     {
       key: "monthly_report",
       title: "Monthly ranking report",
       cadence: { every: "month", dayOfMonth: "anniversary" },
       handler: "obb_monthly_report",
-      approval: true,
+      approval: false,
     },
   ],
-  tools: ["anthropic", "smtp", "stripe", "netlify", "godaddy"],
+  tools: ["anthropic", "smtp", "stripe", "netlify", "godaddy", "localfalcon"],
   leadBrief:
     "Thank them, answer what they asked using only the facts given, and invite them to start: it's £99 a " +
     "month with no setup fee, and straight after signing up they book an onboarding call with Felix.",
@@ -155,8 +135,8 @@ export const onlineBusinessBuilder: Product = {
     accent: "#D42A19",
     resultsTitle: "Your website and Google profile",
     resultsIntro: "Your site, your Google profile and how local customers are finding you.",
-    steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Access to your Google Business Profile", website_design: "Your website built", design_approved: "You approve your website", domain: "Your web address connected" },
-    routines: { weekly_post: "Weekly Google post", reviews: "Google reviews answered", monthly_report: "Monthly report" },
+    steps: { ...sharedPortalSteps, onboarding_call: "Onboarding call", gbp_access: "Your Google Business Profile connected", website_design: "Your website built", design_approved: "You approve your website", domain: "Your web address connected" },
+    routines: { weekly_post: "Weekly Google post", reviews: "Google reviews answered", profile_check: null, monthly_report: "Monthly report" },
     metrics: [
       { key: "profile_views", label: "Google profile views" },
       { key: "calls", label: "Calls from Google" },
