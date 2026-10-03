@@ -135,9 +135,9 @@ Known blockers:
 - Sites live in `sites/<name>/` and are published by the "Publish sites to
   Netlify" workflow. "Pull sites from Netlify" re-copies them.
 - Client areas live on account.linkn.co.uk, account.speedtolead.co.uk,
-  account.goodquestions.co.uk, account.onlinebusinessbuilder.co.uk.
-  EmailFirst's is still at hq…/portal/emailfirst until email-first.co.uk is
-  bought (emailfirst.co.uk is held by the email company).
+  account.goodquestions.co.uk, account.onlinebusinessbuilder.co.uk and
+  account.emailfirst.co.uk. emailfirst.co.uk's DNS is in Cloudflare (the
+  `account` CNAME was added there by hand; deploy.mjs skips it for GoDaddy).
 - Sbl.so: webhook into /webhooks/sbl/<token> (address shown on the Linkn
   product page). FeedBoss: Service API key (x-api-key); one workspace per
   client, created by hand. Awaz: no webhook; Make scenario "Watch Calls" ->
@@ -152,14 +152,12 @@ Known blockers:
 
 ## Next work, in order
 1. Awaz: buy a UK number, finish the Make "OBB call me" scenario.
-2. EmailFirst: once email-first.co.uk is bought, move the site and account
-   area onto it.
-3. Wire what's still manual where an API exists (Sbl.so API key pending;
+2. Wire what's still manual where an API exists (Sbl.so API key pending;
    Local Falcon when FirstPageLocal launches). Don't guess endpoints: read
    the docs through the read-docs workflow.
-4. Outreach (`engine/outreach.ts`) sends through the app's own SMTP. For
+3. Outreach (`engine/outreach.ts`) sends through the app's own SMTP. For
    volume, sending should move to Mailpulse/MailWizz once that API is wired.
    Keep the PECR rules: corporate subscribers only by default, opt-out in
    every email, global suppression.
-5. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
+4. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
    needs to set REPLY_TO and IMAP_URL for a mailbox that all replies reach.
