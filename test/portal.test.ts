@@ -499,7 +499,9 @@ describe("client account areas", () => {
 
   it("sends the sites' book-a-call links to the right Cal.com page, and thanks people afterwards", async () => {
     const r = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/chat" });
-    assert.equal(r.headers.location, "https://cal.com/felixclarke/onlinebusinessbuilder-chat");
+    assert.equal(r.statusCode, 200);
+    assert.match(r.body, /felixclarke\/onlinebusinessbuilder-chat/);
+    assert.match(r.body, /\/portal\/onlinebusinessbuilder\/booked\?kind=chat/);
     const thanks = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/booked?kind=chat" });
     assert.equal(thanks.statusCode, 200);
     assert.match(thanks.body, /your call is booked/);

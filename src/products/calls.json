@@ -1,5 +1,5 @@
 {
-  "_note": "Booking call types in Cal.com, one sales chat and one onboarding call per product. scripts/deploy.mjs creates any that are missing; the slug tells HQ which product and which kind of call it is. After booking, Cal.com sends people to <account>/booked?kind=<kind>; calls use Zoom once it's connected in Cal.com.",
+  "_note": "Booking call types in Cal.com, one sales chat and one onboarding call per product. scripts/deploy.mjs creates any that are missing and switches them to Zoom once Zoom is connected; the slug tells HQ which product and which kind of call it is. The calendar is embedded on account.<site>/chat and /book, which show our thank-you page after booking.",
   "calls": [
     {
       "product": "firstpagelocal",
@@ -73,13 +73,5 @@
       "title": "Online Business Builder onboarding call",
       "minutes": 45
     }
-  ],
-  "accounts": {
-    "firstpagelocal": "https://hq.onlinebusinessbuilder.co.uk/portal/firstpagelocal",
-    "linkn": "https://account.linkn.co.uk",
-    "speedtolead": "https://account.speedtolead.co.uk",
-    "emailfirst": "https://account.emailfirst.co.uk",
-    "goodquestions": "https://account.goodquestions.co.uk",
-    "onlinebusinessbuilder": "https://account.onlinebusinessbuilder.co.uk"
-  }
+  ]
 }

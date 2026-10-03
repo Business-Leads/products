@@ -73,6 +73,11 @@ export function accountPage(v: View, title: string, body: Raw, active?: string, 
 }
 
 /** Sign-in, password and other pages shown before signing in. */
+/** A page with the product's header but no account menu, wide enough for a booking calendar. */
+export function widePage(v: View, title: string, body: Raw): string {
+  return shell({ ...v, user: undefined }, title, html`<main class="portal-main">${body}</main>`);
+}
+
 export function narrowPage(v: View, title: string, body: Raw): string {
   return shell({ ...v, user: undefined }, title, html`<main class="portal-narrow"><div class="panel">${body}</div></main>`);
 }
@@ -276,30 +281,36 @@ function safeJson(value: unknown): string {
   return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
+/** Cal.com's inline booking calendar; after booking the page goes to `after`. */
+export function calEmbed(bookingPage: string, after: string, beforeRedirect = ""): Raw {
+  const link = new URL(bookingPage);
+  const calLink = link.pathname.replace(/^\//, "");
+  const prefill: Record<string, string> = {};
+  link.searchParams.forEach((value, key) => { prefill[key] = value; });
+  return html`<div id="cal-booking" class="booking-widget"></div>
+    <script>
+      (function (C, A, L) { var p = function (a, ar) { a.q.push(ar); }; var d = C.document; C.Cal = C.Cal || function () { var cal = C.Cal; var ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { var api = function () { p(api, arguments); }; var namespace = ar[1]; api.q = api.q || []; if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+      Cal("init", { origin: "https://cal.com" });
+      Cal("inline", { elementOrSelector: "#cal-booking", calLink: ${raw(safeJson(calLink))}, config: ${raw(safeJson(prefill))} });
+      Cal("on", { action: "bookingSuccessful", callback: function () {
+        var go = function () { window.location.href = ${raw(safeJson(after))}; };
+        ${raw(beforeRedirect || "go();")}
+      } });
+    </script>`;
+}
+
 export function bookingWidget(v: View, c: CustomerRow): Raw {
   const link = new URL(bookingLink(v.product, c.name, c.email, "onboarding", c.id));
-  const done = `fetch(${JSON.stringify(`${v.base}/book/done`)}, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", credentials: "same-origin" })` +
-    `.finally(function () { window.location.href = ${JSON.stringify(`${v.base}/`)}; });`;
-  if (link.hostname === "cal.com") {
-    const calLink = link.pathname.replace(/^\//, "");
-    const prefill: Record<string, string> = {};
-    link.searchParams.forEach((value, key) => { prefill[key] = value; });
-    // Cal.com's own inline embed; HQ also hears about the booking from Cal.com directly.
-    return html`<div id="cal-booking" class="booking-widget"></div>
-      <script>
-        (function (C, A, L) { var p = function (a, ar) { a.q.push(ar); }; var d = C.document; C.Cal = C.Cal || function () { var cal = C.Cal; var ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { var api = function () { p(api, arguments); }; var namespace = ar[1]; api.q = api.q || []; if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar); return; } p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-        Cal("init", { origin: "https://cal.com" });
-        Cal("inline", { elementOrSelector: "#cal-booking", calLink: ${raw(safeJson(calLink))}, config: ${raw(safeJson(prefill))} });
-        Cal("on", { action: "bookingSuccessful", callback: function () { ${raw(done)} } });
-      </script>`;
-  }
+  const markBooked = `fetch(${safeJson(`${v.base}/book/done`)}, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", credentials: "same-origin" }).finally(go);`;
+  if (link.hostname === "cal.com") return calEmbed(link.toString(), `${v.base}/booked?kind=onboarding`, markBooked);
   link.searchParams.set("hide_gdpr_banner", "1");
   return html`<div class="calendly-inline-widget" data-url="${link.toString()}"></div>
     <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
     <script>
       window.addEventListener("message", function (e) {
         if (e.origin !== "https://calendly.com" || !e.data || e.data.event !== "calendly.event_scheduled") return;
-        ${raw(done)}
+        var go = function () { window.location.href = ${raw(safeJson(`${v.base}/`))}; };
+        ${raw(markBooked)}
       });
     </script>`;
 }

@@ -38,7 +38,7 @@ import {
   userForSession,
   type ClientUser,
 } from "./accounts.js";
-import { accountPage, bookingWidget, dashboardBody, narrowPage, periodLabel, statusChip, type View } from "./views.js";
+import { accountPage, bookingWidget, calEmbed, widePage, dashboardBody, narrowPage, periodLabel, statusChip, type View } from "./views.js";
 
 const COOKIE = "client_session";
 const IP_FAILURE_LIMIT = 20;
@@ -346,14 +346,24 @@ export async function portalRoutes(app: FastifyInstance) {
     return sendHtml(reply, accountPage(a.v, "Dashboard", await dashboardBody(a.v, a.customer), "/", req.query.flash));
   });
 
-  // A short address for the product sites' "book a call" buttons, so the booking tool can change without republishing them.
+  // The product sites' "Book a chat" buttons land here: the booking calendar on the product's own page,
+  // then our thank-you page. (Without Cal.com set up, it sends people to the old booking link.)
   app.get(`${P}/chat`, async (req: Req, reply) => {
-    const product = getProduct(req.params.product ?? "");
-    if (!product) return reply.code(404).send("Not found");
-    return reply.redirect(bookingUrl(product, "chat"), 302);
+    const v = viewFor(req);
+    if (!v) return notFound(reply);
+    const page = new URL(bookingUrl(v.product, "chat"));
+    if (page.hostname !== "cal.com") return reply.redirect(page.toString(), 302);
+    const user = await userForSession(req.cookies[COOKIE], v.product.slug);
+    const customer = user ? currentCustomer(await customersFor(user)) : undefined;
+    if (customer?.name) page.searchParams.set("name", customer.name);
+    if (customer?.email) page.searchParams.set("email", customer.email);
+    return sendHtml(reply, widePage(v, `Book a chat · ${v.product.name}`, html`
+      <h1>Book a chat with Felix</h1>
+      <p>Pick a time that suits you for a relaxed 20-minute chat about your business and ${v.product.name}. No preparation needed.</p>
+      ${calEmbed(page.toString(), `${v.base}/booked?kind=chat`)}`));
   });
 
-  // Cal.com sends people here after they book. Signed-in clients go back to their account.
+  // The booking pages send people here after they book. Signed-in clients go back to their account.
   app.get(`${P}/booked`, async (req: Req, reply) => {
     const v = viewFor(req);
     if (!v) return notFound(reply);
