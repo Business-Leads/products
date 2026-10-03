@@ -43,39 +43,36 @@ export const emailFirst: Product = {
     ...welcomeSteps,
     {
       key: "copy",
-      title: "Write 3 emails and landing page copy",
-      kind: "approval",
-      handler: "ef_draft_copy",
-    },
-    {
-      key: "customer_approves_copy",
-      title: "Customer approves the copy",
+      title: "Client approves their 3 emails and landing page copy",
       kind: "customer",
-      handler: "ef_customer_copy_approval",
+      handler: "ef_draft_copy",
+      revisable: true,
+      instructions: "AI writes the three emails and landing page copy from their answers; the client approves them in their account or asks for changes.",
     },
     {
       key: "provision_sending",
-      title: "Create list, template and campaigns in MailWizz",
+      title: "Audience matched in our database and templates created in Mailpulse",
       kind: "auto",
       handler: "ef_provision_sending",
-      instructions:
-        "In the Mailpulse/MailWizz customer area: create the client's list and custom fields, upload the three " +
-        "approved emails as templates, create the campaigns with the sender name and reply-to from the intake, " +
-        "and add the client to the daily sending matrix and Hot Prospects report.",
-      guide: {
-        why: "Lists and campaigns in Mailpulse are set up by hand for now.",
-        minutes: 30,
-        steps: [
-          "In Mailpulse, create a list for the client.",
-          "Add the three approved emails as templates (they're in the client's emails in HQ).",
-          "Create the campaigns with the sender name and reply-to address from their answers.",
-          "Type the campaign ids below, separated by commas, and save. Weekly results then come in by themselves.",
-        ],
-      },
+      instructions: "HQ turns their audience into search filters on our prospect database, checks there are enough people, and creates the email templates.",
     },
     goLiveStep,
   ],
   routines: [
+    {
+      key: "daily_send",
+      title: "Today's sends (about 600 new contacts, plus follow-ups)",
+      cadence: { every: "day", weekdaysOnly: true },
+      handler: "ef_daily_send",
+      approval: false,
+    },
+    {
+      key: "daily_report",
+      title: "Morning report of who clicked",
+      cadence: { every: "day", weekdaysOnly: true },
+      handler: "ef_daily_report",
+      approval: false,
+    },
     {
       key: "weekly_summary",
       title: "Weekly results summary",
@@ -97,8 +94,8 @@ export const emailFirst: Product = {
     accent: "#D42A19",
     resultsTitle: "Your campaign results",
     resultsIntro: "Emails sent to your audience and the people who responded.",
-    steps: { ...sharedPortalSteps, copy: "Your emails and landing page written", customer_approves_copy: "You approve the copy", provision_sending: "Sending set up" },
-    routines: { weekly_summary: "Weekly results" },
+    steps: { ...sharedPortalSteps, copy: "You approve your emails and landing page", provision_sending: "Sending set up" },
+    routines: { daily_send: null, daily_report: "Daily clicks report", weekly_summary: "Weekly results" },
     metrics: [
       { key: "emails_sent", label: "Emails sent" },
       { key: "human_clicks", label: "Verified clicks" },

@@ -7,7 +7,7 @@ export const goodQuestions: Product = {
   tagline: "Research for organisations, built on good questions",
   description:
     "Business research service. Decision-makers are invited to a free 15-question AI readiness " +
-    "assessment (ScoreApp) and get a score and report; the answers become publishable research, and " +
+    "assessment and get a score and report; the answers become publishable research, and " +
     "opt-ins join the Good Questions Panel. Clients buy sponsored assessments, bespoke research or a " +
     "scorecard on their own account. Priced per engagement.",
   entity: `Good Questions is a trading name of ${AIFT}`,
@@ -36,77 +36,53 @@ export const goodQuestions: Product = {
     ...welcomeSteps,
     {
       key: "question_design",
-      title: "Agree the questions with the sponsor",
-      kind: "manual",
-      instructions: "Design the 15 questions and bands with the sponsor and get written sign-off.",
-      guide: {
-        why: "The questions are agreed with the sponsor, so it needs your conversation.",
-        minutes: 60,
-        steps: [
-          "Meet the sponsor and agree the topic and audience.",
-          "Draft fifteen questions across five areas, each with three answers.",
-          "Get the sponsor's written OK by email, then mark this done.",
-        ],
-      },
+      title: "Sponsor approves the research questions",
+      kind: "customer",
+      handler: "gq_questions",
+      revisable: true,
+      instructions: "AI drafts fifteen questions in five areas from the brief; the sponsor approves them, or asks for changes and gets a new draft.",
     },
     {
       key: "compliance",
-      title: "Compliance sign-off (legitimate interests, privacy, retention)",
-      kind: "manual",
-      instructions: "Complete the legitimate interests assessment and privacy wording for this campaign.",
-      guide: {
-        why: "A short legal check is needed before contacting people for research.",
-        minutes: 30,
-        steps: [
-          "Write down why contacting this audience is reasonable (legitimate interests) in a few sentences.",
-          "Check the invitation email has who we are, why we're writing, and an opt-out.",
-          "Agree how long answers are kept (for example 12 months), then mark this done.",
-        ],
-      },
+      title: "Sponsor approves the privacy and invitation wording",
+      kind: "customer",
+      handler: "gq_compliance",
+      revisable: true,
+      instructions: "AI drafts the legitimate interests note, privacy wording, invitation email and retention period for the sponsor to approve.",
     },
     {
       key: "scorecard",
-      title: "Build the scorecard in ScoreApp",
+      title: "Survey page built",
       kind: "auto",
-      handler: "gq_build_scorecard",
-      instructions: "Clone the scorecard template in ScoreApp, apply the agreed questions and branding, and test it end to end.",
-      guide: {
-        why: "The sponsor's assessment page is set up by hand for now.",
-        minutes: 45,
-        steps: [
-          "Copy the AI readiness assessment page and change the questions to the agreed ones.",
-          "Check it on a phone and a computer.",
-          "Mark this done.",
-        ],
-      },
+      handler: "gq_build_survey",
+      instructions: "HQ builds the survey page from the approved questions; respondents get their scores and a short report.",
     },
     {
       key: "sends",
-      title: "Schedule the invitation sends",
-      kind: "manual",
-      instructions: "Create the invitation campaigns in Mailpulse with rest periods between lists.",
-      guide: {
-        why: "Invitation emails go out from Mailpulse, which is set up by hand for now.",
-        minutes: 20,
-        steps: [
-          "In Mailpulse, create the invitation campaign to the agreed list.",
-          "Leave at least three days between sends to the same list.",
-          "Mark this done.",
-        ],
-      },
+      title: "Invitations scheduled",
+      kind: "auto",
+      handler: "gq_send_invites",
+      instructions: "Invitations go to the agreed audience from our prospect database through Mailpulse, with rest periods between sends.",
     },
     goLiveStep,
   ],
   routines: [
     {
+      key: "daily_invites",
+      title: "Today's invitations (up to 300)",
+      cadence: { every: "day", weekdaysOnly: true },
+      handler: "gq_daily_invites",
+      approval: false,
+    },
+    {
       key: "findings",
       title: "Weekly findings summary for the sponsor",
       cadence: { every: "week", weekday: 4 },
       handler: "gq_findings",
-      approval: true,
+      approval: false,
     },
   ],
-  tools: ["scoreapp", "anthropic", "smtp"],
+  tools: ["mailwizz", "anthropic", "smtp"],
   leadBrief:
     "Enquiries come from organisations thinking about sponsored or bespoke research. Ask what they want " +
     "to learn and offer a short call to scope it; do not quote prices.",
@@ -118,7 +94,7 @@ export const goodQuestions: Product = {
     resultsTitle: "Your research",
     resultsIntro: "Responses collected and what they show.",
     steps: { ...sharedPortalSteps, question_design: "Questions agreed", compliance: "Compliance checks", scorecard: "Your scorecard built", sends: "Invitations scheduled" },
-    routines: { findings: "Weekly findings" },
+    routines: { daily_invites: null, findings: "Weekly findings" },
     metrics: [
       { key: "completions", label: "Completed responses" },
       { key: "average_score", label: "Average score" },

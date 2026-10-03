@@ -7,6 +7,8 @@ process.env.AWAZ_WEBHOOK_TOKEN = "awaz-hook";
 process.env.BASE_URL = "https://hq.example.com";
 process.env.SBL_API_KEY = "sbl_test";
 process.env.SBL_COMPANY_ID = "42";
+process.env.MAILWIZZ_API_URL = "https://mw.example.com/api";
+process.env.MAILWIZZ_API_KEY = "mw_test";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -35,7 +37,7 @@ function fakeLocalFalcon(responses: Record<string, unknown>) {
 describe("Local Falcon (Online Business Builder)", () => {
   before(async () => {
     await migrate();
-    await query(`TRUNCATE customers, emails, tasks, awaz_events RESTART IDENTITY CASCADE`);
+    await query(`TRUNCATE customers, emails, tasks, awaz_events, prospect_db, suppressions RESTART IDENTITY CASCADE`);
   });
   after(async () => {
     globalThis.fetch = realFetch;
@@ -146,5 +148,71 @@ describe("Local Falcon (Online Business Builder)", () => {
     const sent = tools.find((t) => t.name === "sbl_reply_and_resolve")!;
     assert.equal(sent.args.message, "Thanks Sam, shall we talk Tuesday?");
     assert.equal(sent.args.company_id, "42");
+  });
+
+  it("every handler a product names exists", async () => {
+    const { handlerNames } = await import("../src/engine/handlers.js");
+    const { products } = await import("../src/products/index.js");
+    const names = new Set(handlerNames());
+    for (const p of products) {
+      for (const st of p.onboarding) if (st.handler) assert.ok(names.has(st.handler), `${p.slug}: ${st.handler}`);
+      for (const r of p.routines) assert.ok(names.has(r.handler), `${p.slug}: ${r.handler}`);
+    }
+  });
+
+  it("loads the master prospect file and picks contacts: matching, never suppressed, never twice", async () => {
+    const { writeFile } = await import("node:fs/promises");
+    const { importProspectFile, pickProspects, countMatches } = await import("../src/engine/prospectdb.js");
+    const file = "/tmp/hq-prospects-test.csv";
+    await writeFile(file, 'Email,First Name,Surname,Company Name,Job Title,Industry,County\n' +
+      'ann@acme.co.uk,Ann,Lee,"Acme, Ltd",Managing Director,Construction,Yorkshire\n' +
+      'bob@build.co.uk,Bob,Hill,Build Co,Director,Construction,Kent\n' +
+      'cat@shop.co.uk,Cat,May,Shop,Shop Assistant,Retail,Kent\n' +
+      'not-an-email,X,Y,Z,Director,Construction,Kent\n' +
+      'dan@nope.co.uk,Dan,Fox,Nope,Director,Construction,Kent\n');
+    const r = await importProspectFile(file);
+    assert.equal(r.imported, 4);
+    await query(`INSERT INTO suppressions (value, reason) VALUES ('dan@nope.co.uk', 'test')`);
+    const customer = await one(`INSERT INTO customers (product, plan, email) VALUES ('emailfirst', 'weekly', 'c@x.co.uk') RETURNING *`);
+    const filter = { titles: ["director"], sectors: ["construction"], regions: [], exclude: [] };
+    assert.equal(await countMatches(filter, customer.id), 2);
+    const first = await pickProspects(filter, customer.id, 10, "b1");
+    assert.deepEqual(first.map((p) => p.email).sort(), ["ann@acme.co.uk", "bob@build.co.uk"]);
+    assert.equal(first.find((p) => p.email === "ann@acme.co.uk")!.company, "Acme, Ltd");
+    assert.equal((await pickProspects(filter, customer.id, 10, "b2")).length, 0);
+  });
+
+  it("EmailFirst: a day's send creates the list, loads the contacts and schedules the opener", async () => {
+    const product = requireProduct("emailfirst");
+    const calls: { method: string; path: string; body: URLSearchParams }[] = [];
+    globalThis.fetch = (async (url: string, init: any) => {
+      const path = new URL(url).pathname.replace("/api", "");
+      calls.push({ method: init?.method ?? "GET", path, body: new URLSearchParams(init?.body ?? "") });
+      if (path === "/lists" && init?.method === "POST") return new Response(JSON.stringify({ status: "success", list_uid: "L1" }));
+      if (path === "/campaigns" && init?.method === "POST") return new Response(JSON.stringify({ status: "success", campaign_uid: "C1" }));
+      if (path.endsWith("/fields") && !init?.method) return new Response(JSON.stringify({ status: "success", data: { records: [{ tag: "EMAIL" }] } }));
+      return new Response(JSON.stringify({ status: "success", data: {} }));
+    }) as typeof fetch;
+    await query(`UPDATE prospect_db SET last_used_at = NULL`);
+    await query(`DELETE FROM prospect_uses`);
+    const customer = await one(
+      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'weekly', 'd@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
+      [JSON.stringify({
+        intake: { sender_name: "Dee", reply_to: "dee@dee.co.uk", company: "Dee Ltd" },
+        ef_filters: { titles: ["director"], sectors: [], regions: [], exclude: [] },
+        ef_templates: ["T1", "T2", "T3"],
+        ef_copy: { emails: [{ subject: "Quick question, {FNAME}", body: "Hi {FNAME}" }, { subject: "b", body: "b" }, { subject: "c", body: "c" }], landing: "" },
+      })],
+    );
+    const out = await getHandler("ef_daily_send")({ product, customer });
+    assert.equal(out.type, "done");
+    assert.ok(calls.some((c) => c.path === "/lists/L1/subscribers/bulk" && c.body.get("subscribers[0][EMAIL]")));
+    const campaign = calls.find((c) => c.path === "/campaigns" && c.method === "POST")!;
+    assert.equal(campaign.body.get("campaign[subject]"), "Quick question, [FNAME]");
+    assert.equal(campaign.body.get("campaign[template][template_uid]"), "T1");
+    assert.equal(campaign.body.get("campaign[reply_to]"), "dee@dee.co.uk");
+    const saved = (await one(`SELECT data FROM customers WHERE id = $1`, [customer.id])).data;
+    assert.equal(saved.ef_lists[0].list, "L1");
+    assert.deepEqual(saved.ef_lists[0].campaigns, ["C1"]);
   });
 });

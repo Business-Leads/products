@@ -15,6 +15,7 @@ import {
   upgradePlan,
 } from "../engine/clients.js";
 import type { CustomerRow } from "../engine/types.js";
+import { loadSurvey, saveResponse } from "../engine/surveys.js";
 import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { clearFailures, passwordProblem, recordFailure, tooManyFailures, verifyPassword } from "../lib/passwords.js";
@@ -361,6 +362,53 @@ export async function portalRoutes(app: FastifyInstance) {
       <h1>Book a chat with Felix</h1>
       <p>Pick a time that suits you for a relaxed 20-minute chat about your business and ${v.product.name}. No preparation needed.</p>
       ${calEmbed(page.toString(), `${v.base}/booked?kind=chat`)}`));
+  });
+
+  // Good Questions research surveys (public; the token is in the invitation link).
+  app.get(`${P}/survey/:token`, async (req: Req, reply) => {
+    const v = viewFor(req);
+    const loaded = v && v.product.slug === "goodquestions" ? await loadSurvey(req.params.token ?? "") : undefined;
+    if (!v || !loaded) return notFound(reply);
+    const s = loaded.survey;
+    return sendHtml(reply, widePage(v, s.title, html`
+      <h1>${s.title}</h1>
+      <p>${s.intro}</p>
+      <form method="post" action="${v.base}/survey/${req.params.token}" class="panel">
+        ${s.areas.map((a, ai) => html`<fieldset style="border:0;padding:0;margin:0 0 18px"><legend><h2>${a.name}</h2></legend>
+          ${a.questions.map((q, qi) => html`<div style="margin-bottom:14px"><p><strong>${q.q}</strong></p>
+            ${q.answers.map((ans, i) => html`<label style="display:block;font-weight:400"><input type="radio" name="q${ai}_${qi}" value="${i}" required> ${ans.text}</label>`)}
+          </div>`)}</fieldset>`)}
+        <h2>Your report</h2>
+        <p class="small muted">Leave your email if you'd like your scores and advice sent to you. Optional.</p>
+        <label for="s-name">Your name</label><input id="s-name" name="name" autocomplete="name">
+        <label for="s-email">Email</label><input id="s-email" name="email" type="email" autocomplete="email">
+        <label for="s-org">Organisation</label><input id="s-org" name="organisation" autocomplete="organization">
+        <label for="s-role">Your role</label><input id="s-role" name="role" autocomplete="organization-title">
+        <label style="font-weight:400;margin-top:10px"><input type="checkbox" name="opt_in" value="yes"> Invite me to future Good Questions research</label>
+        <p class="small muted">Your answers are used without your name in published research. Ask us to delete them any time.</p>
+        <p><button class="primary">See my results</button></p>
+      </form>`));
+  });
+
+  app.post(`${P}/survey/:token`, async (req: Req, reply) => {
+    const v = viewFor(req);
+    const token = req.params.token ?? "";
+    const loaded = v && v.product.slug === "goodquestions" ? await loadSurvey(token) : undefined;
+    if (!v || !loaded) return notFound(reply);
+    const b = req.body ?? {};
+    const answers = Object.fromEntries(Object.entries(b).filter(([k]) => /^q\d+_\d+$/.test(k)));
+    const scored = await saveResponse(token, loaded.survey, answers, {
+      name: b.name?.trim(),
+      email: b.email?.trim(),
+      organisation: b.organisation?.trim(),
+      role: b.role?.trim(),
+      optIn: b.opt_in === "yes",
+    });
+    return sendHtml(reply, narrowPage(v, "Your results", html`
+      <h1>Your score: ${scored.total}%</h1>
+      ${scored.band ? html`<p><strong>${scored.band.label}</strong></p><p>${scored.band.advice}</p>` : ""}
+      <ul>${Object.entries(scored.areas).map(([k, val]) => html`<li>${k}: ${val}%</li>`)}</ul>
+      <p>Thank you for taking part.${b.email ? " We've emailed you a copy." : ""}</p>`));
   });
 
   // The booking pages send people here after they book. Signed-in clients go back to their account.

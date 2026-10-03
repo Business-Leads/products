@@ -89,6 +89,12 @@ services:
       - key: AWAZ_TEST_FROM_ID
         scope: RUN_TIME
         type: SECRET
+      - key: EF_FROM_EMAIL
+        scope: RUN_TIME
+        type: SECRET
+      - key: GQ_FROM_EMAIL
+        scope: RUN_TIME
+        type: SECRET
       - key: LOCALFALCON_API_KEY
         scope: RUN_TIME
         type: SECRET

@@ -13,6 +13,7 @@ import { autonomyFor, getSetting, setSetting } from "../lib/settings.js";
 import { ago, fmtDate, token } from "../lib/util.js";
 import { bookingUrl, formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
 import { buyUrl, portalUrl } from "../portal/accounts.js";
+import { dataAdminRoutes } from "./admin-data.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
@@ -735,6 +736,7 @@ export async function adminRoutes(app: FastifyInstance) {
         </form></div>
       ${intro("This is the engine room. You shouldn't need to come here often: if anything stops working, it shows up on your to-do list. The pause button above is an emergency stop for every product.")}
       ${warnings.length ? html`<div class="flash">${warnings.join("; ")}</div>` : ""}
+      <div class="panel"><h2>Prospect database</h2><p>The contacts EmailFirst and Good Questions email. <a href="/system/prospects">Upload or update the master prospect file</a>.</p></div>
       <div class="panel"><h2>Regular jobs</h2>
         <table><tr><th>What it does</th><th>How often</th><th>Last ran</th><th>Result</th><th></th></tr>
         ${jobs.map((j) => {
@@ -772,6 +774,7 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   await clientAdminRoutes(app, send);
+  await dataAdminRoutes(app, send);
 }
 
 function customersTable(rows: CustomerRow[], showProduct = false): Raw {

@@ -45,6 +45,8 @@ jobs:
           AWAZ_API_KEY: ${{ secrets.AWAZ_API_KEY }}
           FEEDBOSS_API_KEY: ${{ secrets.FEEDBOSS_API_KEY }}
           LOCALFALCON_API_KEY: ${{ secrets.LOCALFALCON_API_KEY }}
+          EF_FROM_EMAIL: ${{ secrets.EF_FROM_EMAIL }}
+          GQ_FROM_EMAIL: ${{ secrets.GQ_FROM_EMAIL }}
           AWAZ_TEST_AGENT_ID: ${{ secrets.AWAZ_TEST_AGENT_ID }}
           AWAZ_TEST_FROM_ID: ${{ secrets.AWAZ_TEST_FROM_ID }}
           GBP_MANAGER_EMAIL: ${{ secrets.GBP_MANAGER_EMAIL }}

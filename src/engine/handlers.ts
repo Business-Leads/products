@@ -5,9 +5,13 @@ import { bookingLink, getPlan } from "../products/index.js";
 import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
-import { campaignStats } from "../integrations/mailwizz.js";
+import { addSubscribers, campaignClickers, campaignStats, createCampaign, createList, createTemplate, ensureFields, unsubscribed, type Contact, type Sender } from "../integrations/mailwizz.js";
+import { countMatches, pickProspects, type AudienceFilter } from "./prospectdb.js";
+import { suppress } from "./outreach.js";
+import { emailOperator } from "../lib/email.js";
 import { addGuard, campaignSummary, createMonthlyCampaign, guardChanges, linkedLocations, profileMetrics, unansweredReviews } from "../integrations/localfalcon.js";
 import { queueEmail } from "../lib/email.js";
+import { createSurvey, surveyFindings, surveySchema, surveyText, type Survey } from "./surveys.js";
 import { listAgents, placeCall, subscribeCalls } from "../integrations/awaz.js";
 import { campaignUsers, draftCampaign, field, getCampaign, linkedinChannels, previewEngagers, waitingLeads } from "../integrations/sbl.js";
 import { generatePost, recentPosts } from "../integrations/feedboss.js";
@@ -90,6 +94,46 @@ function warmBrief(ctx: HandlerContext): string {
     `${coldBrief(ctx)}\n\nThis campaign goes to people who recently liked or commented on ${ctx.customer.name}'s LinkedIn posts. ` +
     "Never mention the post or that they engaged with it: start a natural conversation relevant to their role."
   ).slice(0, 19000);
+}
+
+interface EfCopy {
+  emails: { subject: string; body: string }[];
+  landing: string;
+}
+
+interface EfDay {
+  date: string;
+  list?: string;
+  count: number;
+  campaigns: string[];
+}
+
+function efCopyText(c: EfCopy): string {
+  return `${c.emails.map((e, i) => `Email ${i + 1}\nSubject: ${e.subject}\n\n${e.body}`).join("\n\n---\n\n")}\n\n---\n\nLanding page\n\n${c.landing}`;
+}
+
+/** Our {FNAME}/{COMPANY} placeholders as MailWizz tags. */
+function mergeTags(text: string): string {
+  return text.replace(/\{FNAME\}/g, "[FNAME]").replace(/\{COMPANY\}/g, "[COMPANY]");
+}
+
+/** A plain-English audience as search filters on our prospect database. */
+async function audienceFilters(audience: string, about: string): Promise<AudienceFilter> {
+  return draftJson<AudienceFilter>({
+    system:
+      "You turn a description of who should be emailed into search filters for a UK B2B contact database. " +
+      "titles: short words that appear in matching job titles (e.g. 'director', 'owner', 'head of marketing'). " +
+      "sectors: short industry words; empty if any sector. regions: UK places; empty if anywhere in the UK. " +
+      "exclude: words that rule people out (competitors, existing clients, unsuitable roles). Keep each list short.",
+    prompt: `Who to email: ${audience}\nContext: ${about}`,
+    schema: {
+      type: "object",
+      properties: { titles: { type: "array", items: { type: "string" } }, sectors: { type: "array", items: { type: "string" } }, regions: { type: "array", items: { type: "string" } }, exclude: { type: "array", items: { type: "string" } } },
+      required: ["titles", "sectors", "regions", "exclude"],
+      additionalProperties: false,
+    },
+    maxTokens: 1500,
+  });
 }
 
 function needData(ctx: HandlerContext, what: string, instructions: string): Outcome {
@@ -767,44 +811,147 @@ const handlers: Record<string, Handler> = {
 
   // ------------------------------------------------------------ EmailFirst
 
+  /** The three cold emails and landing page copy, drafted from their answers; the client approves (or asks for changes) in their account. */
   async ef_draft_copy(ctx) {
-    const draft = await draftCustomerEmail(
-      ctx,
-      "Write the client three cold emails for UK B2B decision makers (each under 150 words, one clear call " +
-        "to action, no hype) and the copy for a one-page landing page (headline, three short sections, call " +
-        "to action). Put them in an email to the client asking them to approve or reply with changes.",
-    );
-    return { type: "email", approval: true, ...draft };
-  },
-
-  async ef_customer_copy_approval(ctx) {
-    const copy = (
-      await query(`SELECT body_text FROM emails WHERE customer_id = $1 AND kind = 'onboarding:copy' AND status = 'sent' ORDER BY created_at DESC LIMIT 1`, [ctx.customer.id])
-    )[0]?.body_text;
+    const feedback: string[] = ctx.customer.data.copy_feedback ?? [];
+    const copy = await draftJson<EfCopy>({
+      system:
+        `You write cold B2B emails for UK decision makers for ${ctx.product.name}. ${ctx.product.voice} ` +
+        "Three emails: an opener and two follow-ups, each under 150 words, plain text that reads like a personal email, " +
+        "one clear call to action, no hype, no false familiarity, no fake 'Re:'. Use {FNAME} for the first name and " +
+        "{COMPANY} for their company where natural. Also the copy for a one-page landing page.",
+      prompt:
+        `Client answers:\n${intakeSummary(ctx)}` +
+        (ctx.customer.data.ef_copy ? `\n\nPrevious draft:\n${efCopyText(ctx.customer.data.ef_copy)}` : "") +
+        (feedback.length ? `\n\nThe client asked for these changes:\n${feedback.join("\n")}` : ""),
+      schema: {
+        type: "object",
+        properties: {
+          emails: { type: "array", items: { type: "object", properties: { subject: { type: "string" }, body: { type: "string" } }, required: ["subject", "body"], additionalProperties: false } },
+          landing: { type: "string" },
+        },
+        required: ["emails", "landing"],
+        additionalProperties: false,
+      },
+      maxTokens: 6000,
+    });
+    await query(`UPDATE customers SET data = data || jsonb_build_object('ef_copy', $2::jsonb) WHERE id = $1`, [ctx.customer.id, JSON.stringify(copy)]);
     return askClientToApprove(ctx, {
       title: "Your emails and landing page are ready to approve",
-      body: `${copy ?? "We've emailed you your three emails and landing page copy."}\n\nIf you're happy, press Approve and we'll set up sending. If not, press Ask for changes and tell us what to change.`,
+      body: `${efCopyText(copy)}\n\nIf you're happy, press Approve and sending is set up straight away. If not, press Ask for changes and tell us what to change: you'll get a new version.`,
     });
   },
 
+  /** Turn their audience into search filters on our database, check there are enough people, and create the templates. */
   async ef_provision_sending(ctx) {
     requireAutomation("mailwizz");
-    if (ctx.input) return { type: "done", note: "Campaigns recorded" };
-    return {
-      type: "manual",
-      title: `Set up sending for ${customerLabel(ctx)} in Mailpulse`,
-      instructions:
-        "Create their list, template and campaigns in Mailpulse using the approved copy, then paste the campaign " +
-        "IDs below (separated by commas). From then on their weekly results are collected and sent automatically.",
-      inputLabel: "Campaign IDs (for example ab12cd34ef56, xy98wv76ut54)",
-      saveAs: "mailwizz_campaigns",
-      rerun: true,
+    const intake = ctx.customer.data.intake ?? {};
+    const filters = await audienceFilters(intake.audience ?? "", intake.offer ?? "");
+    const available = await countMatches(filters, ctx.customer.id);
+    const copy: EfCopy | undefined = ctx.customer.data.ef_copy;
+    if (!copy?.emails?.length) return { type: "done", note: "No approved copy" };
+    const templates: string[] = [];
+    for (const [i, e] of copy.emails.slice(0, 3).entries()) templates.push(await createTemplate(`EF ${customerLabel(ctx)} ${i + 1}`, mergeTags(e.body)));
+    await query(`UPDATE customers SET data = data || jsonb_build_object('ef_filters', $2::jsonb, 'ef_templates', $3::jsonb, 'ef_available', $4::int) WHERE id = $1`, [
+      ctx.customer.id,
+      JSON.stringify(filters),
+      JSON.stringify(templates),
+      available,
+    ]);
+    if (available < 3000) {
+      await emailOperator(
+        `EmailFirst: only ${available} matching contacts for ${customerLabel(ctx)}`,
+        `Their audience ("${intake.audience ?? ""}") matches ${available} people in our database, about ${Math.max(1, Math.floor(available / 600))} days of sending. ` +
+          `Sending starts anyway. Filters used: ${JSON.stringify(filters)}`,
+      );
+    }
+    return { type: "done", note: `Templates created; ${available} matching contacts in our database` };
+  },
+
+  /** Each weekday: today's ~600 contacts into a new list, the opener to them, and follow-ups to earlier days' lists. */
+  async ef_daily_send(ctx) {
+    requireAutomation("mailwizz");
+    const d = ctx.customer.data;
+    const templates: string[] = d.ef_templates ?? [];
+    const copy: EfCopy | undefined = d.ef_copy;
+    if (!templates.length || !copy || !d.ef_filters) return { type: "done", note: "Sending isn't set up yet" };
+    const intake = d.intake ?? {};
+    const sender: Sender = {
+      fromName: intake.sender_name || ctx.customer.name || customerLabel(ctx),
+      fromEmail: process.env.EF_FROM_EMAIL?.trim() || ctx.product.email.from,
+      replyTo: intake.reply_to || ctx.customer.email,
+      company: intake.company || customerLabel(ctx),
     };
+    const today = new Date().toISOString().slice(0, 10);
+    const history: EfDay[] = d.ef_lists ?? [];
+    if (history.some((h) => h.date === today)) return { type: "done", note: "Already sent today" };
+    const perDay = Number(d.ef_per_day ?? 600);
+    const picked = await pickProspects(d.ef_filters, ctx.customer.id, perDay, `ef-${today}`);
+    const sendAt = new Date(Math.max(Date.now() + 15 * 60_000, new Date(`${today}T09:30:00Z`).getTime()));
+    const campaigns: string[] = [];
+    let listUid: string | undefined;
+    if (picked.length) {
+      listUid = await createList(`EF | ${customerLabel(ctx)} | ${today}`, sender);
+      await ensureFields(listUid, [{ tag: "COMPANY", label: "Company" }, { tag: "TITLE", label: "Job title" }]);
+      await addSubscribers(listUid, picked.map((p) => ({ EMAIL: p.email, FNAME: p.first_name ?? "", LNAME: p.last_name ?? "", COMPANY: p.company ?? "", TITLE: p.title ?? "" })));
+      campaigns.push(await createCampaign({ name: `EF ${customerLabel(ctx)} ${today} #1`, subject: mergeTags(copy.emails[0]!.subject), listUid, templateUid: templates[0]!, sendAt, sender }));
+    }
+    // Follow-ups: email 2 to the list from three sending days ago, email 3 to the one from seven.
+    for (const [ago, n] of [[3, 1], [7, 2]] as const) {
+      const earlier = history[history.length - ago];
+      if (earlier?.list && templates[n] && copy.emails[n]) {
+        campaigns.push(await createCampaign({ name: `EF ${customerLabel(ctx)} ${earlier.date} #${n + 1}`, subject: mergeTags(copy.emails[n]!.subject), listUid: earlier.list, templateUid: templates[n]!, sendAt, sender }));
+      }
+    }
+    const entry: EfDay = { date: today, list: listUid, count: picked.length, campaigns };
+    await query(`UPDATE customers SET data = data || jsonb_build_object('ef_lists', $2::jsonb) WHERE id = $1`, [ctx.customer.id, JSON.stringify([...history, entry].slice(-40))]);
+    if (!picked.length) {
+      await emailOperator(`EmailFirst: no new contacts left for ${customerLabel(ctx)}`, "Their audience has been fully used. Upload a fresh prospect file, or widen their audience.");
+    }
+    return { type: "done", note: `${picked.length} new contacts; ${campaigns.length} sends scheduled` };
+  },
+
+  /** Each weekday morning: who clicked yesterday, with a suggested follow-up for each, sent to the client. */
+  async ef_daily_report(ctx) {
+    requireAutomation("mailwizz");
+    const history: EfDay[] = ctx.customer.data.ef_lists ?? [];
+    const recent = history.filter((h) => Date.now() - new Date(h.date).getTime() < 4 * 864e5);
+    if (!recent.length) return { type: "done", note: "Nothing sent recently" };
+    const seen: string[] = ctx.customer.data.ef_reported ?? [];
+    const clickers: Contact[] = [];
+    for (const day of history.slice(-8)) {
+      if (!day.list) continue;
+      for (const uid of day.campaigns) {
+        for (const c of await campaignClickers(day.list, uid, 2).catch(() => [])) {
+          const key = (c.EMAIL ?? "").toLowerCase();
+          if (key && !seen.includes(key) && !clickers.some((x) => x.EMAIL.toLowerCase() === key)) clickers.push(c);
+        }
+      }
+      for (const email of await unsubscribed(day.list).catch(() => [])) await suppress(email, "Unsubscribed from EmailFirst");
+    }
+    await query(`UPDATE customers SET data = data || jsonb_build_object('ef_reported', $2::jsonb) WHERE id = $1`, [
+      ctx.customer.id,
+      JSON.stringify([...seen, ...clickers.map((c) => c.EMAIL.toLowerCase())].slice(-5000)),
+    ]);
+    const people = clickers.map((c) => `- ${[c.FNAME, c.LNAME].filter(Boolean).join(" ") || "(no name)"}, ${c.TITLE || "role not known"} at ${c.COMPANY || "company not known"} <${c.EMAIL}>`).join("\n");
+    const draft = await draftCustomerEmail(
+      ctx,
+      clickers.length
+        ? "Write this morning's short report: the people below clicked through to their page from our emails. List them exactly as given, " +
+            "then a short, friendly follow-up email they could send to each (one template using the person's first name). Use only these facts."
+        : "Write this morning's short report: nobody new clicked through yesterday. Keep it to two or three sentences and say sending continues today.",
+      clickers.length ? `People who clicked:\n${people}` : "",
+    );
+    return { type: "email", approval: false, ...draft };
   },
 
   /** Weekly results from Mailpulse: this week's figures are the change in each campaign's running totals. */
   async ef_weekly_summary(ctx) {
-    const uids = String(ctx.customer.data.mailwizz_campaigns ?? "").split(/[\s,]+/).filter(Boolean);
+    const weekAgo = Date.now() - 8 * 864e5;
+    const uids = [
+      ...String(ctx.customer.data.mailwizz_campaigns ?? "").split(/[\s,]+/).filter(Boolean),
+      ...((ctx.customer.data.ef_lists ?? []) as EfDay[]).filter((h) => new Date(h.date).getTime() > weekAgo).flatMap((h) => h.campaigns),
+    ];
     if (!ctx.input && uids.length) {
       requireAutomation("mailwizz");
       const totals = { sent: 0, opens: 0, clicks: 0 };
@@ -1179,26 +1326,126 @@ const handlers: Record<string, Handler> = {
 
   // -------------------------------------------------------- Good Questions
 
-  async gq_build_scorecard() {
-    requireAutomation("scoreapp");
-    return { type: "done" };
+  /** AI drafts the research questions from the brief; the sponsor approves (or asks for changes) in their account. */
+  async gq_questions(ctx) {
+    const feedback: string[] = ctx.customer.data.question_design_feedback ?? [];
+    const survey = await draftJson<Survey>({
+      system:
+        "You design short business research surveys for Good Questions. Five areas, three questions each, each with three " +
+        "answers scored 0, 1 and 2 points (2 = most mature). Plain British English, neutral wording, no leading questions. " +
+        "Four result bands with a min percentage (0, 40, 60, 80) and one practical sentence of advice each.",
+      prompt:
+        `Sponsor: ${ctx.customer.data.intake?.organisation ?? customerLabel(ctx)}\nBrief:\n${intakeSummary(ctx)}` +
+        (ctx.customer.data.gq_questions ? `\n\nPrevious draft:\n${surveyText(ctx.customer.data.gq_questions)}` : "") +
+        (feedback.length ? `\n\nThe sponsor asked for these changes:\n${feedback.join("\n")}` : ""),
+      schema: surveySchema as unknown as Record<string, unknown>,
+      maxTokens: 8000,
+    });
+    await query(`UPDATE customers SET data = data || jsonb_build_object('gq_questions', $2::jsonb) WHERE id = $1`, [ctx.customer.id, JSON.stringify(survey)]);
+    ctx.customer.data.gq_questions = survey;
+    return askClientToApprove(ctx, {
+      title: "Please approve your research questions",
+      body: `Here are the questions for your research. Approve them, or tell us what to change and we'll send a new version.\n\n${surveyText(survey)}`,
+    });
+  },
+
+  /** Legitimate interests note, privacy wording, invitation email and retention: drafted, then approved by the sponsor. */
+  async gq_compliance(ctx) {
+    const feedback: string[] = ctx.customer.data.compliance_feedback ?? [];
+    const pack = await draftJson<{ body: string; invitation_subject: string; invitation_body: string }>({
+      system:
+        "You prepare a short UK GDPR/PECR compliance pack for B2B research by email: (1) a legitimate interests assessment " +
+        "in a few sentences (purpose, necessity, balance), (2) the privacy wording shown on the survey, (3) the invitation " +
+        "email (who we are, why we're writing, what it involves, how long, a clear opt-out line), (4) retention: answers kept " +
+        "12 months then deleted. Corporate subscribers only. Plain British English. Not legal advice.",
+      prompt:
+        `Sponsor and brief:\n${intakeSummary(ctx)}\n\nSurvey: ${ctx.customer.data.gq_questions?.title ?? ""}\n` +
+        "In the invitation body, write {SURVEY_LINK} where the survey link goes and {FNAME} for the first name." +
+        (feedback.length ? `\n\nThe sponsor asked for these changes:\n${feedback.join("\n")}` : ""),
+      schema: {
+        type: "object",
+        properties: { body: { type: "string" }, invitation_subject: { type: "string" }, invitation_body: { type: "string" } },
+        required: ["body", "invitation_subject", "invitation_body"],
+        additionalProperties: false,
+      },
+      maxTokens: 5000,
+    });
+    await query(`UPDATE customers SET data = data || jsonb_build_object('gq_compliance', $2::text, 'gq_invitation', $3::jsonb) WHERE id = $1`, [
+      ctx.customer.id,
+      pack.body,
+      JSON.stringify({ subject: pack.invitation_subject, body: pack.invitation_body }),
+    ]);
+    return askClientToApprove(ctx, { title: "Please approve the privacy and invitation wording", body: pack.body });
+  },
+
+  /** Build the survey page from the approved questions (hosted by HQ, in place of ScoreApp). */
+  async gq_build_survey(ctx) {
+    const survey: Survey | undefined = ctx.customer.data.gq_questions;
+    if (!survey) return { type: "done", note: "No approved questions" };
+    let token: string | undefined = ctx.customer.data.gq_survey_token;
+    if (!token) {
+      token = await createSurvey(ctx.customer, survey);
+      await query(`UPDATE customers SET data = data || jsonb_build_object('gq_survey_token', $2::text) WHERE id = $1`, [ctx.customer.id, token]);
+    }
+    const url = `${portalUrl(ctx.product)}/survey/${token}`;
+    await postUpdate(ctx.customer, { title: "Your survey is ready", body: `Your research survey is live. You can try it here:\n${url}`, link: url });
+    return { type: "done", note: `Survey live at ${url}` };
+  },
+
+  /** Set up the invitations: the audience as filters on our database, and the approved invitation as a template. */
+  async gq_send_invites(ctx) {
+    requireAutomation("mailwizz");
+    const intake = ctx.customer.data.intake ?? {};
+    const inv: { subject: string; body: string } | undefined = ctx.customer.data.gq_invitation;
+    const token: string | undefined = ctx.customer.data.gq_survey_token;
+    if (!inv || !token) return { type: "done", note: "No approved invitation or survey yet" };
+    const filters = await audienceFilters(intake.audience ?? "", intake.objective ?? "");
+    const link = `${portalUrl(ctx.product)}/survey/${token}`;
+    const template = await createTemplate(`GQ ${customerLabel(ctx)} invitation`, mergeTags(inv.body).replace(/\{SURVEY_LINK\}/g, link));
+    const available = await countMatches(filters, ctx.customer.id);
+    await query(`UPDATE customers SET data = data || jsonb_build_object('gq_filters', $2::jsonb, 'gq_template', $3::text, 'gq_invites_sent', 0) WHERE id = $1`, [
+      ctx.customer.id,
+      JSON.stringify(filters),
+      template,
+    ]);
+    return { type: "done", note: `Invitations ready; ${available} matching people in our database` };
+  },
+
+  /** Each weekday: up to 300 more invitations, until the target is reached. */
+  async gq_daily_invites(ctx) {
+    requireAutomation("mailwizz");
+    const d = ctx.customer.data;
+    if (!d.gq_template || !d.gq_filters || !d.gq_invitation) return { type: "done", note: "Invitations not set up yet" };
+    const target = Number(d.gq_target ?? 3000);
+    const sent = Number(d.gq_invites_sent ?? 0);
+    if (sent >= target) return { type: "done", note: "All invitations sent" };
+    const today = new Date().toISOString().slice(0, 10);
+    const picked = await pickProspects(d.gq_filters, ctx.customer.id, Math.min(300, target - sent), `gq-${today}`, 30);
+    if (!picked.length) return { type: "done", note: "No more matching people" };
+    const sender: Sender = {
+      fromName: "Felix at Good Questions",
+      fromEmail: process.env.GQ_FROM_EMAIL?.trim() || ctx.product.email.from,
+      replyTo: ctx.product.email.from,
+      company: "Good Questions",
+    };
+    const list = await createList(`GQ | ${customerLabel(ctx)} | ${today}`, sender);
+    await ensureFields(list, [{ tag: "COMPANY", label: "Company" }, { tag: "TITLE", label: "Job title" }]);
+    await addSubscribers(list, picked.map((p) => ({ EMAIL: p.email, FNAME: p.first_name ?? "", LNAME: p.last_name ?? "", COMPANY: p.company ?? "", TITLE: p.title ?? "" })));
+    await createCampaign({ name: `GQ ${customerLabel(ctx)} ${today}`, subject: mergeTags(d.gq_invitation.subject), listUid: list, templateUid: d.gq_template, sendAt: new Date(Date.now() + 15 * 60_000), sender });
+    await query(`UPDATE customers SET data = data || jsonb_build_object('gq_invites_sent', $2::int) WHERE id = $1`, [ctx.customer.id, sent + picked.length]);
+    return { type: "done", note: `${picked.length} invitations scheduled (${sent + picked.length} of ${target})` };
   },
 
   async gq_findings(ctx) {
-    if (!ctx.input) {
-      return needData(
-        ctx,
-        "This week's responses",
-        "Export this week's responses from ScoreApp and paste the summary (completions, average scores by area, notable answers).",
-      );
-    }
+    const figures = ctx.input || (await surveyFindings(ctx.customer));
+    if (!figures) return { type: "done", note: "No survey yet" };
     const draft = await draftCustomerEmail(
       ctx,
       "Write a weekly findings update for the research sponsor: completions so far, what the answers show, " +
         "and anything worth watching. Use only the data given.",
-      ctx.input,
+      figures,
     );
-    return { type: "email", approval: true, ...draft };
+    return { type: "email", approval: false, ...draft };
   },
 };
 

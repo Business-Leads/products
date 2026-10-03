@@ -196,6 +196,16 @@ export async function respondToUpdate(customer: CustomerRow, updateId: string, a
     );
     await alert(customer, product, `${customerLabel(customer)} asked for website changes`, `${note}\n\nThe site is being rebuilt with these changes and they'll be sent the new version automatically.`, "client_activity");
     await advanceOnboarding(customer.id);
+  } else if (product.onboarding.find((d) => d.key === update.approval_step)?.revisable) {
+    // The handler redrafts with the client's notes and asks them again.
+    const key = update.approval_step as string;
+    await query(
+      `UPDATE customers SET data = jsonb_set(data - $3::text, ARRAY[$2::text], COALESCE(data->$2::text, '[]'::jsonb) || to_jsonb($4::text)), updated_at = now() WHERE id = $1`,
+      [customer.id, `${key}_feedback`, `asked_${key}`, note || "Please improve it"],
+    );
+    await query(`UPDATE onboarding_steps SET status = 'pending', completed_at = NULL, task_id = NULL, attempts = 0 WHERE customer_id = $1 AND key = $2`, [customer.id, key]);
+    await alert(customer, product, `${customerLabel(customer)} asked for changes to "${update.title}"`, `${note}\n\nIt's being redrafted with these changes and sent back to them automatically.`, "client_activity");
+    await advanceOnboarding(customer.id);
   } else {
     await createTask({
       kind: "manual",

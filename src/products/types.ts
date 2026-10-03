@@ -50,6 +50,11 @@ export interface StepDef {
   plans?: string[];
   /** For manual steps: why it needs a person, and the steps to follow. */
   guide?: Guide;
+  /**
+   * The client approves this step in their account. If they ask for changes, their note is
+   * saved to customer.data["<key>_feedback"] and the step's handler redrafts and asks again.
+   */
+  revisable?: boolean;
 }
 
 export type Cadence =
