@@ -74,20 +74,8 @@ export const speedToLead: Product = {
       kind: "auto",
       handler: "stl_provision_agent",
       instructions:
-        "In Awaz: create an assistant from the approved script, attach a UK number, set call transfer to " +
-        "the urgent mobile, SMS and email notifications, the booking calendar, and the recording retention " +
-        "period. Record the assistant id and the forwarding number on the customer.",
-      guide: {
-        why: "Awaz doesn't let other systems create assistants, so this is done in Awaz.",
-        minutes: 20,
-        steps: [
-          "In Awaz, go to Agents and create a new agent named after the business.",
-          "Open the client's page in HQ, copy the approved call script (Notes and drafts, \"script\"), and paste it into the agent's Prompt.",
-          "Buy a UK number for it (Settings, Phones, Buy Phone) and attach it to the agent.",
-          "Under Actions, add Transfer Call (to the urgent number in their answers) and End Call.",
-          "Type the agent id and the phone number below, separated by a comma, and save.",
-        ],
-      },
+        "Duplicate the Speed to Lead template agent in Awaz, paste the approved script, attach a UK number and set the " +
+        "urgent transfer. HQ then finds the agent, links its calls and carries on.",
     },
     {
       key: "forwarding",
@@ -97,22 +85,12 @@ export const speedToLead: Product = {
     },
     {
       key: "test_calls",
-      title: "Test calls with the owner",
-      kind: "manual",
+      title: "Test calls to the business number",
+      kind: "auto",
+      handler: "stl_test_calls",
       instructions:
-        "Ring the business number and let it go unanswered to confirm forwarding. Make three test calls with " +
-        "the owner: a normal booking, an out-of-area enquiry and an urgent call. Adjust the script if needed.",
-      guide: {
-        why: "Someone needs to ring the number and hear the assistant answer.",
-        minutes: 15,
-        steps: [
-          "Ring the client's business number and let it go unanswered. It should forward to the assistant.",
-          "Make a normal booking call.",
-          "Make an out-of-area call: it should politely say they don't cover that area.",
-          "Make an urgent call: it should transfer to the urgent number.",
-          "If anything sounds wrong, adjust the agent's prompt in Awaz, then mark this done.",
-        ],
-      },
+        "Our test caller rings the client's business number three times (unanswered, a booking and an out-of-area " +
+        "enquiry). The step ticks itself when the calls come back, and Felix gets the summaries.",
     },
     goLiveStep,
   ],
@@ -122,7 +100,7 @@ export const speedToLead: Product = {
       title: "Weekly review of calls and script improvements",
       cadence: { every: "week", weekday: 2 },
       handler: "stl_call_review",
-      approval: true,
+      approval: false,
     },
     {
       key: "usage_summary",

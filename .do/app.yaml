@@ -83,6 +83,12 @@ services:
       - key: AWAZ_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: AWAZ_TEST_AGENT_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: AWAZ_TEST_FROM_ID
+        scope: RUN_TIME
+        type: SECRET
       - key: LOCALFALCON_API_KEY
         scope: RUN_TIME
         type: SECRET

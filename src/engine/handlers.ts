@@ -8,6 +8,7 @@ import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify }
 import { campaignStats } from "../integrations/mailwizz.js";
 import { addGuard, campaignSummary, createMonthlyCampaign, guardChanges, linkedLocations, profileMetrics, unansweredReviews } from "../integrations/localfalcon.js";
 import { queueEmail } from "../lib/email.js";
+import { listAgents, placeCall, subscribeCalls } from "../integrations/awaz.js";
 import { generatePost, recentPosts } from "../integrations/feedboss.js";
 import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
 import { postUpdate, saveMetrics } from "./clients.js";
@@ -424,24 +425,97 @@ const handlers: Record<string, Handler> = {
     return { type: "review", title: `Call script: ${customerLabel(ctx)}`, body: script.body, saveAs: "script" };
   },
 
+  /**
+   * Awaz can't create assistants through its API, so this is one short guided job in Awaz.
+   * Everything around it is automatic: we find the new assistant by name, record it, and
+   * ask Awaz to send its calls straight to HQ.
+   */
   async stl_provision_agent(ctx) {
+    const awazReady = Boolean(process.env.AWAZ_API_KEY?.trim());
     if (ctx.input) {
-      const [agent, number] = ctx.input.split(/[,;\s]+/).filter(Boolean);
+      const [nameOrId, numberRaw] = ctx.input.split(",").map((x) => x.trim());
+      let agentId = nameOrId ?? "";
+      if (awazReady && nameOrId) {
+        const agents = await listAgents().catch(() => []);
+        const match = agents.find((a) => a.id === nameOrId) ?? agents.find((a) => a.name.toLowerCase() === nameOrId.toLowerCase());
+        if (!match) {
+          return {
+            type: "manual",
+            title: `Couldn't find "${nameOrId}" in Awaz for ${customerLabel(ctx)}`,
+            instructions: `There's no Awaz agent called "${nameOrId}". Check the name and try again (agent name, phone number).`,
+            inputLabel: "Agent name in Awaz, phone number",
+            rerun: true,
+          };
+        }
+        agentId = match.id;
+      }
+      const number = numberRaw || ctx.customer.data.forwarding_number || null;
       await query(
         `UPDATE customers SET data = data || jsonb_build_object('awaz_agent_ids', $2::jsonb, 'forwarding_number', $3::text) WHERE id = $1`,
-        [ctx.customer.id, JSON.stringify(agent ? [agent] : []), number ?? null],
+        [ctx.customer.id, JSON.stringify(agentId ? [agentId] : []), number],
       );
-      return { type: "done", note: `Assistant ${agent ?? ""} on ${number ?? "(number not given)"}` };
+      const token = process.env.AWAZ_WEBHOOK_TOKEN?.trim();
+      if (awazReady && token && agentId) {
+        await subscribeCalls(`${config.baseUrl}/webhooks/awaz/${token}`, [agentId]).catch(() => undefined);
+      }
+      return { type: "done", note: `Assistant ${agentId} on ${number ?? "(number not given)"}; calls now come into HQ` };
     }
+    const intake = ctx.customer.data.intake ?? {};
+    const name = `STL ${customerLabel(ctx)}`;
     return {
       type: "manual",
       title: `Set up the phone assistant for ${customerLabel(ctx)} in Awaz`,
-      instructions: "Create the assistant in Awaz from the approved script, then type its id and phone number below.",
-      inputLabel: "Assistant id, phone number (for example 6625bd4a8716, +441234567890)",
+      instructions:
+        `Approved call script:\n\n${ctx.customer.data.script ?? "(see Notes and drafts)"}\n\n` +
+        `Urgent transfer number: ${intake.urgent_mobile ?? intake.notify_mobile ?? "(see their answers)"}`,
+      inputLabel: "Agent name in Awaz, phone number (for example STL Jo Plumbing, +441134960000)",
       rerun: true,
+      guide: {
+        why: "Awaz doesn't let other systems create assistants or attach numbers; everything else is automatic.",
+        minutes: 5,
+        steps: [
+          `In Awaz, duplicate the "Speed to Lead template" agent and name it "${name}".`,
+          "Paste the approved script (below, under More detail) into its Prompt.",
+          "Attach one of our UK numbers to it, and set Transfer Call to the urgent number shown below.",
+          `Type "${name}" and the number below, and save. HQ finds the agent, links its calls and carries on.`,
+        ],
+      },
     };
   },
 
+  /**
+   * Three test calls from our "test caller" agent to the client's business number: unanswered (checks
+   * forwarding), a normal booking, an out-of-area enquiry. Completes when the calls come back.
+   */
+  async stl_test_calls(ctx) {
+    const tester = process.env.AWAZ_TEST_AGENT_ID?.trim();
+    const from = process.env.AWAZ_TEST_FROM_ID?.trim();
+    const business = ctx.customer.data.intake?.phone;
+    if (!tester || !from || !business || !process.env.AWAZ_API_KEY?.trim()) {
+      return {
+        type: "manual",
+        title: `Test calls for ${customerLabel(ctx)}`,
+        instructions: "Ring the business number and let it go unanswered; make a booking call, an out-of-area call and an urgent call.",
+        guide: {
+          why: "Automatic test calls need a test caller agent in Awaz (AWAZ_TEST_AGENT_ID and AWAZ_TEST_FROM_ID).",
+          minutes: 15,
+          steps: [
+            "Ring the client's business number and let it go unanswered. It should forward to the assistant.",
+            "Make a normal booking call, an out-of-area call and an urgent call.",
+            "If anything sounds wrong, adjust the agent's prompt in Awaz, then mark this done.",
+          ],
+        },
+      };
+    }
+    if (ctx.customer.data.test_calls_started_at) return { type: "waiting", note: "Waiting for the test calls to come back" };
+    const personas = ["Test caller (booking)", "Test caller (out of area)", "Test caller (callback)"];
+    const start = Date.now() + 2 * 60_000;
+    for (const [i, persona] of personas.entries()) {
+      await placeCall({ agent: tester, name: persona, phone: business, from, datetime: new Date(start + i * 5 * 60_000).toISOString() });
+    }
+    await query(`UPDATE customers SET data = data || jsonb_build_object('test_calls_started_at', to_jsonb(now())) WHERE id = $1`, [ctx.customer.id]);
+    return { type: "waiting", note: "Three test calls placed; this ticks itself when they're answered" };
+  },
 
   async stl_forwarding_instructions(ctx) {
     const number = ctx.customer.data.forwarding_number;
@@ -466,25 +540,48 @@ const handlers: Record<string, Handler> = {
     return { type: "email", approval: false, ...draft };
   },
 
-  async stl_call_review() {
-    requireAutomation("awaz");
-    return { type: "done" };
+  /** Last week's calls, read by AI: what went well, what was missed, suggested script changes. */
+  async stl_call_review(ctx) {
+    const calls = await query<{ payload: Record<string, any> }>(
+      `SELECT payload FROM awaz_events WHERE customer_id = $1 AND received_at > now() - interval '7 days' ORDER BY received_at`,
+      [ctx.customer.id],
+    );
+    if (!calls.length) return { type: "done", note: "No calls this week" };
+    const material = calls
+      .map((c, i) => `Call ${i + 1}: ${JSON.stringify(c.payload).slice(0, 2500)}`)
+      .join("\n\n")
+      .slice(0, 60000);
+    const review = await draftJson<{ body: string; changes_needed: boolean }>({
+      system:
+        "You review calls answered by an AI phone assistant for a UK trade business. Be specific and brief. " +
+        "Say what went well, any call handled badly (wrong answer, missed booking, missed urgency, rude or confusing), " +
+        "and exact wording changes for the assistant's script. Never invent calls.",
+      prompt: `Current script:\n${ctx.customer.data.script ?? "(not recorded)"}\n\nThis week's calls:\n${material}`,
+      schema: { type: "object", properties: { body: { type: "string" }, changes_needed: { type: "boolean" } }, required: ["body", "changes_needed"], additionalProperties: false },
+      maxTokens: 6000,
+    });
+    if (!review.changes_needed) return { type: "done", note: `${calls.length} calls reviewed; no changes needed` };
+    return { type: "review", title: `Suggested script changes for ${customerLabel(ctx)}`, body: review.body, saveAs: "script_suggestions" };
   },
 
   async stl_usage_summary(ctx) {
-    if (!ctx.input) {
-      return needData(
-        ctx,
-        "Last month's call figures",
-        "From Awaz, paste last month's calls answered, jobs booked, urgent transfers and call backs requested.",
+    let figures = ctx.input ?? "";
+    if (!figures) {
+      const rows = await query<{ payload: Record<string, any> }>(
+        `SELECT payload FROM awaz_events WHERE customer_id = $1 AND received_at > now() - interval '1 month'`,
+        [ctx.customer.id],
       );
+      const t = rows.map((r) => JSON.stringify(r.payload).toLowerCase());
+      figures =
+        `Calls answered in the last month: ${rows.length}. Jobs booked: ${t.filter((x) => /book(ed|ing)|appointment/.test(x)).length}. ` +
+        `Urgent calls transferred: ${t.filter((x) => /transfer/.test(x)).length}. Call backs requested: ${t.filter((x) => /call ?back/.test(x)).length}.`;
     }
     const plan = getPlan(ctx.product, ctx.customer.plan);
     const draft = await draftCustomerEmail(
       ctx,
       `Write a short monthly summary email of calls handled for them. Their plan (${plan?.name}) includes ` +
         `${plan?.id === "team" ? 300 : 150} calls a month; mention usage against that only if the figures show it.`,
-      ctx.input,
+      figures,
     );
     return { type: "email", approval: false, ...draft };
   },

@@ -45,6 +45,8 @@ jobs:
           AWAZ_API_KEY: ${{ secrets.AWAZ_API_KEY }}
           FEEDBOSS_API_KEY: ${{ secrets.FEEDBOSS_API_KEY }}
           LOCALFALCON_API_KEY: ${{ secrets.LOCALFALCON_API_KEY }}
+          AWAZ_TEST_AGENT_ID: ${{ secrets.AWAZ_TEST_AGENT_ID }}
+          AWAZ_TEST_FROM_ID: ${{ secrets.AWAZ_TEST_FROM_ID }}
           GBP_MANAGER_EMAIL: ${{ secrets.GBP_MANAGER_EMAIL }}
           SCOREAPP_API_KEY: ${{ secrets.SCOREAPP_API_KEY }}
           SBL_API_KEY: ${{ secrets.SBL_API_KEY }}

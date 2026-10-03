@@ -2,6 +2,9 @@
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? "postgres://hq:hq@localhost:5432/products_hq_test";
 process.env.LOCALFALCON_API_KEY = "lf_test";
 process.env.GBP_MANAGER_EMAIL = "felix@example.com";
+process.env.AWAZ_API_KEY = "awaz_test";
+process.env.AWAZ_WEBHOOK_TOKEN = "awaz-hook";
+process.env.BASE_URL = "https://hq.example.com";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -30,7 +33,7 @@ function fakeLocalFalcon(responses: Record<string, unknown>) {
 describe("Local Falcon (Online Business Builder)", () => {
   before(async () => {
     await migrate();
-    await query(`TRUNCATE customers, emails, tasks RESTART IDENTITY CASCADE`);
+    await query(`TRUNCATE customers, emails, tasks, awaz_events RESTART IDENTITY CASCADE`);
   });
   after(async () => {
     globalThis.fetch = realFetch;
@@ -82,5 +85,35 @@ describe("Local Falcon (Online Business Builder)", () => {
     const sent = calls.find((c) => c.path === "/v2/gbp/reply-review/")!;
     assert.equal(sent.fields.get("replies[0][reply]"), "Thank you Sam, lovely to hear.");
     assert.equal(sent.fields.get("replies[1][review_id]"), "r2");
+  });
+
+  it("Speed to Lead: finds the assistant by name, links its calls, and ticks the test calls when they come back", async () => {
+    const product = requireProduct("speedtolead");
+    const customer = await one(
+      `INSERT INTO customers (product, plan, email, name, business, data) VALUES ('speedtolead', 'solo', 'al@heat.co.uk', 'Al', 'Al Heating', '{}') RETURNING *`,
+    );
+    let hook: any;
+    globalThis.fetch = (async (url: string, init: any) => {
+      const path = new URL(url).pathname;
+      if (path === "/v1/agents") return new Response(JSON.stringify({ items: [{ id: "ag_77", name: "STL Al Heating" }] }));
+      if (path === "/v1/hooks/calls") hook = JSON.parse(init.body);
+      return new Response("{}");
+    }) as typeof fetch;
+    const out = await getHandler("stl_provision_agent")({ product, customer, input: "STL Al Heating, +441134960000" });
+    assert.equal(out.type, "done");
+    assert.deepEqual(hook.agents, ["ag_77"]);
+    assert.equal(hook.hookUrl, "https://hq.example.com/webhooks/awaz/awaz-hook");
+    const linked = (await one(`SELECT data FROM customers WHERE id = $1`, [customer.id])).data;
+    assert.deepEqual(linked.awaz_agent_ids, ["ag_77"]);
+
+    // Test calls placed earlier; three call events for the assistant complete the step.
+    await query(`UPDATE customers SET data = data || jsonb_build_object('test_calls_started_at', to_jsonb(now() - interval '1 minute')) WHERE id = $1`, [customer.id]);
+    const step = await one(`INSERT INTO onboarding_steps (customer_id, position, key, title, kind, status) VALUES ($1, 7, 'test_calls', 'Test calls', 'auto', 'waiting') RETURNING id`, [customer.id]);
+    const { handleAwazEvent } = await import("../src/engine/awaz.js");
+    for (const summary of ["Booked a boiler service", "Out of area, politely declined", "Asked for a call back"]) {
+      await handleAwazEvent({ event: "call_ended", agent_id: "ag_77", summary });
+    }
+    assert.equal((await one(`SELECT status FROM onboarding_steps WHERE id = $1`, [step.id])).status, "done");
+    assert.ok(await one(`SELECT 1 FROM emails WHERE subject LIKE '%test calls done for Al Heating%'`));
   });
 });

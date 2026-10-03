@@ -1,9 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { one, query } from "../db/index.js";
+import { emailOperator } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { createTask } from "../lib/tasks.js";
 import { customerLabel, saveMetrics } from "./clients.js";
 import type { CustomerRow } from "./types.js";
+import { completeStep } from "./workflow.js";
 
 // Awaz pushes call events for Speed to Lead clients to
 // /webhooks/awaz/<AWAZ_WEBHOOK_TOKEN>. Each is stored as received, matched to a
@@ -61,6 +63,23 @@ async function refreshFigures(customer: CustomerRow): Promise<void> {
   });
 }
 
+/** The automatic test calls: once three have come back, tick the step and send Felix the summaries. */
+async function checkTestCalls(customer: CustomerRow): Promise<void> {
+  const step = await one<{ id: string }>(`SELECT id FROM onboarding_steps WHERE customer_id = $1 AND key = 'test_calls' AND status = 'waiting'`, [customer.id]);
+  if (!step) return;
+  const rows = await query<{ payload: Payload }>(
+    `SELECT payload FROM awaz_events WHERE customer_id = $1 AND received_at >= $2::timestamptz ORDER BY received_at`,
+    [customer.id, customer.data.test_calls_started_at],
+  );
+  if (rows.length < 3) return;
+  const summaries = rows
+    .slice(0, 3)
+    .map((r, i) => `Test call ${i + 1}: ${pick(r.payload, ["summary", "call_summary", "analysis.summary", "transcript_summary"]) ?? "(no summary; open it in Awaz)"}`)
+    .join("\n\n");
+  await emailOperator(`Speed to Lead: test calls done for ${customerLabel(customer)}`, `The assistant answered all three test calls.\n\n${summaries}`, "client_activity");
+  await completeStep(step.id, "Three test calls answered by the assistant");
+}
+
 export async function handleAwazEvent(p: Payload): Promise<{ event: string; agent: string | null; matched: boolean }> {
   const event = String(pick(p, ["event", "event_type", "type", "status"]) ?? "call");
   const agentRaw = pick(p, ["agent_id", "agentId", "assistant_id", "assistantId", "agent.id", "assistant.id", "bot_id"]);
@@ -95,7 +114,8 @@ export async function handleAwazEvent(p: Payload): Promise<{ event: string; agen
       customerId: customer?.id,
     });
   }
-  if (!customer && agent) {
+  if (customer?.data.test_calls_started_at) await checkTestCalls(customer);
+  if (!customer && agent && agent !== process.env.AWAZ_TEST_AGENT_ID?.trim()) {
     await createTask({
       kind: "alert",
       priority: 3,
