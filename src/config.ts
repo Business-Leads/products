@@ -36,6 +36,13 @@ export const config = {
     domains: str("PORTAL_DOMAINS"),
   },
 
+  calcom: {
+    // Dad's Cal.com username; booking links are cal.com/<username>/<product>-chat|onboarding.
+    username: str("CALCOM_USERNAME"),
+    // Secret path segment for the Cal.com webhook: /webhooks/calcom/<token>
+    webhookToken: str("CALCOM_WEBHOOK_TOKEN"),
+  },
+
   sbl: {
     // Secret path segment for the Sbl.so webhook: /webhooks/sbl/<token>
     webhookToken: str("SBL_WEBHOOK_TOKEN"),

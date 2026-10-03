@@ -7,7 +7,7 @@ import { queueEmail } from "../lib/email.js";
 import { logEvent } from "../lib/events.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
-import { getProduct } from "../products/index.js";
+import { bookingUrl, getProduct } from "../products/index.js";
 import { createLead } from "./leads.js";
 import { suppress } from "./outreach.js";
 
@@ -75,7 +75,7 @@ export async function handleInbound(msg: InboundMessage): Promise<Intent> {
           "Never invent facts, prices or commitments; if something needs Felix's judgement, say he will reply personally.",
         prompt:
           `Sender is ${customer ? `an existing ${product.name} customer (plan ${customer.plan}, status ${customer.status})` : "someone who enquired but has not bought"}.\n` +
-          `Booking link: ${product.bookingUrl}\n\nSubject: ${msg.subject}\n\n${body}`,
+          `Booking link: ${bookingUrl(product)}\n\nSubject: ${msg.subject}\n\n${body}`,
         schema: {
           type: "object",
           properties: {

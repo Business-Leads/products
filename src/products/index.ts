@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 import { emailFirst } from "./emailfirst.js";
 import { firstPageLocal } from "./firstpagelocal.js";
 import { goodQuestions } from "./goodquestions.js";
@@ -10,11 +11,26 @@ export type { Product, Plan } from "./types.js";
 
 export const products: Product[] = [firstPageLocal, linkn, speedToLead, emailFirst, goodQuestions, onlineBusinessBuilder];
 
-/** Calendly link with the customer's name and email filled in. */
-export function bookingLink(product: Product, name?: string | null, email?: string | null): string {
-  const url = new URL(product.bookingUrl);
+export type CallKind = "chat" | "onboarding";
+
+/** The booking page for one kind of call about one product (Cal.com once set up, else the old Calendly link). */
+export function bookingUrl(product: Product, kind: CallKind = "chat"): string {
+  const user = config.calcom.username;
+  return user ? `https://cal.com/${encodeURIComponent(user)}/${product.slug}-${kind}` : product.bookingUrl;
+}
+
+/** Booking link with the customer's name and email filled in. */
+export function bookingLink(
+  product: Product,
+  name?: string | null,
+  email?: string | null,
+  kind: CallKind = "onboarding",
+  customerId?: string,
+): string {
+  const url = new URL(bookingUrl(product, kind));
   if (name) url.searchParams.set("name", name);
   if (email) url.searchParams.set("email", email);
+  if (customerId && url.hostname === "cal.com") url.searchParams.set("metadata[customer_id]", customerId);
   return url.toString();
 }
 

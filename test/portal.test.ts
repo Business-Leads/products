@@ -8,6 +8,8 @@ process.env.BASE_URL = "https://hq.example.com";
 process.env.PORTAL_DOMAINS = "linkn";
 process.env.SBL_WEBHOOK_TOKEN = "sbl-secret-token";
 process.env.AWAZ_WEBHOOK_TOKEN = "awaz-token";
+process.env.CALCOM_WEBHOOK_TOKEN = "cal-token";
+process.env.CALCOM_USERNAME = "felixclarke";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -131,7 +133,7 @@ describe("client account areas", () => {
 
     // Book the onboarding call.
     const book = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/book", headers: { cookie } });
-    assert.match(book.body, /calendly-inline-widget/);
+    assert.match(book.body, /cal-booking/);
     const booked = await app.inject({ method: "POST", url: "/portal/onlinebusinessbuilder/book/done", headers: { cookie } });
     assert.equal(booked.headers.location, "/portal/onlinebusinessbuilder/details");
     const alert = await one(`SELECT * FROM emails WHERE to_address = 'info@felixclarke.com' AND subject LIKE '%onboarding call booked%'`);
@@ -465,23 +467,34 @@ describe("client account areas", () => {
     assert.equal(v.call_backs, 1);
   });
 
-  it("asks the phone assistant to call people who tick 'call me', or makes a to-do", async () => {
-    const send = (payload: object) => app.inject({ method: "POST", url: "/api/leads/onlinebusinessbuilder", headers: { "content-type": "application/json" }, payload });
-    await send({ name: "Sam", phone: "07700 900123", call_permission: "yes", _source: "Call me form" });
-    assert.ok(await one(`SELECT 1 FROM tasks WHERE title LIKE 'Call Sam back%'`));
-    process.env.MAKE_CALL_WEBHOOK_URL = "https://hook.eu1.make.com/abc";
-    const realFetch = globalThis.fetch;
-    let sent: any;
-    globalThis.fetch = (async (_url: string, init: any) => { sent = JSON.parse(init.body); return new Response("Accepted"); }) as typeof fetch;
-    try {
-      await send({ name: "Jo Bloggs", phone: "07700 900456", call_permission: "yes", business: "Jo's Plumbing" });
-    } finally {
-      globalThis.fetch = realFetch;
-      delete process.env.MAKE_CALL_WEBHOOK_URL;
-    }
-    assert.equal(sent.phone, "+447700900456");
-    assert.equal(sent.first_name, "Jo");
-    assert.equal((await query(`SELECT * FROM tasks WHERE title LIKE 'Call Jo%'`)).length, 0);
+  it("records Cal.com bookings: onboarding calls tick the checklist, sales chats become enquiries", async () => {
+    const c = await one(
+      `INSERT INTO customers (product, plan, email, name) VALUES ('onlinebusinessbuilder', 'monthly', 'cal@client.co.uk', 'Cal Client') RETURNING *`,
+    );
+    const post = (payload: object, token = "cal-token") => app.inject({ method: "POST", url: `/webhooks/calcom/${token}`, payload });
+    assert.equal((await post({ triggerEvent: "BOOKING_CREATED" }, "wrong")).statusCode, 404);
+
+    const booked = await post({
+      triggerEvent: "BOOKING_CREATED",
+      payload: { type: `${c.product}-onboarding`, startTime: "2026-10-06T09:00:00Z", attendees: [{ name: c.name, email: c.email }], metadata: { customer_id: c.id } },
+    });
+    assert.deepEqual([booked.json().kind, booked.json().matched], ["onboarding", true]);
+    assert.ok((await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data.call_booked_at);
+
+    await post({ triggerEvent: "BOOKING_CANCELLED", payload: { type: `${c.product}-onboarding`, attendees: [{ email: c.email }] } });
+    assert.equal((await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data.call_booked_at, undefined);
+
+    const chat = await post({ triggerEvent: "BOOKING_CREATED", payload: { type: "onlinebusinessbuilder-chat", startTime: "2026-10-07T13:30:00Z", attendees: [{ name: "Pat Shop", email: "pat@shop.co.uk" }] } });
+    assert.equal(chat.json().kind, "chat");
+    const lead = await one(`SELECT * FROM leads WHERE email = 'pat@shop.co.uk'`);
+    assert.equal(lead.product, "onlinebusinessbuilder");
+    assert.equal(lead.next_touch_at, null);
+    assert.ok(await one(`SELECT 1 FROM emails WHERE subject LIKE '%sales chat booked by Pat Shop%'`));
+  });
+
+  it("sends the sites' book-a-call links to the right Cal.com page", async () => {
+    const r = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/chat" });
+    assert.equal(r.headers.location, "https://cal.com/felixclarke/onlinebusinessbuilder-chat");
   });
 
   it("reads FeedBoss's streamed answers", async () => {

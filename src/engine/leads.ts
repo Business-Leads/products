@@ -7,7 +7,7 @@ import { logEvent } from "../lib/events.js";
 import { isProductPaused } from "../lib/settings.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
-import { formatPrice, requireProduct, type Product } from "../products/index.js";
+import { bookingUrl, formatPrice, requireProduct, type Product } from "../products/index.js";
 
 export interface LeadInput {
   product: string;
@@ -81,7 +81,7 @@ export async function createLead(input: LeadInput): Promise<{ id: string; duplic
 function planLines(product: Product, leadId: string, lead?: LeadRow): string {
   // Extras the visitor ticked on the site (EmailFirst's price calculator) carry into checkout.
   const addons = String(lead?.data?.addons ?? "").split(",").map((a) => a.trim()).filter((a) => product.addOns?.some((x) => x.id === a)).join(",");
-  if (product.quoted) return `Pricing is quoted per engagement. Booking link: ${product.bookingUrl}`;
+  if (product.quoted) return `Pricing is quoted per engagement. Booking link: ${bookingUrl(product)}`;
   return product.plans
     .map(
       (p) =>
@@ -118,14 +118,14 @@ async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): P
           body:
             `Hello ${lead.name?.split(/\s+/)[0] || "there"},\n\nThank you for getting in touch about ${product.name}.\n\n` +
             `${planLines(product, lead.id, lead)}\n\nIf you'd like to talk it through first, ` +
-            `you can book a short call here: ${product.bookingUrl}\n\nFelix`,
+            `you can book a short call here: ${bookingUrl(product)}\n\nFelix`,
         }
       : {
           subject: `Following up: ${product.name}`,
           body:
             `Hello ${lead.name?.split(/\s+/)[0] || "there"},\n\nJust following up on your enquiry about ${product.name}. ` +
             `If it's still of interest, you can start here:\n\n${planLines(product, lead.id, lead)}\n\n` +
-            `Or book a short call: ${product.bookingUrl}\n\nFelix`,
+            `Or book a short call: ${bookingUrl(product)}\n\nFelix`,
         };
   }
   return draftJson<EmailDraft>({
@@ -135,7 +135,7 @@ async function draftLeadEmail(product: Product, lead: LeadRow, touch: number): P
       "link or the booking link exactly as given. End with a line saying they can reply 'stop' to hear no more.",
     prompt:
       `Enquiry:\n${leadDetails(lead)}\n\nPlans and links:\n${planLines(product, lead.id, lead)}\n` +
-      `Booking link: ${product.bookingUrl}\n\n` +
+      `Booking link: ${bookingUrl(product)}\n\n` +
       (first
         ? `Write the first reply to this enquiry. ${product.leadBrief ?? ""}`
         : `Write follow-up number ${touch}. They have not signed up yet. Be brief and helpful, add one new ` +

@@ -108,7 +108,7 @@ const handlers: Record<string, Handler> = {
         body:
           `Hello ${firstName(ctx)},\n\nThank you for signing up to ${ctx.product.name}. The next step is a short ` +
           `onboarding call with me, so we get everything right from the start. Pick a time that suits you:\n\n` +
-          `${bookingLink(ctx.product, ctx.customer.name, ctx.customer.email)}\n\n` +
+          `${bookingLink(ctx.product, ctx.customer.name, ctx.customer.email, "onboarding", ctx.customer.id)}\n\n` +
           `Your account is where you'll follow progress, see reports and download invoices. If you haven't ` +
           `set your password yet, do it here:\n\n${link}\n\nBefore the call, it helps if you fill in the short ` +
           `form about your business in your account (about five minutes).\n\n` +

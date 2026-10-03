@@ -2,9 +2,9 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { one, query } from "../db/index.js";
 import { handleStripeEvent } from "../engine/billing.js";
 import { createLead } from "../engine/leads.js";
-import { requestCall } from "../engine/callback.js";
 import type { CustomerRow } from "../engine/types.js";
 import { saveIntake } from "../engine/clients.js";
+import { calTokenMatches, handleCalEvent } from "../engine/calcom.js";
 import { handleSblEvent, sblTokenMatches } from "../engine/sbl.js";
 import { awazTokenMatches, handleAwazEvent } from "../engine/awaz.js";
 import { handleAssessment, type AssessmentInput } from "../engine/assessment.js";
@@ -13,7 +13,7 @@ import { logEvent } from "../lib/events.js";
 import { createCheckout, stripeConfigured, verifyWebhook } from "../lib/stripe.js";
 import { createTask } from "../lib/tasks.js";
 import { errorMessage } from "../lib/util.js";
-import { bookingLink, getPlan, getProduct, products } from "../products/index.js";
+import { bookingUrl, getPlan, getProduct, products } from "../products/index.js";
 import { fieldInput } from "./fields.js";
 import { html } from "./html.js";
 import { publicPage } from "./layout.js";
@@ -96,18 +96,6 @@ export async function publicRoutes(app: FastifyInstance) {
       source: body._source || "website",
       data,
     });
-    // Someone who ticked "call me" gets a call from the phone assistant.
-    if (!lead.duplicate && body.phone && body.call_permission === "yes") {
-      await requestCall({
-        leadId: lead.id,
-        product: product.slug,
-        name: body.name,
-        phone: body.phone,
-        email: body.email,
-        business: body.business,
-        callTime: body.call_time,
-      });
-    }
     if (wantsJson) return { ok: true, id: lead.id };
     if (body._redirect) return reply.redirect(body._redirect, 303);
     return reply.type("text/html").send(
@@ -127,7 +115,7 @@ export async function publicRoutes(app: FastifyInstance) {
       const product = getProduct(req.params.product);
       const plan = product && getPlan(product, req.params.plan);
       if (!product || !plan) return reply.code(404).send("Not found");
-      if (product.quoted) return reply.redirect(product.bookingUrl);
+      if (product.quoted) return reply.redirect(bookingUrl(product));
       if (rateLimited(`buy:${req.ip}`)) return reply.code(429).send("Too many requests. Please try again later.");
       if (!stripeConfigured()) {
         await createTask({
@@ -141,7 +129,7 @@ export async function publicRoutes(app: FastifyInstance) {
           publicPage(
             product.name,
             html`<div class="panel"><h1>Almost there</h1><p>Online sign-up is being switched on. Please book a
-            short call instead and we'll set you up: <a href="${product.bookingUrl}">book a call</a>.</p></div>`,
+            short call instead and we'll set you up: <a href="${bookingUrl(product)}">book a call</a>.</p></div>`,
           ),
         );
       }
@@ -158,7 +146,7 @@ export async function publicRoutes(app: FastifyInstance) {
           publicPage(
             product.name,
             html`<div class="panel"><h1>Sorry, something went wrong</h1><p>Please try again in a minute, or
-            <a href="${product.bookingUrl}">book a call</a> and we'll set you up.</p></div>`,
+            <a href="${bookingUrl(product)}">book a call</a> and we'll set you up.</p></div>`,
           ),
         );
       }
@@ -237,6 +225,14 @@ export async function publicRoutes(app: FastifyInstance) {
     if (!body || typeof body !== "object") return reply.code(400).send({ ok: false, error: "Expected JSON" });
     const result = await handleSblEvent(body as Record<string, unknown>);
     return { ok: true, ...result };
+  });
+
+  // Cal.com (Dad's booking pages) tells us about bookings here; the token in the path is the secret.
+  app.post<{ Params: { token: string }; Body: Record<string, unknown> }>("/webhooks/calcom/:token", async (req, reply) => {
+    if (!calTokenMatches(req.params.token)) return reply.code(404).send({ ok: false });
+    const body = req.body;
+    if (!body || typeof body !== "object") return reply.code(400).send({ ok: false, error: "Expected JSON" });
+    return { ok: true, ...(await handleCalEvent(body as Record<string, unknown>)) };
   });
 
   // Awaz (Speed to Lead's phone assistant) pushes call events here; the token in the path is the secret.

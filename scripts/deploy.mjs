@@ -9,7 +9,8 @@
 //   ADMIN_PASSWORD              optional: generated on first deploy if missing
 //
 // Safe to re-run: it updates the existing app and keeps secrets it isn't given.
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { parse } from "yaml";
 
@@ -85,7 +86,7 @@ if (process.env.GMAIL_APP_PASSWORD) {
 }
 // Tool keys passed straight through to the app.
 for (const k of ["NETLIFY_AUTH_TOKEN", "GODADDY_API_KEY", "GODADDY_API_SECRET", "MAILWIZZ_API_URL", "MAILWIZZ_API_KEY",
-  "AWAZ_API_KEY", "FEEDBOSS_API_KEY", "SCOREAPP_API_KEY", "SBL_API_KEY", "SBL_COMPANY_ID", "SBL_WEBHOOK_SECRET", "MAKE_CALL_WEBHOOK_URL"]) {
+  "AWAZ_API_KEY", "FEEDBOSS_API_KEY", "SCOREAPP_API_KEY", "SBL_API_KEY", "SBL_COMPANY_ID", "SBL_WEBHOOK_SECRET"]) {
   if (process.env[k]) values[k] = process.env[k];
 }
 if (!process.env.RESEND_API_KEY && process.env.MAIL_ADDRESS && process.env.MAIL_APP_PASSWORD) {
@@ -104,6 +105,43 @@ const hasSblToken = (existing?.spec?.services?.[0]?.envs ?? []).some((e) => e.ke
 if (!hasSblToken) values.SBL_WEBHOOK_TOKEN = randomBytes(24).toString("base64url");
 const hasAwazToken = (existing?.spec?.services?.[0]?.envs ?? []).some((e) => e.key === "AWAZ_WEBHOOK_TOKEN" && e.value);
 if (!hasAwazToken) values.AWAZ_WEBHOOK_TOKEN = randomBytes(24).toString("base64url");
+
+// Cal.com (booking calls): find the username, create any missing call types
+// (src/products/calls.json), and derive the webhook token from the API key so
+// every run knows it without storing it anywhere else.
+const CAL_KEY = process.env.CALCOM_API_KEY?.trim();
+async function cal(method, path, body) {
+  const res = await fetch(`https://api.cal.com${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${CAL_KEY}`, "cal-api-version": "2026-06-12", "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, json };
+}
+const asList = (j) => (Array.isArray(j?.data) ? j.data : Array.isArray(j?.data?.eventTypes) ? j.data.eventTypes : Array.isArray(j) ? j : []);
+if (CAL_KEY) {
+  values.CALCOM_WEBHOOK_TOKEN = createHmac("sha256", CAL_KEY).update("hq-calcom-webhook").digest("base64url").slice(0, 32);
+  const me = await cal("GET", "/v2/me");
+  const username = me.json?.data?.username;
+  if (!username) {
+    console.log(`Cal.com: couldn't read the account (${me.status}); booking links stay as they are.`);
+  } else {
+    values.CALCOM_USERNAME = username;
+    const have = new Set(asList((await cal("GET", `/v2/event-types?username=${encodeURIComponent(username)}`)).json).map((e) => e.slug));
+    const { calls } = JSON.parse(readFileSync(new URL("../src/products/calls.json", import.meta.url), "utf8"));
+    for (const c of calls) {
+      const slug = `${c.product}-${c.kind}`;
+      if (have.has(slug)) continue;
+      const description = c.kind === "onboarding"
+        ? "Your onboarding call: we go through what you need so everything is set up right from the start."
+        : "A friendly chat about your business and whether this is right for you.";
+      const r = await cal("POST", "/v2/event-types", { title: c.title, slug, lengthInMinutes: c.minutes, description });
+      console.log(`Cal.com: call type ${slug} ${r.ok ? "created" : `not created (${r.status} ${JSON.stringify(r.json).slice(0, 200)})`}`);
+    }
+    console.log(`Cal.com: booking links are cal.com/${username}/<product>-chat and -onboarding.`);
+  }
+}
 
 function applyValues(target, current) {
   const currentEnvs = new Map((current?.services?.[0]?.envs ?? []).map((e) => [e.key, e]));
@@ -225,6 +263,23 @@ if (process.env.STRIPE_SECRET_KEY) {
     } else {
       console.log("Stripe webhook already exists.");
     }
+  }
+}
+
+// Cal.com tells HQ about bookings.
+if (CAL_KEY && values.CALCOM_USERNAME) {
+  const subscriberUrl = `${app.live_url}/webhooks/calcom/${values.CALCOM_WEBHOOK_TOKEN}`;
+  const hooks = asList((await cal("GET", "/v2/webhooks")).json);
+  if (hooks.some((h) => h.subscriberUrl === subscriberUrl)) {
+    console.log("Cal.com webhook already exists.");
+  } else {
+    const r = await cal("POST", "/v2/webhooks", {
+      active: true,
+      subscriberUrl,
+      triggers: ["BOOKING_CREATED", "BOOKING_RESCHEDULED", "BOOKING_CANCELLED"],
+      secret: createHmac("sha256", CAL_KEY).update("hq-calcom-secret").digest("base64url"),
+    });
+    console.log(`Cal.com webhook ${r.ok ? "created" : `not created (${r.status} ${JSON.stringify(r.json).slice(0, 200)})`}.`);
   }
 }
 

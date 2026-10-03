@@ -159,5 +159,5 @@ details summary { cursor: pointer; }
 .feed-item:last-child { border-bottom: 0; }
 .delta.up { color: var(--ok); } .delta.down { color: var(--bad); }
 .readonly-banner { background: var(--violet); color: #fff; padding: 8px 16px; text-align: center; font-size: 13px; }
-.calendly-inline-widget { min-width: 280px; height: 700px; }
+.calendly-inline-widget, .booking-widget { min-width: 280px; height: 700px; overflow: auto; }
 .portal-main a:not(.btn), .portal-narrow a:not(.btn) { color: var(--accent); }

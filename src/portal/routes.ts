@@ -20,7 +20,7 @@ import { logEvent } from "../lib/events.js";
 import { clearFailures, passwordProblem, recordFailure, tooManyFailures, verifyPassword } from "../lib/passwords.js";
 import { stripeConfigured } from "../lib/stripe.js";
 import { errorMessage, fmtDate } from "../lib/util.js";
-import { formatPrice, getPlan, getProduct, type Product } from "../products/index.js";
+import { bookingUrl, formatPrice, getPlan, getProduct, type Product } from "../products/index.js";
 import { fieldInput } from "../web/fields.js";
 import { html, type Raw } from "../web/html.js";
 import {
@@ -346,6 +346,13 @@ export async function portalRoutes(app: FastifyInstance) {
     return sendHtml(reply, accountPage(a.v, "Dashboard", await dashboardBody(a.v, a.customer), "/", req.query.flash));
   });
 
+  // A short address for the product sites' "book a call" buttons, so the booking tool can change without republishing them.
+  app.get(`${P}/chat`, async (req: Req, reply) => {
+    const product = getProduct(req.params.product ?? "");
+    if (!product) return reply.code(404).send("Not found");
+    return reply.redirect(bookingUrl(product, "chat"), 302);
+  });
+
   // ------------------------------------------------------------- onboarding
 
   app.get(`${P}/book`, async (req: Req, reply) => {
@@ -587,7 +594,7 @@ export async function portalRoutes(app: FastifyInstance) {
             <label for="message">Message</label><textarea name="message" id="message" required></textarea>
             <p style="margin-top:14px"><button class="primary">Send</button></p>
           </form>
-          <p class="small muted">We reply within one working day, by email and here. Prefer to talk? <a href="${a.v.product.bookingUrl}">Book a call</a>.</p>
+          <p class="small muted">We reply within one working day, by email and here. Prefer to talk? <a href="${bookingUrl(a.v.product)}">Book a call</a>.</p>
         </div>
         <div class="panel"><h2>Your messages</h2>
           ${requests.length

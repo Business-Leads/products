@@ -11,7 +11,7 @@ import { integrations } from "../integrations/index.js";
 import { logEvent } from "../lib/events.js";
 import { autonomyFor, getSetting, setSetting } from "../lib/settings.js";
 import { ago, fmtDate, token } from "../lib/util.js";
-import { formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
+import { bookingUrl, formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
 import { buyUrl, portalUrl } from "../portal/accounts.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
@@ -349,6 +349,12 @@ export async function adminRoutes(app: FastifyInstance) {
         <h3 style="margin-top:14px">Client log-in button</h3>
         <p class="small muted">Link the site's "Log in" button here. Clients sign in with their email and password.</p>
         <input readonly aria-label="Client log-in link" value="${portalUrl(product)}/login" onclick="this.select()">
+        <h3 style="margin-top:14px">Booking links</h3>
+        <p class="small muted">Each kind of call has its own link, so the calendar shows which product it's for and whether it's a sales chat or an onboarding call. HQ hears about every booking. Customers get their onboarding link automatically after they pay.</p>
+        <label class="small" for="book-chat">Sales chat (for the website's "Book a chat" buttons)</label>
+        <input readonly id="book-chat" value="${portalUrl(product)}/chat" onclick="this.select()">
+        <label class="small" for="book-onboarding" style="margin-top:8px">Onboarding call</label>
+        <input readonly id="book-onboarding" value="${bookingUrl(product, "onboarding")}" onclick="this.select()">
         ${product.slug === "linkn" ? html`<h3 style="margin-top:14px">Sbl.so webhook address</h3>
           ${config.sbl.webhookToken
             ? html`<p class="small muted">In Sbl.so: Webhooks → Add webhook. Paste this, tick all six events, keep "All campaigns". Keep it private.</p>
