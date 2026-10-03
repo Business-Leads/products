@@ -1,0 +1,31 @@
+# Read-only: checks HQ's Sbl.so key works by counting connected LinkedIn senders
+# and campaigns. Prints counts only (this repository's logs are public).
+name: Sbl.so check
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Check
+        env:
+          SBL_API_KEY: ${{ secrets.SBL_API_KEY }}
+          SBL_COMPANY_ID: ${{ secrets.SBL_COMPANY_ID }}
+        run: |
+          [ -n "$SBL_API_KEY" ] && echo "SBL_API_KEY: set" || echo "SBL_API_KEY: missing"
+          [ -n "$SBL_COMPANY_ID" ] && echo "SBL_COMPANY_ID: set" || echo "SBL_COMPANY_ID: missing"
+          cat > check.mts <<'TS'
+          const { linkedinChannels, sbl, listOf } = await import("./src/integrations/sbl.ts");
+          const channels = await linkedinChannels();
+          console.log(`Connected LinkedIn senders: ${channels.length}`);
+          const campaigns = listOf(await sbl("sbl_list_campaigns", { response_format: "json" }));
+          console.log(`Campaigns visible: ${campaigns.length}`);
+          console.log("Sbl.so key works.");
+          TS
+          npx tsx check.mts
