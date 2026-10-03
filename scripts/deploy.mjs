@@ -132,7 +132,9 @@ if (CAL_KEY) {
     const bySlug = new Map(types.map((e) => [e.slug, e]));
     const { calls } = JSON.parse(readFileSync(new URL("../src/products/calls.json", import.meta.url), "utf8"));
     const zoom = [{ type: "integration", integration: "zoom" }];
-    const hasZoom = (e) => (e.locations ?? []).some((l) => l.integration === "zoom" || l.type === "zoom");
+    const isZoom = (l) => l.integration === "zoom" || l.type === "zoom";
+    // Zoom only: no Cal Video or other options for the booker to pick.
+    const hasZoom = (e) => (e.locations ?? []).length === 1 && isZoom(e.locations[0]);
     let zoomMissing = false;
     for (const c of calls) {
       const slug = `${c.product}-${c.kind}`;
@@ -150,7 +152,7 @@ if (CAL_KEY) {
       // Cal.com feature, so the booking calendar is embedded on our own pages instead: /chat and /book.)
       if (hasZoom(current)) continue;
       const r = await cal("PATCH", `/v2/event-types/${current.id}`, { locations: zoom });
-      if (r.ok) console.log(`Cal.com: call type ${slug} now uses Zoom`);
+      if (r.ok) console.log(`Cal.com: call type ${slug} now uses Zoom only`);
       else zoomMissing = true;
     }
     if (zoomMissing) console.log("Cal.com: Zoom isn't connected yet (Apps -> Zoom -> Install); calls use Cal Video until it is.");
