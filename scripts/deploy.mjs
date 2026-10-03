@@ -176,10 +176,16 @@ console.log(`\nLive at ${app.live_url}`);
 const ingress = app.default_ingress?.replace(/^https?:\/\//, "").replace(/\/$/, "");
 if (ingress && process.env.GODADDY_API_KEY && process.env.GODADDY_API_SECRET) {
   const auth = { Authorization: `sso-key ${process.env.GODADDY_API_KEY}:${process.env.GODADDY_API_SECRET}`, "Content-Type": "application/json" };
+  // Zones whose DNS isn't in GoDaddy; their records are set where the DNS lives.
+  const notInGoDaddy = new Set(["emailfirst.co.uk"]);
   for (const { domain } of spec.domains ?? []) {
     const parts = domain.split(".");
     const name = parts[0];
     const zone = parts.slice(1).join(".");
+    if (notInGoDaddy.has(zone)) {
+      console.log(`DNS: ${domain} is managed in Cloudflare; skipped.`);
+      continue;
+    }
     // Don't overwrite an existing A record with the same name.
     const existingA = await fetch(`https://api.godaddy.com/v1/domains/${zone}/records/A/${name}`, { headers: auth });
     if (existingA.ok && (await existingA.json()).length) {

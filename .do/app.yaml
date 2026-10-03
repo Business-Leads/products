@@ -16,6 +16,9 @@ domains:
     type: ALIAS
   - domain: account.onlinebusinessbuilder.co.uk
     type: ALIAS
+  # emailfirst.co.uk's DNS is in Cloudflare, so its CNAME is added there by hand.
+  - domain: account.emailfirst.co.uk
+    type: ALIAS
 services:
   - name: web
     dockerfile_path: Dockerfile
@@ -112,7 +115,7 @@ services:
         value: "20"
       - key: PORTAL_DOMAINS
         scope: RUN_TIME
-        value: "linkn,speedtolead,goodquestions,onlinebusinessbuilder"
+        value: "linkn,speedtolead,goodquestions,onlinebusinessbuilder,emailfirst"
 databases:
   # A small managed cluster (created by scripts/deploy.mjs if missing). The
   # cheaper "dev database" doesn't let the app create tables on Postgres 15+.
