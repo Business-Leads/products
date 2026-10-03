@@ -1,17 +1,85 @@
 {
-  "_note": "Booking call types in Cal.com, one sales chat and one onboarding call per product. scripts/deploy.mjs creates any that are missing; the slug tells HQ which product and which kind of call it is.",
+  "_note": "Booking call types in Cal.com, one sales chat and one onboarding call per product. scripts/deploy.mjs creates any that are missing; the slug tells HQ which product and which kind of call it is. After booking, Cal.com sends people to <account>/booked?kind=<kind>; calls use Zoom once it's connected in Cal.com.",
   "calls": [
-    { "product": "firstpagelocal", "kind": "chat", "title": "Chat about FirstPageLocal", "minutes": 20 },
-    { "product": "firstpagelocal", "kind": "onboarding", "title": "FirstPageLocal onboarding call", "minutes": 45 },
-    { "product": "linkn", "kind": "chat", "title": "Chat about Linkn", "minutes": 20 },
-    { "product": "linkn", "kind": "onboarding", "title": "Linkn onboarding call", "minutes": 45 },
-    { "product": "speedtolead", "kind": "chat", "title": "Chat about Speed to Lead", "minutes": 20 },
-    { "product": "speedtolead", "kind": "onboarding", "title": "Speed to Lead onboarding call", "minutes": 45 },
-    { "product": "emailfirst", "kind": "chat", "title": "Chat about EmailFirst", "minutes": 20 },
-    { "product": "emailfirst", "kind": "onboarding", "title": "EmailFirst onboarding call", "minutes": 45 },
-    { "product": "goodquestions", "kind": "chat", "title": "Chat about Good Questions", "minutes": 20 },
-    { "product": "goodquestions", "kind": "onboarding", "title": "Good Questions onboarding call", "minutes": 45 },
-    { "product": "onlinebusinessbuilder", "kind": "chat", "title": "Chat about Online Business Builder", "minutes": 20 },
-    { "product": "onlinebusinessbuilder", "kind": "onboarding", "title": "Online Business Builder onboarding call", "minutes": 45 }
-  ]
+    {
+      "product": "firstpagelocal",
+      "kind": "chat",
+      "title": "Chat about FirstPageLocal",
+      "minutes": 20
+    },
+    {
+      "product": "firstpagelocal",
+      "kind": "onboarding",
+      "title": "FirstPageLocal onboarding call",
+      "minutes": 45
+    },
+    {
+      "product": "linkn",
+      "kind": "chat",
+      "title": "Chat about Linkn",
+      "minutes": 20
+    },
+    {
+      "product": "linkn",
+      "kind": "onboarding",
+      "title": "Linkn onboarding call",
+      "minutes": 45
+    },
+    {
+      "product": "speedtolead",
+      "kind": "chat",
+      "title": "Chat about Speed to Lead",
+      "minutes": 20
+    },
+    {
+      "product": "speedtolead",
+      "kind": "onboarding",
+      "title": "Speed to Lead onboarding call",
+      "minutes": 45
+    },
+    {
+      "product": "emailfirst",
+      "kind": "chat",
+      "title": "Chat about EmailFirst",
+      "minutes": 20
+    },
+    {
+      "product": "emailfirst",
+      "kind": "onboarding",
+      "title": "EmailFirst onboarding call",
+      "minutes": 45
+    },
+    {
+      "product": "goodquestions",
+      "kind": "chat",
+      "title": "Chat about Good Questions",
+      "minutes": 20
+    },
+    {
+      "product": "goodquestions",
+      "kind": "onboarding",
+      "title": "Good Questions onboarding call",
+      "minutes": 45
+    },
+    {
+      "product": "onlinebusinessbuilder",
+      "kind": "chat",
+      "title": "Chat about Online Business Builder",
+      "minutes": 20
+    },
+    {
+      "product": "onlinebusinessbuilder",
+      "kind": "onboarding",
+      "title": "Online Business Builder onboarding call",
+      "minutes": 45
+    }
+  ],
+  "accounts": {
+    "firstpagelocal": "https://hq.onlinebusinessbuilder.co.uk/portal/firstpagelocal",
+    "linkn": "https://account.linkn.co.uk",
+    "speedtolead": "https://account.speedtolead.co.uk",
+    "emailfirst": "https://account.emailfirst.co.uk",
+    "goodquestions": "https://account.goodquestions.co.uk",
+    "onlinebusinessbuilder": "https://account.onlinebusinessbuilder.co.uk"
+  }
 }

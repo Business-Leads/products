@@ -1,3 +1,4 @@
+import { londonTime, manageUrl, type ClientCall } from "../engine/calcom.js";
 import { one, query } from "../db/index.js";
 import { upgradeOptions, type MetricsSnapshot } from "../engine/clients.js";
 import type { CustomerRow } from "../engine/types.js";
@@ -244,10 +245,30 @@ export async function dashboardBody(v: View, c: CustomerRow): Promise<Raw> {
     <div class="grid-2">
       <div class="panel"><h2>Progress</h2>${await timeline(v, c)}</div>
       <div>
+        ${callsPanel(v, c)}
         <div class="panel"><h2>Your account</h2>${accountSummary(v, c)}</div>
         <div class="panel"><h2>Reports and updates</h2>${feedList(await feed(v, c))}</div>
       </div>
     </div>`;
+}
+
+/** Upcoming calls with Felix, with a link to join and to change the time. */
+export function callsPanel(v: View, c: CustomerRow): Raw {
+  const calls: ClientCall[] = Array.isArray(c.data.calls) ? c.data.calls : [];
+  const now = Date.now() - 60 * 60 * 1000;
+  const upcoming = calls.filter((x) => x.status === "booked" && Date.parse(x.start) > now);
+  if (!upcoming.length) {
+    return v.product.bookingAfterPurchase && !c.data.call_booked_at
+      ? html`<div class="panel"><h2>Your calls</h2><p>You haven't booked your onboarding call yet.</p><a class="btn primary" href="${v.base}/book">Book your call</a></div>`
+      : html`<div class="panel"><h2>Your calls</h2><p class="muted">No calls booked. Want to talk something through? <a href="${v.base}/chat">Book a call with Felix</a>.</p></div>`;
+  }
+  return html`<div class="panel"><h2>Your calls</h2>${upcoming.map(
+    (x) => html`<div class="call">
+      <p><strong>${x.kind === "onboarding" ? "Onboarding call" : "Call"} with Felix</strong><br>${londonTime(x.start) ?? x.start} (UK time)</p>
+      <p class="row">${x.joinUrl ? html`<a class="btn primary" href="${x.joinUrl}" target="_blank" rel="noopener">Join the call</a>` : ""}
+        <a href="${manageUrl(x.uid)}" target="_blank" rel="noopener">Change or cancel</a></p>
+    </div>`,
+  )}</div>`;
 }
 
 /** JSON that is safe inside a <script> element. */

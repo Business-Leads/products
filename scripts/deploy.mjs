@@ -128,17 +128,32 @@ if (CAL_KEY) {
     console.log(`Cal.com: couldn't read the account (${me.status}); booking links stay as they are.`);
   } else {
     values.CALCOM_USERNAME = username;
-    const have = new Set(asList((await cal("GET", `/v2/event-types?username=${encodeURIComponent(username)}`)).json).map((e) => e.slug));
-    const { calls } = JSON.parse(readFileSync(new URL("../src/products/calls.json", import.meta.url), "utf8"));
+    const types = asList((await cal("GET", `/v2/event-types?username=${encodeURIComponent(username)}`)).json);
+    const bySlug = new Map(types.map((e) => [e.slug, e]));
+    const { calls, accounts } = JSON.parse(readFileSync(new URL("../src/products/calls.json", import.meta.url), "utf8"));
+    const zoom = [{ type: "integration", integration: "zoom" }];
+    const hasZoom = (e) => (e.locations ?? []).some((l) => l.integration === "zoom" || l.type === "zoom");
+    let zoomMissing = false;
     for (const c of calls) {
       const slug = `${c.product}-${c.kind}`;
-      if (have.has(slug)) continue;
-      const description = c.kind === "onboarding"
-        ? "Your onboarding call: we go through what you need so everything is set up right from the start."
-        : "A friendly chat about your business and whether this is right for you.";
-      const r = await cal("POST", "/v2/event-types", { title: c.title, slug, lengthInMinutes: c.minutes, description });
-      console.log(`Cal.com: call type ${slug} ${r.ok ? "created" : `not created (${r.status} ${JSON.stringify(r.json).slice(0, 200)})`}`);
+      // After booking, people land on a thank-you page on the product's own account site.
+      const successRedirectUrl = `${accounts[c.product]}/booked?kind=${c.kind}`;
+      const current = bySlug.get(slug);
+      if (!current) {
+        const description = c.kind === "onboarding"
+          ? "Your onboarding call: we go through what you need so everything is set up right from the start."
+          : "A friendly chat about your business and whether this is right for you.";
+        let r = await cal("POST", "/v2/event-types", { title: c.title, slug, lengthInMinutes: c.minutes, description, successRedirectUrl, locations: zoom });
+        if (!r.ok) { zoomMissing = true; r = await cal("POST", "/v2/event-types", { title: c.title, slug, lengthInMinutes: c.minutes, description, successRedirectUrl }); }
+        console.log(`Cal.com: call type ${slug} ${r.ok ? "created" : `not created (${r.status} ${JSON.stringify(r.json).slice(0, 200)})`}`);
+        continue;
+      }
+      if (current.successRedirectUrl === successRedirectUrl && hasZoom(current)) continue;
+      let r = await cal("PATCH", `/v2/event-types/${current.id}`, { successRedirectUrl, ...(hasZoom(current) ? {} : { locations: zoom }) });
+      if (!r.ok && !hasZoom(current)) { zoomMissing = true; r = await cal("PATCH", `/v2/event-types/${current.id}`, { successRedirectUrl }); }
+      console.log(`Cal.com: call type ${slug} ${r.ok ? "updated" : `not updated (${r.status} ${JSON.stringify(r.json).slice(0, 200)})`}`);
     }
+    if (zoomMissing) console.log("Cal.com: Zoom isn't connected yet (Apps -> Zoom -> Install); calls use Cal Video until it is.");
     console.log(`Cal.com: booking links are cal.com/${username}/<product>-chat and -onboarding.`);
   }
 }

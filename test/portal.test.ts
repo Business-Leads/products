@@ -476,13 +476,18 @@ describe("client account areas", () => {
 
     const booked = await post({
       triggerEvent: "BOOKING_CREATED",
-      payload: { type: `${c.product}-onboarding`, startTime: "2026-10-06T09:00:00Z", attendees: [{ name: c.name, email: c.email }], metadata: { customer_id: c.id } },
+      payload: { uid: "bk1", type: `${c.product}-onboarding`, startTime: "2026-10-06T09:00:00Z", attendees: [{ name: c.name, email: c.email }], metadata: { customer_id: c.id, videoCallUrl: "https://zoom.us/j/123" } },
     });
     assert.deepEqual([booked.json().kind, booked.json().matched], ["onboarding", true]);
-    assert.ok((await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data.call_booked_at);
+    const afterBooking = (await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data;
+    assert.ok(afterBooking.call_booked_at);
+    assert.equal(afterBooking.calls.length, 1);
+    assert.ok(await one(`SELECT 1 FROM emails WHERE to_address = 'cal@client.co.uk' AND subject LIKE '%onboarding call is booked%'`));
 
-    await post({ triggerEvent: "BOOKING_CANCELLED", payload: { type: `${c.product}-onboarding`, attendees: [{ email: c.email }] } });
-    assert.equal((await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data.call_booked_at, undefined);
+    await post({ triggerEvent: "BOOKING_CANCELLED", payload: { uid: "bk1", type: `${c.product}-onboarding`, attendees: [{ email: c.email }] } });
+    const afterCancel = (await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data;
+    assert.equal(afterCancel.call_booked_at, undefined);
+    assert.equal(afterCancel.calls[0].status, "cancelled");
 
     const chat = await post({ triggerEvent: "BOOKING_CREATED", payload: { type: "onlinebusinessbuilder-chat", startTime: "2026-10-07T13:30:00Z", attendees: [{ name: "Pat Shop", email: "pat@shop.co.uk" }] } });
     assert.equal(chat.json().kind, "chat");
@@ -492,9 +497,12 @@ describe("client account areas", () => {
     assert.ok(await one(`SELECT 1 FROM emails WHERE subject LIKE '%sales chat booked by Pat Shop%'`));
   });
 
-  it("sends the sites' book-a-call links to the right Cal.com page", async () => {
+  it("sends the sites' book-a-call links to the right Cal.com page, and thanks people afterwards", async () => {
     const r = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/chat" });
     assert.equal(r.headers.location, "https://cal.com/felixclarke/onlinebusinessbuilder-chat");
+    const thanks = await app.inject({ method: "GET", url: "/portal/onlinebusinessbuilder/booked?kind=chat" });
+    assert.equal(thanks.statusCode, 200);
+    assert.match(thanks.body, /your call is booked/);
   });
 
   it("reads FeedBoss's streamed answers", async () => {

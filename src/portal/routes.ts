@@ -353,6 +353,28 @@ export async function portalRoutes(app: FastifyInstance) {
     return reply.redirect(bookingUrl(product, "chat"), 302);
   });
 
+  // Cal.com sends people here after they book. Signed-in clients go back to their account.
+  app.get(`${P}/booked`, async (req: Req, reply) => {
+    const v = viewFor(req);
+    if (!v) return notFound(reply);
+    const onboarding = req.query.kind === "onboarding";
+    const user = await userForSession(req.cookies[COOKIE], v.product.slug);
+    if (user && (await customersFor(user)).length) {
+      const msg = onboarding ? "Thank you, your onboarding call is booked. You'll find it below, and the details are in your email." : "Thank you, your call is booked. The details are in your email.";
+      return reply.redirect(`${v.base}/?flash=${encodeURIComponent(msg)}`, 303);
+    }
+    const site = v.product.siteUrls[0] ?? "/";
+    return sendHtml(reply, narrowPage(v, "Your call is booked", onboarding
+      ? html`<h1>Thank you, your call is booked</h1>
+        <p>We've emailed you the details, with the link to join. You can also see the call in your account.</p>
+        <p><a class="btn primary" href="${v.base}/login">Go to your account</a></p>
+        <p class="small muted">Before we speak, it helps if you fill in a few details in your account.</p>`
+      : html`<h1>Thank you, your call is booked</h1>
+        <p>We've emailed you the details, with the link to join. Felix is looking forward to speaking with you.</p>
+        <p>It's a relaxed chat: no preparation needed.</p>
+        <p><a class="btn primary" href="${site}">Back to ${v.product.name}</a></p>`));
+  });
+
   // ------------------------------------------------------------- onboarding
 
   app.get(`${P}/book`, async (req: Req, reply) => {
