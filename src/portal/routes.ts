@@ -357,7 +357,7 @@ export async function portalRoutes(app: FastifyInstance) {
     const customer = user ? currentCustomer(await customersFor(user)) : undefined;
     if (customer?.name) page.searchParams.set("name", customer.name);
     if (customer?.email) page.searchParams.set("email", customer.email);
-    return sendHtml(reply, widePage(v, `Book a chat · ${v.product.name}`, html`
+    return sendHtml(reply, widePage(v, "Book a chat", html`
       <h1>Book a chat with Felix</h1>
       <p>Pick a time that suits you for a relaxed 20-minute chat about your business and ${v.product.name}. No preparation needed.</p>
       ${calEmbed(page.toString(), `${v.base}/booked?kind=chat`)}`));
