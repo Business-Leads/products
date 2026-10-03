@@ -137,7 +137,9 @@ Known blockers:
 - Client areas live on account.linkn.co.uk, account.speedtolead.co.uk,
   account.goodquestions.co.uk, account.onlinebusinessbuilder.co.uk and
   account.emailfirst.co.uk. emailfirst.co.uk's DNS is in Cloudflare (the
-  `account` CNAME was added there by hand; deploy.mjs skips it for GoDaddy).
+  `account` CNAME, A @ 75.2.60.5 and CNAME www -> emailfirst.netlify.app were
+  added there by hand; deploy.mjs skips it for GoDaddy). The site is live at
+  emailfirst.co.uk.
 - Sbl.so: webhook into /webhooks/sbl/<token> (address shown on the Linkn
   product page). FeedBoss: Service API key (x-api-key); one workspace per
   client, created by hand. Awaz: no webhook; Make scenario "Watch Calls" ->
