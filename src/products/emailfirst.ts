@@ -10,7 +10,7 @@ export const emailFirst: Product = {
     "landing page written for the client, sends to 3,000 UK decision makers a week from the Mailpulse " +
     "platform, and a report each weekday of verified human clicks with a follow-up already drafted.",
   entity: "EmailFirst is a trading name of Emailfirst Limited (company 14162647)",
-  siteUrls: ["https://emailfirst.netlify.app"],
+  siteUrls: ["https://emailfirst.co.uk", "https://www.emailfirst.co.uk", "https://emailfirst.netlify.app"],
   bookingUrl: BOOKING_URL,
   email: { from: fromAddress("emailfirst", "hello@emailfirst.co.uk"), fromName: "EmailFirst" },
   voice: `${HOUSE_VOICE} Be open that the service is run by AI with a person checking it.`,
