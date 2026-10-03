@@ -9,6 +9,9 @@ on:
       pairs:
         description: "Space-separated domain=netlifySiteId pairs"
         required: true
+      godaddy_dns:
+        description: "Also set the GoDaddy records (no if the DNS lives elsewhere, e.g. Cloudflare)"
+        default: "yes"
 permissions: {}
 jobs:
   connect:
@@ -21,6 +24,7 @@ jobs:
           SECRET: ${{ secrets.GODADDY_API_SECRET }}
           NETLIFY: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           PAIRS: ${{ inputs.pairs }}
+          GODADDY_DNS: ${{ inputs.godaddy_dns }}
         run: |
           GD="Authorization: sso-key $KEY:$SECRET"
           NL="Authorization: Bearer $NETLIFY"
@@ -32,12 +36,16 @@ jobs:
             code=$(curl -s -o nl.json -w "%{http_code}" -X PATCH -H "$NL" -H "Content-Type: application/json" \
               -d "{\"custom_domain\":\"$d\",\"domain_aliases\":[\"www.$d\"]}" "https://api.netlify.com/api/v1/sites/$site")
             echo "  Netlify attach: $code $(jq -r '.custom_domain // .message // empty' nl.json)"
+            if [ "$GODADDY_DNS" = "yes" ]; then
             echo "  before: A@=$(curl -s -H "$GD" "https://api.godaddy.com/v1/domains/$d/records/A/@" | jq -c '[.[]?.data]') CNAME www=$(curl -s -H "$GD" "https://api.godaddy.com/v1/domains/$d/records/CNAME/www" | jq -c '[.[]?.data]')"
             a=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "$GD" -H "Content-Type: application/json" \
               -d '[{"data":"75.2.60.5","ttl":600}]' "https://api.godaddy.com/v1/domains/$d/records/A/@")
             c=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "$GD" -H "Content-Type: application/json" \
               -d "[{\"data\":\"$name.netlify.app\",\"ttl\":3600}]" "https://api.godaddy.com/v1/domains/$d/records/CNAME/www")
             echo "  GoDaddy update: A@ $a, CNAME www $c"
+            else
+            echo "  DNS is elsewhere: point A @ at 75.2.60.5 and CNAME www at $name.netlify.app there."
+            fi
             s=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "$NL" "https://api.netlify.com/api/v1/sites/$site/ssl")
             echo "  HTTPS certificate request: $s (may need DNS to settle first; Netlify retries automatically)"
           done
