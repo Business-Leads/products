@@ -5,6 +5,8 @@ process.env.GBP_MANAGER_EMAIL = "felix@example.com";
 process.env.AWAZ_API_KEY = "awaz_test";
 process.env.AWAZ_WEBHOOK_TOKEN = "awaz-hook";
 process.env.BASE_URL = "https://hq.example.com";
+process.env.SBL_API_KEY = "sbl_test";
+process.env.SBL_COMPANY_ID = "42";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.SMTP_URL;
 
@@ -115,5 +117,34 @@ describe("Local Falcon (Online Business Builder)", () => {
     }
     assert.equal((await one(`SELECT status FROM onboarding_steps WHERE id = $1`, [step.id])).status, "done");
     assert.ok(await one(`SELECT 1 FROM emails WHERE subject LIKE '%test calls done for Al Heating%'`));
+  });
+
+  it("Linkn: talks to Sbl.so's API, drafts a campaign on the client's sender and sends approved replies", async () => {
+    const tools: { name: string; args: any }[] = [];
+    globalThis.fetch = (async (_url: string, init: any) => {
+      const msg = JSON.parse(init.body);
+      if (msg.method === "initialize") return new Response(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: {} }), { headers: { "mcp-session-id": "s1", "content-type": "application/json" } });
+      if (!msg.id) return new Response("", { status: 202 });
+      tools.push({ name: msg.params.name, args: msg.params.arguments });
+      const reply: Record<string, unknown> = {
+        sbl_create_campaign_from_prompt: { id: 901 },
+        sbl_get_campaign: { id: 901, revision: 3 },
+      };
+      const text = JSON.stringify(reply[msg.params.name] ?? { ok: true });
+      // Answer as a server-sent event stream, as the hosted server can.
+      return new Response(`event: message\ndata: ${JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text }] } })}\n\n`, { headers: { "content-type": "text/event-stream" } });
+    }) as typeof fetch;
+    const { draftCampaign } = await import("../src/integrations/sbl.js");
+    const id = await draftCampaign("A brief long enough to pass", "lnk-1-cold-2026-10", 55);
+    assert.equal(id, "901");
+    const bind = tools.find((t) => t.name === "sbl_bind_linkedin_channel")!;
+    assert.deepEqual([bind.args.channel_id, bind.args.expected_revision, bind.args.company_id], [55, 3, 42]);
+
+    const customer = await one(`SELECT * FROM customers LIMIT 1`);
+    const note = await runPublisher("sbl_replies", customer, { replies: [{ campaignId: "901", userId: "u1", reply: "Draft" }] }, "Conversation #1 with Sam:\nHi\nReply #1:\nThanks Sam, shall we talk Tuesday?");
+    assert.equal(note, "Sent 1 LinkedIn reply");
+    const sent = tools.find((t) => t.name === "sbl_reply_and_resolve")!;
+    assert.equal(sent.args.message, "Thanks Sam, shall we talk Tuesday?");
+    assert.equal(sent.args.company_id, "42");
   });
 });

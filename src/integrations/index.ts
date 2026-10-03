@@ -110,10 +110,10 @@ export const integrations: Integration[] = [
     name: "Sbl.so",
     purpose: "Linkn LinkedIn outreach and conversations",
     envVars: ["SBL_WEBHOOK_SECRET", "SBL_API_KEY", "SBL_COMPANY_ID"],
-    // Connected through its webhook: replies and outreach results arrive by themselves.
-    configured: () => has("SBL_WEBHOOK_SECRET")() || has("SBL_API_KEY", "SBL_COMPANY_ID")(),
-    notes: "Connected by webhook: replies and results come in by themselves. Messages are still sent from Sbl.so.",
-    automation: "manual",
+    // The webhook brings results in; the API key (app.secondbrainlabs.com/mcp-server) lets HQ run campaigns.
+    configured: has("SBL_API_KEY", "SBL_COMPANY_ID"),
+    notes: "API key from app.secondbrainlabs.com/mcp-server, company id from Settings, Company. The webhook works without it.",
+    automation: "full",
   },
   {
     id: "scoreapp",

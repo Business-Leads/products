@@ -54,7 +54,7 @@ export function campaignId(p: Payload): string | null {
 function prospectSummary(p: Payload): string {
   const name = pick(p, ["prospect.name", "lead.name", "user.name", "prospect_name", "name", "full_name"]);
   const company = pick(p, ["prospect.company", "lead.company", "user.company", "company"]);
-  const profile = pick(p, ["prospect.linkedin_url", "lead.linkedin_url", "user.linkedin_profile_url", "linkedin_url", "profile_url"]);
+  const profile = pick(p, ["prospect.linkedin_profile", "prospect.linkedin_url", "lead.linkedin_url", "user.linkedin_profile_url", "linkedin_url", "profile_url"]);
   const message = pick(p, ["message.text", "message.content", "message", "reply", "text", "content"]);
   return [
     name ? `Who: ${name}${company ? `, ${company}` : ""}` : "",

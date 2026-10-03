@@ -98,59 +98,29 @@ export const linkn: Product = {
     },
     {
       key: "campaign_drafts",
-      title: "Draft Sbl.so campaigns (cold ICP and warm engagers)",
-      kind: "manual",
+      title: "Cold and warm campaigns drafted in Sbl.so",
+      kind: "auto",
+      handler: "linkn_campaigns",
       plans: ["business", "growth"],
       instructions:
-        "Create 'LNK <slug> / cold-icp / <yyyy-mm>' and 'LNK <slug> / warm-engagers' in Sbl.so, bind the " +
-        "client's sender, and get the approver's sign-off on the wording.",
-      guide: {
-        why: "Sbl.so doesn't let other systems create campaigns, so this is done in Sbl.so.",
-        minutes: 20,
-        steps: [
-          "In Sbl.so, create a campaign called \"LNK <client> / cold\" using the audience agreed on the call.",
-          "Create a second campaign called \"LNK <client> / warm\" for people who engage with their posts.",
-          "Choose the client's LinkedIn as the sender in both.",
-          "Check the message wording reads like them.",
-          "Open the client's page in HQ, paste both campaign ids under Sbl.so campaigns, then mark this done.",
-        ],
-      },
+        "HQ finds the client's LinkedIn sender in Sbl.so and drafts the cold and warm campaigns from their answers, " +
+        "bound to their own LinkedIn. Nothing is sent.",
     },
     {
       key: "launch",
-      title: "LAUNCH: one-recipient proof, then at most 25 leads",
-      kind: "manual",
+      title: "Start outreach (your approval), first 25 leads",
+      kind: "approval",
+      handler: "linkn_launch",
       plans: ["business", "growth"],
-      instructions:
-        "Send a one-recipient proof, then launch to at most 25 leads. Watch for 48 hours before widening.",
-      guide: {
-        why: "Starting outreach from someone's LinkedIn is a judgement call you should make.",
-        minutes: 10,
-        steps: [
-          "In Sbl.so, send the cold campaign to one person (yourself) and check it.",
-          "Start it with no more than 25 people.",
-          "Look again in two days. If the replies look right, let it run at full volume, then mark this done.",
-        ],
-      },
+      instructions: "Approving finds 25 people matching their ideal customer and starts the cold campaign from their LinkedIn.",
     },
     {
       key: "call_guide",
-      title: "Write the call guide and agree calling data arrangements",
-      kind: "manual",
+      title: "Call guide written for the calling team",
+      kind: "approval",
+      handler: "linkn_call_guide",
       plans: ["growth"],
-      instructions:
-        "Write the seven-part call guide in the client's voice and get sign-off. Confirm the data-processing " +
-        "agreement with the calling team and TPS/CTPS screening. First calling day 3–4 weeks after outreach starts.",
-      guide: {
-        why: "Telephone follow-up needs a written guide you are happy to put your name to.",
-        minutes: 60,
-        steps: [
-          "Write a one-page call guide in the client's voice: who we are, why we're calling, three questions, how to book a meeting.",
-          "Send it to the client to agree.",
-          "Check the calling list against the TPS and CTPS (do-not-call lists).",
-          "Mark this done. The first calling day is three to four weeks after outreach starts.",
-        ],
-      },
+      instructions: "AI writes the call guide in the client's voice from their answers and kickoff notes, for your check.",
     },
     goLiveStep,
   ],
@@ -208,7 +178,7 @@ export const linkn: Product = {
       title: "Monthly client report",
       cadence: { every: "month", dayOfMonth: 3 },
       handler: "linkn_monthly_report",
-      approval: true,
+      approval: false,
     },
   ],
   tools: ["feedboss", "sblso", "anthropic", "smtp", "stripe"],

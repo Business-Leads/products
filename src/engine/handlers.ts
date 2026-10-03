@@ -9,6 +9,7 @@ import { campaignStats } from "../integrations/mailwizz.js";
 import { addGuard, campaignSummary, createMonthlyCampaign, guardChanges, linkedLocations, profileMetrics, unansweredReviews } from "../integrations/localfalcon.js";
 import { queueEmail } from "../lib/email.js";
 import { listAgents, placeCall, subscribeCalls } from "../integrations/awaz.js";
+import { campaignUsers, draftCampaign, field, getCampaign, linkedinChannels, previewEngagers, waitingLeads } from "../integrations/sbl.js";
 import { generatePost, recentPosts } from "../integrations/feedboss.js";
 import { createSite, deployFiles, setCustomDomain } from "../integrations/netlify.js";
 import { postUpdate, saveMetrics } from "./clients.js";
@@ -73,6 +74,24 @@ async function previousDelivery(ctx: HandlerContext): Promise<Record<string, any
 }
 
 /** Ask a person for data (scan results, stats) until an API is wired, then draft from it. */
+function coldBrief(ctx: HandlerContext): string {
+  const i = ctx.customer.data.intake ?? {};
+  return (
+    `LinkedIn outreach from ${ctx.customer.name} (${i.company ?? customerLabel(ctx)}), written in their voice: first person, warm, ` +
+    `short, plain British English, no hype, no pitch in the connection request.\n\nWhat they sell and their proof: ${i.offer ?? ""}\n\n` +
+    `Who to reach: ${i.icp ?? ""}\nNever approach: ${i.exclusions ?? "(none)"}\nNever say: ${i.never_say ?? "(nothing)"}\n` +
+    `Price questions: ${i.price_questions ?? "suggest a call"}\nGoal: a short call${i.booking_link ? ` via ${i.booking_link}` : ""}.\n\n` +
+    `Notes from the kickoff call: ${ctx.customer.data.call_notes ?? "(none)"}\nContent themes: ${ctx.customer.data.content_plan ?? ctx.customer.data.pillars ?? "(none)"}`
+  ).slice(0, 19000);
+}
+
+function warmBrief(ctx: HandlerContext): string {
+  return (
+    `${coldBrief(ctx)}\n\nThis campaign goes to people who recently liked or commented on ${ctx.customer.name}'s LinkedIn posts. ` +
+    "Never mention the post or that they engaged with it: start a natural conversation relevant to their role."
+  ).slice(0, 19000);
+}
+
 function needData(ctx: HandlerContext, what: string, instructions: string): Outcome {
   return {
     type: "manual",
@@ -222,15 +241,161 @@ const handlers: Record<string, Handler> = {
     };
   },
 
+  /** New LinkedIn replies waiting for a person: AI drafts each answer in the client's voice; approving sends them. */
   async linkn_reply_triage(ctx) {
     requireAutomation("sblso");
-    return { type: "done", note: `No automated triage for ${customerLabel(ctx)}` };
+    const campaigns: string[] = ctx.customer.data.sbl_campaign_ids ?? [];
+    if (!campaigns.length) return { type: "done", note: "No campaigns yet" };
+    const leads = await waitingLeads(campaigns);
+    if (!leads.length) return { type: "done", note: "No replies waiting" };
+    const intake = ctx.customer.data.intake ?? {};
+    const drafted = await draftJson<{ replies: { n: number; reply: string }[] }>({
+      system:
+        `You reply to LinkedIn messages as ${ctx.customer.name ?? "the client"} of ${intake.company ?? customerLabel(ctx)}. ` +
+        "Write in their voice: first person, warm, brief (under 80 words), plain British English, no hype. Answer what they asked, " +
+        "and if they're interested, suggest a short call" + (intake.booking_link ? ` using ${intake.booking_link}` : "") + ". " +
+        `Price questions: ${intake.price_questions || "say it depends on what they need and suggest a call"}. ` +
+        `Never say: ${intake.never_say || "(nothing listed)"}. If they ask not to be contacted, reply politely that you won't message again. ` +
+        "Never invent facts.",
+      prompt:
+        `What they sell: ${intake.offer ?? ""}\n\n` +
+        leads.map((l, i) => `Conversation #${i + 1} with ${l.name}:\n${l.thread}`).join("\n\n") +
+        "\n\nDraft one reply for each conversation.",
+      schema: {
+        type: "object",
+        properties: { replies: { type: "array", items: { type: "object", properties: { n: { type: "integer" }, reply: { type: "string" } }, required: ["n", "reply"], additionalProperties: false } } },
+        required: ["replies"],
+        additionalProperties: false,
+      },
+      maxTokens: 6000,
+    });
+    const replies = leads.map((l, i) => ({ campaignId: l.campaignId, userId: l.userId, reply: drafted.replies.find((x) => x.n === i + 1)?.reply ?? "" }));
+    return {
+      type: "publish",
+      title: `LinkedIn replies for ${customerLabel(ctx)} (${leads.length})`,
+      body: leads.map((l, i) => `Conversation #${i + 1} with ${l.name}:\n${l.thread.slice(-1500)}\nReply #${i + 1}:\n${replies[i]!.reply}`).join("\n\n"),
+      publisher: "sbl_replies",
+      data: { replies },
+      approval: true,
+    };
   },
 
-  async linkn_weekly_harvest() {
-    // Moving post engagers into the warm campaign happens in Sbl.so.
+  /**
+   * People who engaged with the client's recent posts: a free preview from Sbl.so, scored against
+   * their ideal customer by AI. If enough fit, approving imports them and starts this week's warm campaign.
+   */
+  async linkn_weekly_harvest(ctx) {
     requireAutomation("sblso");
-    return { type: "done" };
+    const d = ctx.customer.data;
+    if (!d.feedboss_workspace || !d.sbl_channel_id || !getIntegration("feedboss")?.configured()) return { type: "done", note: "FeedBoss or LinkedIn sender not connected yet" };
+    const twoDays = Date.now() - 2 * 864e5;
+    const posts = (await recentPosts(d.feedboss_workspace))
+      .filter((p) => p.status === "published" && p.postUrl && new Date(p.createdAt).getTime() < twoDays && new Date(p.createdAt).getTime() > Date.now() - 14 * 864e5)
+      .filter((p) => (p.metrics?.likes ?? 0) + (p.metrics?.comments ?? 0) > 0)
+      .slice(0, 3);
+    if (!posts.length) return { type: "done", note: "No recent posts with engagement" };
+    const week = ctx.delivery?.period ?? new Date().toISOString().slice(0, 10);
+    const intake = d.intake ?? {};
+    const campaignId = await draftCampaign(warmBrief(ctx), `lnk-${ctx.customer.id}-warm-${week}`, Number(d.sbl_channel_id));
+    const previews: { previewId: string; people: string }[] = [];
+    for (const [i, post] of posts.entries()) {
+      for (const mode of ["comments", "likes"] as const) {
+        const pv = await previewEngagers(campaignId, post.postUrl!, mode, `lnk-${ctx.customer.id}-${week}-${i}-${mode}`).catch(() => undefined);
+        if (pv?.previewId) previews.push(pv);
+      }
+    }
+    if (!previews.length) return { type: "done", note: "No engagers found" };
+    const scored = await draftJson<{ fit: number; total: number; summary: string }>({
+      system: "You score LinkedIn engagers against a client's ideal customer. Count only clear fits. Never invent people.",
+      prompt: `Ideal customer: ${intake.icp ?? ""}\nNever approach: ${intake.exclusions ?? "(none)"}\n\nEngagers:\n${previews.map((p) => p.people).join("\n")}`,
+      schema: { type: "object", properties: { fit: { type: "integer" }, total: { type: "integer" }, summary: { type: "string" } }, required: ["fit", "total", "summary"], additionalProperties: false },
+      maxTokens: 3000,
+    });
+    if (scored.fit < 5 || scored.fit < scored.total / 3) return { type: "done", note: `Only ${scored.fit} of ${scored.total} engagers fit; not imported` };
+    return {
+      type: "publish",
+      title: `Warm outreach to ${scored.fit} people who engaged with ${customerLabel(ctx)}'s posts`,
+      body: `${scored.summary}\n\nApproving imports them into this week's warm campaign and starts it from ${customerLabel(ctx)}'s LinkedIn. Messages never mention the post.`,
+      publisher: "sbl_harvest",
+      data: { campaignId, previewIds: previews.map((p) => p.previewId) },
+      approval: true,
+    };
+  },
+
+  /** Draft the cold and warm Sbl.so campaigns from the client's answers, bound to their own LinkedIn sender. */
+  async linkn_campaigns(ctx) {
+    requireAutomation("sblso");
+    let channel: number | undefined = ctx.customer.data.sbl_channel_id;
+    if (!channel) {
+      const name = (ctx.customer.name ?? "").toLowerCase();
+      const found = name ? (await linkedinChannels()).find((c) => c.name.toLowerCase().includes(name) || name.includes(c.name.toLowerCase())) : undefined;
+      if (!found) {
+        return {
+          type: "manual",
+          title: `Connect ${customerLabel(ctx)}'s LinkedIn in Sbl.so`,
+          instructions: `No LinkedIn sender called "${ctx.customer.name}" is connected in Sbl.so yet.`,
+          rerun: true,
+          guide: {
+            why: "Only the client can sign in to their own LinkedIn.",
+            minutes: 5,
+            steps: [
+              "Ask the client to connect their LinkedIn as a sender in Sbl.so (Settings, Communication), ideally on the kickoff call.",
+              "Press Done below. HQ finds their sender and drafts both campaigns by itself.",
+            ],
+          },
+        };
+      }
+      channel = found.id;
+      await query(`UPDATE customers SET data = data || jsonb_build_object('sbl_channel_id', $2::int) WHERE id = $1`, [ctx.customer.id, channel]);
+    }
+    const ym = new Date().toISOString().slice(0, 7);
+    const cold = await draftCampaign(coldBrief(ctx), `lnk-${ctx.customer.id}-cold-${ym}`, channel);
+    const warm = await draftCampaign(warmBrief(ctx), `lnk-${ctx.customer.id}-warm-start`, channel);
+    await query(`UPDATE customers SET data = data || jsonb_build_object('sbl_campaign_ids', $2::jsonb, 'sbl_cold_id', $3::text, 'sbl_warm_id', $4::text) WHERE id = $1`, [
+      ctx.customer.id,
+      JSON.stringify([cold, warm]),
+      cold,
+      warm,
+    ]);
+    return { type: "done", note: `Campaigns drafted in Sbl.so (cold ${cold}, warm ${warm})` };
+  },
+
+  /** Launch: Felix's approval finds 25 matching leads (billable) and starts the cold campaign. */
+  async linkn_launch(ctx) {
+    requireAutomation("sblso");
+    const cold: string | undefined = ctx.customer.data.sbl_cold_id;
+    if (!cold) return { type: "done", note: "No cold campaign to launch" };
+    const c = await getCampaign(cold);
+    const first = String(field(c, "initialMessage", "initial_message") ?? "(see the campaign in Sbl.so)");
+    let published = "";
+    if (ctx.customer.data.feedboss_workspace && getIntegration("feedboss")?.configured()) {
+      const live = (await recentPosts(ctx.customer.data.feedboss_workspace)).filter((p) => p.status === "published").length;
+      published = `\n\nPosts live on their LinkedIn: ${live}${live < 4 ? " (we usually wait for four before starting outreach)" : ""}.`;
+    }
+    return {
+      type: "publish",
+      title: `Start LinkedIn outreach for ${customerLabel(ctx)}`,
+      body:
+        `Opening message:\n${first}\n\nWho it goes to: ${ctx.customer.data.intake?.icp ?? ""}${published}\n\n` +
+        "Approving finds the first 25 people who match (this uses Sbl.so lead credits) and starts the campaign from their LinkedIn.",
+      publisher: "sbl_launch",
+      data: { cold, prompt: ctx.customer.data.intake?.icp ?? "", key: `lnk-${ctx.customer.id}-launch-${new Date().toISOString().slice(0, 7)}` },
+      approval: true,
+    };
+  },
+
+  async linkn_call_guide(ctx) {
+    const guide = await draftJson<{ body: string }>({
+      system: `You write telephone call guides in the client's voice. ${ctx.product.voice}`,
+      prompt:
+        `Client answers:\n${intakeSummary(ctx)}\n\nKickoff notes:\n${ctx.customer.data.call_notes ?? "(none)"}\n\n` +
+        "Write a one-page call guide for following up LinkedIn conversations by phone: who we are, why we're calling, " +
+        "three good questions, handling 'not interested' and price questions, and how to book a meeting. Remind the caller " +
+        "to check every number against TPS/CTPS before calling.",
+      schema: { type: "object", properties: { body: { type: "string" } }, required: ["body"], additionalProperties: false },
+      maxTokens: 4000,
+    });
+    return { type: "review", title: `Call guide for ${customerLabel(ctx)}`, body: guide.body, saveAs: "call_guide" };
   },
 
   /**
@@ -298,9 +463,23 @@ const handlers: Record<string, Handler> = {
     return { type: "review", title: `Content plan: ${customerLabel(ctx)}: ${plan.title}`, body: plan.body, saveAs: "content_plan" };
   },
 
-  async linkn_call_sheet() {
+  /** The month's call list: people who replied or are mid-conversation, for the calling team. */
+  async linkn_call_sheet(ctx) {
     requireAutomation("sblso");
-    return { type: "done" };
+    const campaigns: string[] = ctx.customer.data.sbl_campaign_ids ?? [];
+    const people: any[] = [];
+    for (const id of campaigns) for (const status of ["4", "13"]) people.push(...(await campaignUsers(id, status).catch(() => [])));
+    if (!people.length) return { type: "done", note: "Nobody to call this month" };
+    const rows = people
+      .slice(0, 60)
+      .map((u) => `- ${u.name ?? u.fullName ?? "?"}${u.title ? `, ${u.title}` : ""}${u.company ? ` at ${u.company}` : ""} ${u.linkedinProfileUrl ?? u.linkedin_profile ?? ""}`)
+      .join("\n");
+    return {
+      type: "review",
+      title: `Call sheet for ${customerLabel(ctx)} (${people.length} people)`,
+      body: `People who replied or are talking with ${customerLabel(ctx)} on LinkedIn:\n\n${rows}\n\nCheck every number against TPS/CTPS before calling. Use the call guide saved on their page.`,
+      saveAs: "call_sheet",
+    };
   },
 
   async linkn_monthly_report(ctx) {
