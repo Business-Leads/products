@@ -215,4 +215,27 @@ describe("Local Falcon (Online Business Builder)", () => {
     assert.equal(saved.ef_lists[0].list, "L1");
     assert.deepEqual(saved.ef_lists[0].campaigns, ["C1"]);
   });
+
+  it("brings in Business Leads' Mailpulse contacts, keeping master details and honouring unsubscribes", async () => {
+    globalThis.fetch = (async (url: string) => {
+      const u = new URL(url);
+      const path = u.pathname.replace("/api", "");
+      if (path === "/lists") return new Response(JSON.stringify({ status: "success", data: { records: [{ general: { list_uid: "LA", name: "LR | directors | 2026-09-08" } }, { general: { list_uid: "LE", name: "EF | Dee | 2026-10-01" } }], total_pages: 1 } }));
+      if (path === "/lists/LA/subscribers") return new Response(JSON.stringify({ status: "success", data: { total_pages: 1, records: [
+        { EMAIL: "ann@acme.co.uk", FNAME: "Annie", COMPANY: "Other", status: "confirmed" },
+        { EMAIL: "new@fresh.co.uk", FNAME: "Nia", TITLE: "Director", status: "confirmed" },
+        { EMAIL: "gone@away.co.uk", status: "unsubscribed" },
+      ] } }));
+      return new Response(JSON.stringify({ status: "success", data: { records: [] } }));
+    }) as typeof fetch;
+    const { syncFromMailpulse } = await import("../src/engine/prospectdb.js");
+    const result = await syncFromMailpulse();
+    assert.match(result, /1 list\(s\) synced: 2 contacts merged, 1 unsubscribed/);
+    const ann = await one(`SELECT * FROM prospect_db WHERE email = 'ann@acme.co.uk'`);
+    assert.equal(ann.first_name, "Ann"); // the master file's details win
+    assert.deepEqual(ann.extra.lists, ["LR | directors | 2026-09-08"]);
+    assert.ok(await one(`SELECT 1 FROM prospect_db WHERE email = 'new@fresh.co.uk'`));
+    assert.ok(await one(`SELECT 1 FROM suppressions WHERE value = 'gone@away.co.uk'`));
+    assert.match(await syncFromMailpulse(), /^0 list/); // unchanged lists are skipped
+  });
 });

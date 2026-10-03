@@ -3,6 +3,7 @@ import { query } from "../db/index.js";
 import { pauseOverdueCustomers } from "../engine/billing.js";
 import { processInbound } from "../engine/inbound.js";
 import { processLeads } from "../engine/leads.js";
+import { syncFromMailpulse } from "../engine/prospectdb.js";
 import { runOutreach } from "../engine/outreach.js";
 import { advanceOnboarding, runRoutines } from "../engine/workflow.js";
 import { queueEmail, sendDueEmails } from "../lib/email.js";
@@ -156,4 +157,10 @@ export const jobs: Job[] = [
   { name: "digest", description: "Daily quality-control email", schedule: { dailyAt: "07:30" }, run: sendDigest },
   { name: "watchdog", description: "Alert if any automation stalls", schedule: { everyMinutes: 15 }, run: watchdog },
   { name: "housekeeping", description: "Prune old logs", schedule: { dailyAt: "03:00" }, run: housekeeping },
+  {
+    name: "prospect-sync",
+    description: "Bring in the contacts Business Leads has loaded into Mailpulse",
+    schedule: { dailyAt: "02:00" },
+    run: async () => (process.env.MAILWIZZ_API_URL && process.env.MAILWIZZ_API_KEY ? syncFromMailpulse() : "Mailpulse not connected"),
+  },
 ];

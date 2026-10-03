@@ -174,3 +174,43 @@ export async function unsubscribed(listUid: string): Promise<string[]> {
   const subs = await get<any>(`/lists/${listUid}/subscribers?page=1&per_page=1000&status=unsubscribed`).catch(() => ({ records: [] }));
   return (subs?.records ?? []).filter((r: any) => String(r.status ?? "unsubscribed") === "unsubscribed").map((r: any) => String(r.EMAIL ?? r.email ?? "").toLowerCase()).filter(Boolean);
 }
+
+// ------------------------------------------------------------- reading lists
+
+export interface ListInfo {
+  uid: string;
+  name: string;
+}
+
+/** Every list in the Mailpulse account. */
+export async function allLists(): Promise<ListInfo[]> {
+  const out: ListInfo[] = [];
+  for (let page = 1; page < 200; page++) {
+    const r = await get<any>(`/lists?page=${page}&per_page=50`);
+    const records: any[] = r?.records ?? [];
+    for (const l of records) out.push({ uid: String(l.general?.list_uid ?? l.list_uid), name: String(l.general?.name ?? l.name ?? "") });
+    if (records.length < 50 || page >= Number(r?.total_pages ?? page)) break;
+  }
+  return out.filter((l) => l.uid && l.uid !== "undefined");
+}
+
+export interface ListSubscriber extends Contact {
+  status: string;
+}
+
+/** One page of a list's subscribers (up to 1,000), with their status. */
+export async function listSubscribers(listUid: string, page: number): Promise<{ records: ListSubscriber[]; more: boolean }> {
+  const r = await get<any>(`/lists/${listUid}/subscribers?page=${page}&per_page=1000`);
+  const records: any[] = r?.records ?? [];
+  return {
+    records: records.map((s) => ({
+      EMAIL: String(s.EMAIL ?? s.email ?? ""),
+      FNAME: s.FNAME,
+      LNAME: s.LNAME,
+      COMPANY: s.COMPANY,
+      TITLE: s.TITLE,
+      status: String(s.status ?? "confirmed"),
+    })),
+    more: records.length === 1000 && page < Number(r?.total_pages ?? page + 1),
+  };
+}

@@ -183,7 +183,9 @@ Known blockers:
 - EmailFirst / Good Questions: MailWizz at portal.emailfirst.co.uk
   (MAILWIZZ_API_URL). Contacts come from our prospect database
   (`engine/prospectdb.ts`), loaded from the master file UK_Prospects_Master.csv
-  (Felix's Google Drive) via HQ Settings, Prospect database. Daily lists,
+  (Felix's Google Drive) via HQ Settings, Prospect database, plus a nightly
+  sync of every Business Leads list in Mailpulse (job prospect-sync; also a
+  button on that page) which adds newer contacts and their unsubscribes. Daily lists,
   opener + follow-ups, morning clicks report, suppression sync. The repo is
   public: never print contact data in workflow logs. GQ surveys are hosted by
   HQ at account.goodquestions.co.uk/survey/<token> (ScoreApp no longer used).

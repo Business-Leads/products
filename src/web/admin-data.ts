@@ -2,8 +2,8 @@ import { appendFile, mkdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { databaseSize, importProspectFile, recordImportStatus } from "../engine/prospectdb.js";
-import { getSetting } from "../lib/settings.js";
+import { databaseSize, importProspectFile, recordImportStatus, syncFromMailpulse } from "../engine/prospectdb.js";
+import { getSetting, setSetting } from "../lib/settings.js";
 import { errorMessage } from "../lib/util.js";
 import { html, raw, type Raw } from "./html.js";
 import { intro } from "./layout.js";
@@ -21,13 +21,17 @@ export async function dataAdminRoutes(app: FastifyInstance, send: (reply: Fastif
   app.get("/system/prospects", async (req, reply) => {
     const size = await databaseSize();
     const status = await getSetting<Record<string, any> | null>("prospect_db:import", null);
+    const sync = await getSetting<Record<string, any> | null>("prospect_db:sync", null);
     return send(reply, req, "Prospect database", html`
       <h1>Prospect database</h1>
       ${intro("This is where EmailFirst and Good Questions find the people to email. Upload the master prospect file (a CSV) and it's loaded in by itself. Upload it again whenever it's updated: nobody's send history is lost.")}
       <div class="panel">
         <p><strong>${size.toLocaleString("en-GB")}</strong> contacts in the database.</p>
         ${status ? html`<p class="muted">Last upload: ${status.state === "done" ? `finished, ${Number(status.imported ?? 0).toLocaleString("en-GB")} contacts loaded` : status.state === "failed" ? `failed: ${status.error}` : `loading… ${Number(status.imported ?? 0).toLocaleString("en-GB")} so far`}</p>` : ""}
-        <label for="file">Master prospect file (.csv)</label>
+        ${sync ? html`<p class="muted">Business Leads contacts from Mailpulse: ${sync.state === "running" ? "bringing them in now…" : sync.result ?? sync.error ?? ""}</p>` : ""}
+        <form method="post" action="/system/prospects/sync"><button type="submit">Bring in Business Leads contacts from Mailpulse now</button></form>
+        <p class="small muted">This also happens by itself every night, so new lists are always included.</p>
+        <label for="file" style="margin-top:14px">Master prospect file (.csv)</label>
         <input type="file" id="file" accept=".csv,text/csv">
         <p><button class="primary" id="go" type="button">Upload</button></p>
         <p id="progress" role="status" aria-live="polite" class="muted"></p>
@@ -48,6 +52,14 @@ export async function dataAdminRoutes(app: FastifyInstance, send: (reply: Fastif
           out.textContent = done.ok ? "Uploaded. It's loading in now: this page shows progress when you refresh it." : "Upload finished but loading didn't start. Please try again.";
         });
       `)}</script>`, "/system");
+  });
+
+  app.post("/system/prospects/sync", async (_req, reply) => {
+    await setSetting("prospect_db:sync", { state: "running" });
+    void syncFromMailpulse()
+      .then((result) => setSetting("prospect_db:sync", { state: "done", result }))
+      .catch((err) => setSetting("prospect_db:sync", { state: "failed", error: `Didn't work: ${errorMessage(err)}` }));
+    return reply.redirect("/system/prospects", 303);
   });
 
   app.post<{ Querystring: { id?: string; offset?: string } }>("/system/prospects/chunk", async (req, reply) => {

@@ -217,3 +217,67 @@ export async function databaseSize(): Promise<number> {
 export async function recordImportStatus(status: Record<string, unknown>): Promise<void> {
   await setSetting("prospect_db:import", { ...status, at: new Date().toISOString() });
 }
+
+// ------------------------------------------------ sync from Business Leads
+
+/**
+ * Everything Business Leads has loaded into Mailpulse since the master file:
+ * every list's contacts are merged into the database (keeping the master file's
+ * details, adding the list name so audiences like "saas" or "contractors" can be
+ * matched), and anyone unsubscribed or blacklisted goes on the do-not-contact list.
+ * Lists already synced are skipped unless their size changed. HQ's own sending
+ * lists (EF | / GQ |) are skipped.
+ */
+export async function syncFromMailpulse(): Promise<string> {
+  const { allLists, listSubscribers } = await import("../integrations/mailwizz.js");
+  const { getSetting } = await import("../lib/settings.js");
+  const done = await getSetting<Record<string, number>>("prospect_db:synced_lists", {});
+  let lists = 0;
+  let contacts = 0;
+  let suppressed = 0;
+  for (const list of await allLists()) {
+    if (/^(EF|GQ) \|/.test(list.name)) continue;
+    let page = 1;
+    let seen = 0;
+    const first = await listSubscribers(list.uid, 1);
+    if (done[list.uid] !== undefined && done[list.uid] === first.records.length && !first.more) continue;
+    let batch = first;
+    for (;;) {
+      const keep = batch.records.filter((s) => EMAIL.test(s.EMAIL.trim().toLowerCase()));
+      const bad = keep.filter((s) => /unsubscribed|blacklisted/.test(s.status));
+      for (const s of bad) {
+        await query(`INSERT INTO suppressions (value, reason) VALUES ($1, $2) ON CONFLICT (value) DO NOTHING`, [s.EMAIL.trim().toLowerCase(), "Unsubscribed in Mailpulse"]);
+      }
+      suppressed += bad.length;
+      const good = keep.filter((s) => !/unsubscribed|blacklisted/.test(s.status));
+      for (let i = 0; i < good.length; i += 500) {
+        const chunk = good.slice(i, i + 500);
+        const values: unknown[] = [];
+        const rows = chunk.map((s, j) => {
+          values.push(s.EMAIL.trim().toLowerCase(), s.FNAME || null, s.LNAME || null, s.COMPANY || null, s.TITLE || null, JSON.stringify({ lists: [list.name] }));
+          const b = j * 6;
+          return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6}::jsonb)`;
+        });
+        await query(
+          `INSERT INTO prospect_db (email, first_name, last_name, company, title, extra) VALUES ${rows.join(",")}
+           ON CONFLICT (lower(email)) DO UPDATE SET
+             first_name = COALESCE(prospect_db.first_name, EXCLUDED.first_name),
+             last_name = COALESCE(prospect_db.last_name, EXCLUDED.last_name),
+             company = COALESCE(prospect_db.company, EXCLUDED.company),
+             title = COALESCE(prospect_db.title, EXCLUDED.title),
+             extra = prospect_db.extra || jsonb_build_object('lists',
+               (SELECT jsonb_agg(DISTINCT v) FROM jsonb_array_elements(COALESCE(prospect_db.extra->'lists', '[]'::jsonb) || (EXCLUDED.extra->'lists')) v))`,
+          values,
+        );
+        contacts += chunk.length;
+      }
+      seen += batch.records.length;
+      if (!batch.more) break;
+      batch = await listSubscribers(list.uid, ++page);
+    }
+    done[list.uid] = page === 1 ? seen : -1; // multi-page lists are re-checked each night
+    lists++;
+  }
+  await setSetting("prospect_db:synced_lists", done);
+  return `${lists} list(s) synced: ${contacts} contacts merged, ${suppressed} unsubscribed added to do-not-contact`;
+}
