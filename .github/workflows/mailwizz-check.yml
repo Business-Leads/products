@@ -1,0 +1,36 @@
+# Read-only: lists the MailWizz (Mailpulse) lists, their sizes and fields, so
+# EmailFirst can be set up to pick contacts from them. Changes nothing.
+name: MailWizz check
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lists and fields
+        env:
+          URL: ${{ secrets.MAILWIZZ_API_URL }}
+          KEY: ${{ secrets.MAILWIZZ_API_KEY }}
+        run: |
+          [ -n "$URL" ] && [ -n "$KEY" ] || { echo "MAILWIZZ_API_URL / MAILWIZZ_API_KEY not set"; exit 1; }
+          URL="${URL%/}"
+          echo "API host: $(echo "$URL" | sed -E 's#https?://([^/]+).*#\1#')"
+          get() { curl -s --max-time 30 -H "X-Api-Key: $KEY" -H "Accept: application/json" "$URL$1"; }
+          lists=$(get "/lists?page=1&per_page=50")
+          echo "$lists" | jq -r '.data.records[]? | "\(.general.list_uid)\t\(.general.name)\t\(.general.display_name // "")"' > lists.tsv
+          echo "== Lists: $(wc -l < lists.tsv)"
+          while IFS=$'\t' read -r uid name display; do
+            count=$(get "/lists/$uid/subscribers?page=1&per_page=1" | jq -r '.data.count // "?"')
+            fields=$(get "/lists/$uid/fields" | jq -r '[.data.records[]? | "\(.tag)(\(.type.identifier // .type))"] | join(", ")')
+            segs=$(get "/lists/$uid/segments?page=1&per_page=20" | jq -r '[.data.records[]? | .name] | join("; ")')
+            echo "- $name [$uid] subscribers=$count"
+            echo "    fields: $fields"
+            [ -n "$segs" ] && echo "    segments: $segs"
+          done < lists.tsv
+          echo "== Recent campaigns"
+          get "/campaigns?page=1&per_page=10" | jq -r '.data.records[]? | "- \(.name) [\(.campaign_uid)] \(.status) list=\(.list.name // .list.list_uid // "?")"'
+          echo "== Sample subscriber fields (first list, 3 records, emails masked)"
+          first=$(head -1 lists.tsv | cut -f1)
+          get "/lists/$first/subscribers?page=1&per_page=3" | jq -r '.data.records[]? | with_entries(select(.key != "EMAIL" and .key != "email")) | tostring' | head -3
