@@ -197,9 +197,9 @@ Known blockers:
 
 ## Next work, in order
 1. Wire what's still manual where an API exists (Local Falcon when
-   FirstPageLocal launches). Sbl.so is done: it runs on the webhook, no API
-   key needed. Don't guess endpoints: read
-   the docs through the read-docs workflow.
+   FirstPageLocal launches). Sbl.so: the webhook only reports results into HQ;
+   running campaigns needs SBL_API_KEY/SBL_COMPANY_ID. Don't guess endpoints:
+   read the docs through the read-docs workflow.
 2. Outreach (`engine/outreach.ts`) sends through the app's own SMTP. For
    volume, sending should move to Mailpulse/MailWizz once that API is wired.
    Owner's call (Oct 2026): not until the first EmailFirst product is sold.
