@@ -172,6 +172,7 @@ Known blockers:
    the docs through the read-docs workflow.
 2. Outreach (`engine/outreach.ts`) sends through the app's own SMTP. For
    volume, sending should move to Mailpulse/MailWizz once that API is wired.
+   Owner's call (Oct 2026): not until the first EmailFirst product is sold.
    Keep the PECR rules: corporate subscribers only by default, opt-out in
    every email, global suppression.
 3. Inbound replies are handled by `engine/inbound.ts` via IMAP. The owner
