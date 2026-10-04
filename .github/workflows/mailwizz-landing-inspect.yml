@@ -1,0 +1,68 @@
+# Read-only: signs in to the MailWizz customer area and prints the STRUCTURE of
+# the landing page screens (links, form actions, field names, template names),
+# so HQ can be taught to build landing pages there. Submits nothing except the
+# sign-in form. Never prints page content, contact details or the password
+# (this repository's logs are public).
+name: MailWizz landing page inspect
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect
+        env:
+          URL: ${{ secrets.MAILWIZZ_API_URL }}
+          LOGIN_EMAIL: ${{ secrets.MAILWIZZ_LOGIN_EMAIL }}
+          LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
+        run: |
+          [ -n "$LOGIN_EMAIL" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "Add MAILWIZZ_LOGIN_EMAIL and MAILWIZZ_LOGIN_PASSWORD as repository secrets first."; exit 1; }
+          pip install -q requests beautifulsoup4
+          python3 - <<'PY'
+          import os, re, requests
+          from bs4 import BeautifulSoup
+          base = re.sub(r"^(https?://[^/]+).*$", r"\1", os.environ["URL"].strip())
+          s = requests.Session(); s.headers["User-Agent"] = "Mozilla/5.0 HQ-inspect"
+
+          def forms(html, label):
+              soup = BeautifulSoup(html, "html.parser")
+              print(f"== {label}: title={soup.title.string.strip() if soup.title and soup.title.string else ''}")
+              for f in soup.find_all("form"):
+                  print(f"  form action={f.get('action')} method={f.get('method')} id={f.get('id')}")
+                  for el in f.find_all(["input", "textarea", "select"]):
+                      n = el.get("name")
+                      if not n or (el.name == "input" and el.get("type") == "hidden" and "csrf" in n.lower()): continue
+                      extra = ""
+                      if el.name == "select":
+                          extra = " options=" + " | ".join(o.get_text(strip=True)[:40] for o in el.find_all("option")[:25])
+                      print(f"    {el.name}[{el.get('type','')}] name={n}{extra}")
+              return soup
+
+          login = s.get(f"{base}/customer/guest/index", timeout=30)
+          soup = BeautifulSoup(login.text, "html.parser")
+          form = soup.find("form")
+          data = {i.get("name"): i.get("value", "") for i in form.find_all("input") if i.get("name")}
+          email_field = next(k for k in data if "email" in k.lower())
+          pass_field = next(k for k in data if "password" in k.lower())
+          data[email_field] = os.environ["LOGIN_EMAIL"]; data[pass_field] = os.environ["LOGIN_PASSWORD"]
+          action = form.get("action") or "/customer/guest/index"
+          r = s.post(action if action.startswith("http") else base + action, data=data, timeout=30)
+          print("Sign-in fields:", email_field, pass_field, "->", r.status_code, "signed in:", "guest" not in r.url)
+
+          idx = s.get(f"{base}/customer/landing-pages/index", timeout=30)
+          print("Landing pages index:", idx.status_code, idx.url.replace(base, ""))
+          isoup = forms(idx.text, "index")
+          links = sorted({a.get("href").replace(base, "") for a in isoup.find_all("a", href=True) if "landing" in a.get("href", "")})
+          print("  landing links:", *links[:40], sep="\n    ")
+          for path in ["/customer/landing-pages/create"]:
+              r = s.get(base + path, timeout=30)
+              print(path, "->", r.status_code, r.url.replace(base, ""))
+              csoup = forms(r.text, path)
+              for a in csoup.find_all("a", href=True):
+                  h = a["href"].replace(base, "")
+                  if "landing" in h or "template" in h: print("    link", h, a.get_text(strip=True)[:40])
+              scripts = [sc.get("src") for sc in csoup.find_all("script", src=True)]
+              print("  editor scripts:", [x for x in scripts if x and re.search(r"builder|grapes|editor|landing", x, re.I)])
+          PY
