@@ -10,6 +10,9 @@ on:
       create_test:
         description: "Also create (and leave unpublished) a draft page titled 'HQ test - please ignore' to see the editor"
         default: "no"
+      page:
+        description: "Existing page id to inspect its variant editor, update and domain screens (read-only)"
+        default: ""
 permissions: {}
 jobs:
   inspect:
@@ -22,6 +25,7 @@ jobs:
           LOGIN_EMAIL: ${{ secrets.MAILWIZZ_LOGIN_EMAIL }}
           LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
           CREATE_TEST: ${{ inputs.create_test }}
+          PAGE: ${{ inputs.page }}
         run: |
           [ -n "$LOGIN_EMAIL" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "Add MAILWIZZ_LOGIN_EMAIL and MAILWIZZ_LOGIN_PASSWORD as repository secrets first."; exit 1; }
           pip install -q requests beautifulsoup4
@@ -105,4 +109,36 @@ jobs:
               for sc in esoup.find_all("script", src=False):
                   t = sc.get_text()
                   for m in re.findall(r"(?:url|save|builder|content|json)[^\n]{0,160}", t, re.I)[:25]: print("    inline:", m.strip()[:200])
+          pid = os.environ.get("PAGE", "").strip()
+          if pid:
+              def dump(path):
+                  r = s.get(base + path, timeout=30)
+                  print(path, "->", r.status_code, r.url.replace(base, ""), r.headers.get("content-type", ""))
+                  return r
+              ov = dump(f"/customer/index.php/landing-pages/{pid}/overview")
+              osoup = BeautifulSoup(ov.text, "html.parser")
+              sel = osoup.find(id="landing-page-domain-select")
+              if sel: print("  domain options:", [o.get_text(strip=True)[:50] + "=" + str(o.get("value")) for o in sel.find_all("option")])
+              v = dump(f"/customer/index.php/landing-pages/variants/{pid}/index")
+              try: vhtml = v.json().get("html", "")
+              except Exception: vhtml = v.text
+              vsoup = BeautifulSoup(vhtml, "html.parser")
+              vlinks = []
+              for a in vsoup.find_all("a", href=True):
+                  h = a["href"].replace(base, ""); vlinks.append(h)
+                  print("    variant link", h, "|", a.get_text(" ", strip=True)[:40], {k: v for k, v in a.attrs.items() if k.startswith("data-")})
+              for path in [f"/customer/index.php/landing-pages/{pid}/update"] + [h for h in vlinks if re.search(r"update|edit|builder", h)][:2]:
+                  r = dump(path)
+                  es = forms(r.text, path)
+                  for el in es.select("iframe, [data-url], [data-save-url], [data-content], [id*=builder], [id*=editor], [class*=builder]")[:30]:
+                      attrs = {k: (v if isinstance(v, str) else " ".join(v))[:160] for k, v in el.attrs.items() if k.startswith("data-") or k in ("id", "src", "class", "name")}
+                      print("    el", el.name, attrs)
+                  scripts = [sc.get("src") for sc in es.find_all("script", src=True)]
+                  print("  scripts:", [x for x in scripts if x and not re.search(r"jquery|bootstrap|select2|moment|knockout|notify|adminlte|cookie|favorite|search", x, re.I)])
+                  for sc in es.find_all("script", src=False):
+                      t = sc.get_text()
+                      for m in re.findall(r"(?:url|save|builder|content|json|ajax|post)[^\n]{0,180}", t, re.I)[:30]: print("    inline:", m.strip()[:220])
+                  for a in es.find_all("a", href=True):
+                      h = a["href"].replace(base, "")
+                      if pid in h: print("    link", h, "|", a.get_text(" ", strip=True)[:40])
           PY
