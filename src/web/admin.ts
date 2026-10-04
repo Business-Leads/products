@@ -731,13 +731,15 @@ export async function adminRoutes(app: FastifyInstance) {
     const lastOk = await query(`SELECT job, max(started_at) AS at FROM job_runs WHERE status = 'ok' GROUP BY job`);
     const pausedAll = await getSetting<boolean>("paused:all", false);
     const warnings = assertProductionConfig();
-    const body = html`<div class="spread"><h1>Automation and connections</h1>
-        <form method="post" action="/system/pause">
-          ${pausedAll ? html`<span class="chip bad">Everything is paused</span> <button class="primary" name="paused" value="false">Switch everything back on</button>`
-                      : html`<button class="danger" name="paused" value="true" onclick="return confirm('Pause everything? No emails or work will go out for any product until you switch it back on.')">Pause everything</button>`}
-        </form></div>
-      ${intro("This is the engine room. You shouldn't need to come here often: if anything stops working, it shows up on your to-do list. The pause button above is an emergency stop for every product.")}
+    const body = html`<h1>Automation and connections</h1>
+      ${intro("This is the engine room. You shouldn't need to come here often: if anything stops working, it shows up on your to-do list. The emergency stop is just below.")}
       ${warnings.length ? html`<div class="flash">${warnings.join("; ")}</div>` : ""}
+      <div class="panel stop-panel"><h2>Emergency stop</h2>
+        <p>${pausedAll ? "Everything is paused: no emails or work are going out for any product." : "Stops every email and every piece of work, for all products, until you switch it back on. Nothing is lost."}</p>
+        <form method="post" action="/system/pause">
+          ${pausedAll ? html`<button class="primary" name="paused" value="false">Switch everything back on</button>`
+                      : html`<button class="stop" name="paused" value="true" onclick="return confirm('Pause everything? No emails or work will go out for any product until you switch it back on.')">Pause everything</button>`}
+        </form></div>
       <div class="panel"><h2>People who can sign in</h2><p>Give someone their own login with their email address. <a href="/system/team">See and add people</a>.</p></div>
       <div class="panel"><h2>Prospect database</h2><p>The contacts EmailFirst and Good Questions email. <a href="/system/prospects">Upload or update the master prospect file</a>.</p></div>
       <div class="panel"><h2>Regular jobs</h2>

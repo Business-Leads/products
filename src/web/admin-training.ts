@@ -3,6 +3,8 @@ import { one } from "../db/index.js";
 import { databaseSize } from "../engine/prospectdb.js";
 import { getSetting, setSetting } from "../lib/settings.js";
 import { html, raw, type Raw } from "./html.js";
+import { requireProduct } from "../products/index.js";
+import { portalUrl } from "../portal/accounts.js";
 import { icon, intro } from "./layout.js";
 
 // "Learn HQ": a hands-on training for Felix and family, inside HQ itself. One
@@ -132,8 +134,15 @@ const LESSONS: Lesson[] = [
         <li>They see their own dashboard: progress, figures, reports, calls, billing and support</li>
       </ol>
       <p>On a customer's page in HQ you'll find their <strong>onboarding checklist</strong> (<em>Try again</em> re-runs a stuck step), <strong>See their dashboard</strong> (exactly what they see) and <strong>Post an update</strong> to send them a note.</p>`,
-    show: (l) => (l.firstCustomer ? { href: `/customers/${l.firstCustomer}`, label: "Open a customer" } : { href: "/customers", label: "Open Customers" }),
-    tries: ["Open a customer and read their checklist", "Press See their dashboard", "Find the same person in Client logins"],
+    show: (l) =>
+      l.firstCustomer
+        ? { href: `/customers/${l.firstCustomer}`, label: "Open a customer" }
+        : { href: portalUrl(requireProduct("onlinebusinessbuilder")), label: "See a client's sign-in page" },
+    tries: [
+      "Open a customer and read their checklist (no customers yet? Open the client sign-in page above instead)",
+      "With a customer: press See their dashboard. Without one: look at the sign-in page in our colours",
+      "Open Client logins in the menu",
+    ],
     quiz: {
       q: "Can clients see the names of the tools we use behind the scenes?",
       options: ["Yes, on their dashboard", "Only in their invoices", "No, they only ever see our product"],

@@ -136,6 +136,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     <div class="section">Behind the scenes</div>
     ${link("/activity", "What's happened", "system")}
     ${link("/system", "Settings", "system")}
+    ${link("/system/prospects", "Prospect database", "system")}
     <form method="post" action="/logout" style="margin:20px 10px 8px"><button class="small">Sign out</button></form>
     <form method="post" action="/logout-everywhere" style="margin:0 10px"><button class="small">Sign out everywhere</button></form>
   </nav>

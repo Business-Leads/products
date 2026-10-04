@@ -228,3 +228,8 @@ body.hq {
 .hq .lt-habit ol { margin: 8px 0 0; padding-left: 26px; font-size: 21px; }
 @media (prefers-reduced-motion: reduce) { .hq .nav a.lt-spot { animation: none; box-shadow: inset 4px 0 0 #FF8FC4; } .hq .lt-meter span { transition: none; } }
 .hq .lt-lesson[hidden] { display: none; }
+
+/* Settings: the emergency stop */
+.hq .stop-panel { border: 2px solid #E3B1AA; background: #FFF6F4; }
+.hq .stop-panel p { margin: 0 0 14px; }
+.hq button.stop { background: linear-gradient(160deg, #D9452F 0%, #B92D1B 100%); border-color: #B92D1B; color: #fff; font-size: 22px; min-height: 60px; padding: 12px 28px; }
