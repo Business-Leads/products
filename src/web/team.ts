@@ -57,7 +57,11 @@ export async function sendInvite(user: HqUser): Promise<string> {
 
 /** Anyone added who hasn't been sent their link yet (for example by a migration) gets it now. */
 export async function sendPendingInvites(): Promise<number> {
-  const rows = await query<HqUser>(`SELECT * FROM hq_users WHERE password_hash IS NULL AND invited_at IS NULL AND NOT disabled`);
+  // Also anyone whose last link never got out (for example while sending was broken).
+  const rows = await query<HqUser>(
+    `SELECT u.* FROM hq_users u WHERE u.password_hash IS NULL AND NOT u.disabled AND (u.invited_at IS NULL OR
+       (SELECT e.status FROM emails e WHERE e.kind = 'hq_invite' AND lower(e.to_address) = lower(u.email) ORDER BY e.created_at DESC LIMIT 1) = 'failed')`,
+  );
   for (const u of rows) await sendInvite(u);
   return rows.length;
 }

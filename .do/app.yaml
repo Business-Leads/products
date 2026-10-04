@@ -56,6 +56,9 @@ services:
       - key: SMTP_URL
         scope: RUN_TIME
         type: SECRET
+      - key: SMTP_FROM
+        scope: RUN_TIME
+        type: SECRET
       - key: IMAP_URL
         scope: RUN_TIME
         type: SECRET

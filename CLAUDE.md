@@ -133,6 +133,10 @@ Known blockers:
   steps) so it shows as a clear card in the to-do list.
 
 ## Connections (state as of Oct 2026)
+- Email sending: Gmail SMTP as info@felixclarke.com (GMAIL_APP_PASSWORD; SMTP_FROM
+  keeps each product's name as the sender). The RESEND_API_KEY secret is Agent
+  Point's account and has none of our domains: don't use it. After any change to
+  sending, confirm a real email arrived (`resend-check` workflow shows Resend's side).
 - Stripe live; checkout links work on each product's account domain
   (`account.<site>/buy/<product>/<plan>`), enquiry forms post to
   `account.<site>/api/leads/<product>`.

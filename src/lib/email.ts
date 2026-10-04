@@ -94,6 +94,14 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
   return { id, held: false };
 }
 
+/** The From line actually used: the product's name, at SMTP_FROM when the server only sends as one mailbox. */
+export function sendingFrom(stored: string): string {
+  const only = config.smtp.fromAddress;
+  if (!only) return stored;
+  const name = /^\s*"?([^"<]*?)"?\s*<[^>]+>\s*$/.exec(stored)?.[1]?.trim();
+  return name ? `${name} <${only}>` : only;
+}
+
 /** Send everything due in the outbox. Called by the scheduler every minute. */
 export async function sendDueEmails(limit = 50): Promise<{ sent: number; failed: number; held: number }> {
   const due = await query(
@@ -124,7 +132,7 @@ export async function sendDueEmails(limit = 50): Promise<{ sent: number; failed:
     }
     try {
       await getTransport().sendMail({
-        from: email.from_address,
+        from: sendingFrom(email.from_address),
         to: email.to_address,
         replyTo: email.reply_to ?? undefined,
         subject: email.subject,

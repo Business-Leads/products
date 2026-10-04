@@ -543,4 +543,18 @@ describe("client account areas", () => {
     await app.inject({ method: "POST", url: `/system/team/${u.id}/disable`, ...form({}, await adminCookie(app)) });
     assert.equal((await app.inject({ method: "GET", url: "/", headers: { cookie } })).statusCode, 302, "switching someone off signs them out");
   });
+
+  it("sends as the one Google mailbox, keeping each product's name", async () => {
+    const { sendingFrom } = await import("../src/lib/email.js");
+    const { config } = await import("../src/config.js");
+    assert.equal(sendingFrom("Felix at Linkn <felix@linkn.co.uk>"), "Felix at Linkn <felix@linkn.co.uk>");
+    (config.smtp as any).fromAddress = "info@felixclarke.com";
+    try {
+      assert.equal(sendingFrom("Felix at Linkn <felix@linkn.co.uk>"), "Felix at Linkn <info@felixclarke.com>");
+      assert.equal(sendingFrom('"Online Business Builder" <hello@onlinebusinessbuilder.co.uk>'), "Online Business Builder <info@felixclarke.com>");
+      assert.equal(sendingFrom("hello@x.co.uk"), "info@felixclarke.com");
+    } finally {
+      (config.smtp as any).fromAddress = "";
+    }
+  });
 });

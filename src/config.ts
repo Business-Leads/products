@@ -59,6 +59,9 @@ export const config = {
     // Optional shared reply-to for customer and lead email, so every reply lands
     // in the one mailbox this app reads (IMAP_URL).
     replyTo: str("REPLY_TO"),
+    // When the mail server only sends as one mailbox (Google), every email goes
+    // from this address, keeping each product's name as the sender name.
+    fromAddress: str("SMTP_FROM"),
   },
 
   imap: {
