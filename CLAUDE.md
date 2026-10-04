@@ -195,7 +195,14 @@ Known blockers:
   sync of every Business Leads list in Mailpulse (job prospect-sync; also a
   button on that page) which adds newer contacts and their unsubscribes. Daily lists,
   opener + follow-ups, morning clicks report, suppression sync. The repo is
-  public: never print contact data in workflow logs. GQ surveys are hosted by
+  public: never print contact data in workflow logs. Landing pages (owner: use
+  MailWizz's): there's no API, so `integrations/mailwizz-pages.ts` signs in to the
+  customer area (MAILWIZZ_LOGIN_EMAIL/PASSWORD) and fills its forms: create (blank
+  template 1), variant content (HTML), publish; pages live at
+  portal.emailfirst.co.uk/index.php/lp/<id>-<slug>. Step `landing_page`
+  (ef_landing_page) runs after the copy is approved; emails link to it via {LINK}.
+  Workflows: mailwizz-landing-inspect (read-only screens), mailwizz-landing-test
+  (end to end on a throwaway page). GQ surveys are hosted by
   HQ at account.goodquestions.co.uk/survey/<token> (ScoreApp no longer used).
 - Front-door AI replies (enquiries, cold outreach) stay "Ask me first" by
   default; the owner can switch each product to automatic on its page.

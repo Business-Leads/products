@@ -42,6 +42,8 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           MAILWIZZ_API_URL: ${{ secrets.MAILWIZZ_API_URL }}
           MAILWIZZ_API_KEY: ${{ secrets.MAILWIZZ_API_KEY }}
+          MAILWIZZ_LOGIN_EMAIL: ${{ secrets.MAILWIZZ_LOGIN_EMAIL }}
+          MAILWIZZ_LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
           AWAZ_API_KEY: ${{ secrets.AWAZ_API_KEY }}
           FEEDBOSS_API_KEY: ${{ secrets.FEEDBOSS_API_KEY }}
           LOCALFALCON_API_KEY: ${{ secrets.LOCALFALCON_API_KEY }}

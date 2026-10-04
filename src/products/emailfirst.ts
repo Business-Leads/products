@@ -50,6 +50,13 @@ export const emailFirst: Product = {
       instructions: "AI writes the three emails and landing page copy from their answers; the client approves them in their account or asks for changes.",
     },
     {
+      key: "landing_page",
+      title: "Landing page built and published in Mailpulse",
+      kind: "auto",
+      handler: "ef_landing_page",
+      instructions: "HQ builds the approved landing page copy into a MailWizz landing page in the client's colours, publishes it, and links the emails to it.",
+    },
+    {
       key: "provision_sending",
       title: "Audience matched in our database and templates created in Mailpulse",
       kind: "auto",
@@ -94,7 +101,7 @@ export const emailFirst: Product = {
     accent: "#D42A19",
     resultsTitle: "Your campaign results",
     resultsIntro: "Emails sent to your audience and the people who responded.",
-    steps: { ...sharedPortalSteps, copy: "You approve your emails and landing page", provision_sending: "Sending set up" },
+    steps: { ...sharedPortalSteps, copy: "You approve your emails and landing page", landing_page: "Your landing page goes live", provision_sending: "Sending set up" },
     routines: { daily_send: null, daily_report: "Daily clicks report", weekly_summary: "Weekly results" },
     metrics: [
       { key: "emails_sent", label: "Emails sent" },

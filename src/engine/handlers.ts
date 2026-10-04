@@ -6,6 +6,7 @@ import { NotConfiguredError } from "../lib/util.js";
 import { query } from "../db/index.js";
 import { checkAvailable, domainIdeas, inOurAccount, NETLIFY_IP, pointAtNetlify } from "../integrations/godaddy.js";
 import { addSubscribers, campaignClickers, campaignStats, createCampaign, createList, createTemplate, ensureFields, unsubscribed, type Contact, type Sender } from "../integrations/mailwizz.js";
+import { createLandingPage, landingPageHtml, mailwizzSession, publishLandingPage, setLandingContent } from "../integrations/mailwizz-pages.js";
 import { countMatches, pickProspects, type AudienceFilter } from "./prospectdb.js";
 import { suppress } from "./outreach.js";
 import { emailOperator } from "../lib/email.js";
@@ -112,9 +113,33 @@ function efCopyText(c: EfCopy): string {
   return `${c.emails.map((e, i) => `Email ${i + 1}\nSubject: ${e.subject}\n\n${e.body}`).join("\n\n---\n\n")}\n\n---\n\nLanding page\n\n${c.landing}`;
 }
 
-/** Our {FNAME}/{COMPANY} placeholders as MailWizz tags. */
-function mergeTags(text: string): string {
-  return text.replace(/\{FNAME\}/g, "[FNAME]").replace(/\{COMPANY\}/g, "[COMPANY]");
+/** Our {FNAME}/{COMPANY} placeholders as MailWizz tags, and {LINK} as the client's landing page. */
+export function mergeTags(text: string, link?: string): string {
+  let out = text.replace(/\{FNAME\}/g, "[FNAME]").replace(/\{COMPANY\}/g, "[COMPANY]");
+  if (link) out = /\{LINK\}/.test(out) ? out.replace(/\{LINK\}/g, link) : `${out.trimEnd()}\n\n${link}`;
+  return out.replace(/\{LINK\}/g, "");
+}
+
+/** The client's brand colour, if their website declares one (theme-color, or the most used colour in its CSS). */
+async function siteColour(website: string | undefined): Promise<string | undefined> {
+  if (!website) return undefined;
+  try {
+    const url = /^https?:/.test(website) ? website : `https://${website}`;
+    const html = await (await fetch(url, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "Mozilla/5.0" } })).text();
+    const theme = /<meta[^>]+name=["']theme-color["'][^>]+content=["'](#[0-9a-f]{6})["']/i.exec(html)?.[1];
+    if (theme) return theme;
+    const counts = new Map<string, number>();
+    for (const m of html.matchAll(/#([0-9a-f]{6})\b/gi)) {
+      const hex = m[1]!.toLowerCase();
+      const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      const max = Math.max(r!, g!, b!), min = Math.min(r!, g!, b!);
+      if (max - min < 40 || max < 60 || min > 200) continue; // skip greys, near-black and pastels
+      counts.set(`#${hex}`, (counts.get(`#${hex}`) ?? 0) + 1);
+    }
+    return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  } catch {
+    return undefined;
+  }
 }
 
 /** A plain-English audience as search filters on our prospect database. */
@@ -819,7 +844,9 @@ const handlers: Record<string, Handler> = {
         `You write cold B2B emails for UK decision makers for ${ctx.product.name}. ${ctx.product.voice} ` +
         "Three emails: an opener and two follow-ups, each under 150 words, plain text that reads like a personal email, " +
         "one clear call to action, no hype, no false familiarity, no fake 'Re:'. Use {FNAME} for the first name and " +
-        "{COMPANY} for their company where natural. Also the copy for a one-page landing page.",
+        "{COMPANY} for their company where natural, and put {LINK} on its own line where the link to their landing page goes. " +
+        "Also the copy for a one-page landing page: the first line is the headline, then short paragraphs separated by blank lines, " +
+        "'## ' before a subheading, '- ' before list items. No button text: the button is added from their call to action.",
       prompt:
         `Client answers:\n${intakeSummary(ctx)}` +
         (ctx.customer.data.ef_copy ? `\n\nPrevious draft:\n${efCopyText(ctx.customer.data.ef_copy)}` : "") +
@@ -842,6 +869,36 @@ const handlers: Record<string, Handler> = {
     });
   },
 
+  /** Their approved landing page copy, built into a MailWizz landing page in their colours and published. Re-running updates the same page. */
+  async ef_landing_page(ctx) {
+    requireAutomation("mailwizz");
+    const copy: EfCopy | undefined = ctx.customer.data.ef_copy;
+    if (!copy?.landing) return { type: "done", note: "No approved landing page copy" };
+    const intake = ctx.customer.data.intake ?? {};
+    const company = intake.company || customerLabel(ctx);
+    const website: string | undefined = intake.website;
+    const html = landingPageHtml({
+      copy: copy.landing,
+      company,
+      ctaLabel: (intake.cta || "Find out more").slice(0, 60),
+      ctaUrl: website ? (/^https?:/.test(website) ? website : `https://${website}`) : `mailto:${intake.reply_to || ctx.customer.email}`,
+      colour: await siteColour(website),
+    });
+    const session = await mailwizzSession();
+    let pageId: string | undefined = ctx.customer.data.ef_landing_id;
+    if (!pageId) {
+      pageId = await createLandingPage(session, company, `EmailFirst landing page for ${company} (HQ customer ${ctx.customer.id})`);
+      await query(`UPDATE customers SET data = data || jsonb_build_object('ef_landing_id', $2::text) WHERE id = $1`, [ctx.customer.id, pageId]);
+    }
+    await setLandingContent(session, pageId, company, html);
+    const url = await publishLandingPage(session, pageId);
+    const live = await fetch(url).then((r) => r.ok).catch(() => false);
+    if (!live) throw new Error(`The landing page was published but ${url} isn't answering yet`);
+    await query(`UPDATE customers SET data = data || jsonb_build_object('ef_landing_url', $2::text) WHERE id = $1`, [ctx.customer.id, url]);
+    await postUpdate(ctx.customer, { title: "Your landing page is live", body: `Your landing page is published. Every email links to it, and we count who clicks.`, link: url });
+    return { type: "done", note: `Landing page live at ${url}` };
+  },
+
   /** Turn their audience into search filters on our database, check there are enough people, and create the templates. */
   async ef_provision_sending(ctx) {
     requireAutomation("mailwizz");
@@ -851,7 +908,8 @@ const handlers: Record<string, Handler> = {
     const copy: EfCopy | undefined = ctx.customer.data.ef_copy;
     if (!copy?.emails?.length) return { type: "done", note: "No approved copy" };
     const templates: string[] = [];
-    for (const [i, e] of copy.emails.slice(0, 3).entries()) templates.push(await createTemplate(`EF ${customerLabel(ctx)} ${i + 1}`, mergeTags(e.body)));
+    const link: string | undefined = ctx.customer.data.ef_landing_url;
+    for (const [i, e] of copy.emails.slice(0, 3).entries()) templates.push(await createTemplate(`EF ${customerLabel(ctx)} ${i + 1}`, mergeTags(e.body, link)));
     await query(`UPDATE customers SET data = data || jsonb_build_object('ef_filters', $2::jsonb, 'ef_templates', $3::jsonb, 'ef_available', $4::int) WHERE id = $1`, [
       ctx.customer.id,
       JSON.stringify(filters),

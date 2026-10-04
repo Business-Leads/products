@@ -216,6 +216,82 @@ describe("Local Falcon (Online Business Builder)", () => {
     assert.deepEqual(saved.ef_lists[0].campaigns, ["C1"]);
   });
 
+  it("EmailFirst: builds the approved landing page in MailWizz, publishes it and links the emails to it", async () => {
+    process.env.MAILWIZZ_LOGIN_EMAIL = "felix@example.com";
+    process.env.MAILWIZZ_LOGIN_PASSWORD = "secret";
+    const product = requireProduct("emailfirst");
+    const posted: { path: string; body: URLSearchParams }[] = [];
+    let published = false;
+    const page = (title: string, form: string) => new Response(`<html><title>${title}</title><body>${form}</body></html>`, { headers: { "content-type": "text/html" } });
+    globalThis.fetch = (async (url: string, init: any) => {
+      const u = new URL(url);
+      const path = u.pathname;
+      const body = new URLSearchParams(init?.body ?? "");
+      const get = !init?.method || init.method === "GET";
+      if (!get) posted.push({ path, body });
+      if (u.host === "client.example.com") return page("Client", `<meta name="theme-color" content="#0a7d4f">`);
+      if (u.host === "mw.example.com" && path.startsWith("/index.php/lp/")) return published ? page("Live", "Grow faster") : new Response("", { status: 404 });
+      if (path === "/customer/guest/index" && get)
+        return new Response(`<form action="/customer/guest/index" method="post"><input type="hidden" name="csrf_token" value="t1"><input name="CustomerLogin[email]"><input type="password" name="CustomerLogin[password]"></form>`, { headers: { "set-cookie": "MWSESSID=abc; path=/" } });
+      if (path === "/customer/guest/index") {
+        assert.equal(body.get("CustomerLogin[password]"), "secret");
+        assert.equal(body.get("csrf_token"), "t1");
+        return new Response("", { status: 302, headers: { location: "/customer/dashboard/index" } });
+      }
+      assert.match(init?.headers?.Cookie ?? "", /MWSESSID=abc/, "signed-in requests carry the session");
+      if (path === "/customer/dashboard/index") return page("Dashboard", "");
+      if (path === "/customer/landing-pages/create" && get)
+        return page("New", `<form id="yw0" action="/customer/landing-pages/create" method="post"><input type="hidden" name="csrf_token" value="t2"><input type="hidden" name="LandingPageRevision[template_id]"><input name="LandingPageRevision[title]"><textarea name="LandingPageRevision[description]"></textarea></form>`);
+      if (path === "/customer/landing-pages/create") return new Response("", { status: 302, headers: { location: "/customer/index.php/landing-pages/abc/overview" } });
+      if (path === "/customer/index.php/landing-pages/variants/abc/index") return new Response(JSON.stringify({ html: `<a href="/customer/index.php/landing-pages/variants/v9/update">Edit</a>` }));
+      if (path === "/customer/index.php/landing-pages/variants/v9/update" && get)
+        return page("Variant", `<form action="/customer/index.php/landing-pages/variants/v9/update" method="post"><input type="hidden" name="csrf_token" value="t3"><input name="LandingPageRevisionVariant[title]" value="Variant"><textarea name="LandingPageRevisionVariant[content]"></textarea></form>`);
+      if (path === "/customer/index.php/landing-pages/abc/publish") {
+        published = true;
+        return new Response("", { status: 302, headers: { location: "/customer/index.php/landing-pages/abc/overview" } });
+      }
+      if (path === "/customer/index.php/landing-pages/abc/overview") return page("Overview", `<option>https://mw.example.com/index.php/lp/abc-dee-ltd</option>`);
+      if (path === "/api/templates") return new Response(JSON.stringify({ status: "success", template_uid: "T9" }));
+      return new Response(JSON.stringify({ status: "success", data: { records: [] } }));
+    }) as typeof fetch;
+    const customer = await one(
+      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'weekly', 'e@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
+      [JSON.stringify({
+        intake: { company: "Dee Ltd", website: "https://client.example.com", cta: "Book a 15-minute call", reply_to: "dee@dee.co.uk", audience: "directors", offer: "x" },
+        ef_copy: { emails: [{ subject: "a", body: "Hi {FNAME}\n\n{LINK}\n\nDee" }, { subject: "b", body: "Still keen?" }], landing: "Grow faster\n\nWe help firms like {COMPANY}.\n\n- One\n- Two" },
+      })],
+    );
+    const out = await getHandler("ef_landing_page")({ product, customer });
+    assert.equal(out.type, "done");
+    const saved = (await one(`SELECT data FROM customers WHERE id = $1`, [customer.id])).data;
+    assert.equal(saved.ef_landing_id, "abc");
+    assert.equal(saved.ef_landing_url, "https://mw.example.com/index.php/lp/abc-dee-ltd");
+    const content = posted.find((p) => p.path.endsWith("/variants/v9/update"))!;
+    assert.equal(content.body.get("csrf_token"), "t3");
+    const html = content.body.get("LandingPageRevisionVariant[content]")!;
+    assert.match(html, /Grow faster/);
+    assert.match(html, /background:#0a7d4f/, "uses the client's own colour");
+    assert.match(html, /href="https:\/\/client\.example\.com"[^>]*>Book a 15-minute call/);
+    assert.match(html, /<li[^>]*>One<\/li>/);
+
+    // The emails then link to it: {LINK} where the copy put it, or added at the end, as a tracked link.
+    const { mergeTags } = await import("../src/engine/handlers.js");
+    const { createTemplate } = await import("../src/integrations/mailwizz.js");
+    const url = saved.ef_landing_url;
+    assert.equal(mergeTags("Hi {FNAME}\n\n{LINK}\n\nDee", url), `Hi [FNAME]\n\n${url}\n\nDee`);
+    assert.equal(mergeTags("Still keen?", url), `Still keen?\n\n${url}`);
+    assert.equal(mergeTags("Hi\n{LINK}"), "Hi\n");
+    let template = "";
+    globalThis.fetch = (async (_url: string, init: any) => {
+      template = Buffer.from(new URLSearchParams(init.body).get("template[content]")!, "base64").toString();
+      return new Response(JSON.stringify({ status: "success", template_uid: "T1" }));
+    }) as typeof fetch;
+    await createTemplate("t", mergeTags("Still keen?", url));
+    assert.match(template, /<p>Still keen\?<\/p><p><a href="https:\/\/mw\.example\.com\/index\.php\/lp\/abc-dee-ltd">/);
+    delete process.env.MAILWIZZ_LOGIN_EMAIL;
+    delete process.env.MAILWIZZ_LOGIN_PASSWORD;
+  });
+
   it("brings in Business Leads' Mailpulse contacts, keeping master details and honouring unsubscribes", async () => {
     globalThis.fetch = (async (url: string) => {
       const u = new URL(url);

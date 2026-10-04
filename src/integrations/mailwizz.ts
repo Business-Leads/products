@@ -119,7 +119,7 @@ export async function addSubscribers(listUid: string, contacts: Contact[]): Prom
 export async function createTemplate(name: string, bodyText: string): Promise<string> {
   const htmlBody = `<!doctype html><html><body style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#222">${bodyText
     .split(/\n{2,}/)
-    .map((p) => `<p>${p.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`)
+    .map((p) => `<p>${p.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>").replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1">$1</a>')}</p>`)
     .join("")}<p style="font-size:12px;color:#777">If you'd rather not hear from us, <a href="[UNSUBSCRIBE_URL]">unsubscribe here</a>.</p></body></html>`;
   const r = await send("POST", "/templates", { template: { name, content: Buffer.from(htmlBody).toString("base64"), inline_css: "no", auto_plain_text: "yes" } });
   const uid = r.template_uid ?? r.data?.template_uid ?? r.data?.record?.template_uid;

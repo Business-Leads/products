@@ -83,6 +83,12 @@ services:
       - key: MAILWIZZ_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: MAILWIZZ_LOGIN_EMAIL
+        scope: RUN_TIME
+        type: SECRET
+      - key: MAILWIZZ_LOGIN_PASSWORD
+        scope: RUN_TIME
+        type: SECRET
       - key: AWAZ_API_KEY
         scope: RUN_TIME
         type: SECRET
