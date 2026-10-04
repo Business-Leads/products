@@ -1,0 +1,28 @@
+# Read-only: checks whether this MailWizz install exposes landing pages through
+# its API (GET requests only), and which version it runs. Prints status codes
+# and field names only, never page content or contact details.
+name: MailWizz landing page check
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/mailwizz-landing-check.yml"]
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Probe
+        env:
+          URL: ${{ secrets.MAILWIZZ_API_URL }}
+          KEY: ${{ secrets.MAILWIZZ_API_KEY }}
+        run: |
+          URL="${URL%/}"
+          base="$(echo "$URL" | sed -E 's#(https?://[^/]+).*#\1#')"
+          for p in /landing-pages "/landing-pages?page=1&per_page=5" /landing_pages /customer/landing-pages /templates?page=1\&per_page=1; do
+            code=$(curl -s -o out.json -w "%{http_code}" --max-time 20 -H "X-Api-Key: $KEY" -H "Accept: application/json" "$URL$p")
+            echo "GET $p -> $code  $(jq -c '{status, error, keys: (.data|objects|keys)}' out.json 2>/dev/null | head -c 300)"
+          done
+          echo "Customer area landing pages page: $(curl -s -o /dev/null -w "%{http_code}" "$base/customer/landing-pages/index")"
+          echo "Public landing page route: $(curl -s -o /dev/null -w "%{http_code}" "$base/lp/test")"
+          curl -s --max-time 20 "$base/customer/guest/index" | grep -oiE 'mailwizz[^"<]{0,40}(v|version)[^"<]{0,20}' | head -3 || true
