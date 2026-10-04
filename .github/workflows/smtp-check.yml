@@ -1,0 +1,38 @@
+# Checks the mailbox HQ sends through: signs in to Gmail SMTP with the stored
+# app password (sends nothing unless a test address is given). Never prints the password.
+name: SMTP check
+on:
+  workflow_dispatch:
+    inputs:
+      send_to:
+        description: "Optional: send one test email to this address"
+        default: ""
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Check
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
+          SEND_TO: ${{ inputs.send_to }}
+        run: |
+          node --input-type=module -e '
+          import nodemailer from "nodemailer";
+          const user = process.env.REPLY_MAILBOX || "info@felixclarke.com";
+          const pass = (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
+          console.log("Mailbox:", user, "| password set:", pass.length > 0, "| length:", pass.length);
+          const t = nodemailer.createTransport(`smtps://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@smtp.gmail.com:465`);
+          try { await t.verify(); console.log("Gmail sign-in: OK"); } catch (e) { console.log("Gmail sign-in FAILED:", e.message); process.exit(1); }
+          if (process.env.SEND_TO) {
+            const r = await t.sendMail({ from: `Online Business Builder <${user}>`, to: process.env.SEND_TO, subject: "HQ test email", text: "This is a test from HQ. If you can read this, email sending works." });
+            console.log("Test email accepted by Gmail:", r.accepted.length > 0, r.response);
+          }
+          '
