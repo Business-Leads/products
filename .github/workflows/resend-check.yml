@@ -1,0 +1,27 @@
+# Read-only check of the Resend account the app sends email through.
+# Lists sending domains and whether they're verified, and the status of the
+# most recent emails (no addresses or content printed). Never prints the key.
+name: Resend check
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/resend-check.yml"]
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Domains and recent sends
+        env:
+          KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          [ -n "$KEY" ] || { echo "RESEND_API_KEY missing"; exit 1; }
+          code=$(curl -s -o d.json -w "%{http_code}" -H "Authorization: Bearer $KEY" https://api.resend.com/domains)
+          echo "Domains (HTTP $code):"
+          jq -r '.data[]? | "  \(.name): \(.status) (region \(.region))"' d.json || cat d.json
+          jq -r '.message? // empty' d.json
+          code=$(curl -s -o e.json -w "%{http_code}" -H "Authorization: Bearer $KEY" "https://api.resend.com/emails?limit=20")
+          echo "Recent emails (HTTP $code):"
+          jq -r '.data[]? | "  \(.created_at[0:16])  from-domain \(.from | capture("@(?<d>[^>]+)").d)  \(.last_event)"' e.json || true
+          jq -r '.message? // empty' e.json
