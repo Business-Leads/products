@@ -12,7 +12,7 @@ const FONTS = html`<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Urbanist:wght@400..700&display=swap">`;
 
 // Each part of HQ has a colour and an icon, used in the menu, the page header and the home tiles.
-export type Area = "home" | "todo" | "messages" | "customers" | "logins" | "leads" | "outreach" | "products" | "system";
+export type Area = "home" | "todo" | "messages" | "customers" | "logins" | "leads" | "outreach" | "products" | "system" | "learn";
 
 const AREA_NAMES: Record<Area, string> = {
   home: "Home",
@@ -24,6 +24,7 @@ const AREA_NAMES: Record<Area, string> = {
   outreach: "Cold emails",
   products: "Products",
   system: "Behind the scenes",
+  learn: "Learn HQ",
 };
 
 // Cute little characters, to match the logo: a white shape with a smiley face.
@@ -41,6 +42,8 @@ const ICONS: Record<Area, string> = {
   leads: `<path d="M6 2.5h8.5l5.5 5.5v12a2.5 2.5 0 0 1-2.5 2.5h-11.5A2.5 2.5 0 0 1 3.5 20V5A2.5 2.5 0 0 1 6 2.5z" fill="#fff"/><path d="M14.5 2.5V6.5a1.5 1.5 0 0 0 1.5 1.5h4z" fill="#D6E4FF"/>${face(11.8, 14)}`,
   outreach: `<rect x="2" y="5" width="20" height="15" rx="3.5" fill="#fff"/><path d="M3 6.5l9 6 9-6" fill="none" stroke="#FFC44D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.6 1.6c.9-.9 2.6-.3 2.4 1.2-.2 1.2-2.4 2.6-2.4 2.6s-2.2-1.4-2.4-2.6c-.2-1.5 1.5-2.1 2.4-1.2z" fill="#FF8FA3"/>${face(12, 15.2)}`,
   products: `<path d="M12 2 21.5 6.5v11L12 22 2.5 17.5v-11z" fill="#fff"/><path d="M2.5 6.5 12 11l9.5-4.5" fill="none" stroke="#CFF5E4" stroke-width="1.4" stroke-linejoin="round"/>${face(12, 15)}`,
+  // a little graduate
+  learn: `<circle cx="12" cy="15" r="6.8" fill="#fff"/>${face(12, 15)}<path d="M12 2.5 1.8 7 12 11.5 22.2 7z" fill="#FFF6D6"/><path d="M19.5 8.2v4.6" stroke="#FFE08A" stroke-width="1.4" stroke-linecap="round"/><circle cx="19.5" cy="13.4" r="1.1" fill="#FFE08A"/>`,
   system: `<g fill="#fff"><circle cx="12" cy="12" r="7.5"/>${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => `<rect x="10" y="1.5" width="4" height="5" rx="1.6" transform="rotate(${a} 12 12)"/>`).join("")}</g>${face(12, 11.4)}`,
 };
 
@@ -79,6 +82,7 @@ function areaFor(active: string | undefined): Area {
   if (a.startsWith("/leads")) return "leads";
   if (a.startsWith("/outreach")) return "outreach";
   if (a.startsWith("/products")) return "products";
+  if (a.startsWith("/training")) return "learn";
   return "system";
 }
 
@@ -121,6 +125,7 @@ export function page(title: string, body: Raw, opts: { active?: string; counts?:
     ${link("/", "Home", "home")}
     ${link("/inbox", "To-do list", "todo", opts.counts?.inbox, "things waiting for you")}
     ${link("/support", "Messages", "messages", opts.counts?.support, "unanswered messages")}
+    ${link("/training", "Learn HQ", "learn")}
     <div class="section">People</div>
     ${link("/customers", "Customers", "customers")}
     ${link("/leads", "Enquiries", "leads")}

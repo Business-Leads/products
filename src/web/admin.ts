@@ -14,6 +14,7 @@ import { ago, fmtDate, token } from "../lib/util.js";
 import { bookingUrl, formatPrice, getPlan, getProduct, monthlyValuePence, products, requireProduct } from "../products/index.js";
 import { buyUrl, portalUrl } from "../portal/accounts.js";
 import { dataAdminRoutes } from "./admin-data.js";
+import { trainingRoutes } from "./admin-training.js";
 import { clientAdminRoutes, clientPanels } from "./admin-clients.js";
 import { requireAuth } from "./auth.js";
 import { html, type Raw } from "./html.js";
@@ -775,6 +776,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   await clientAdminRoutes(app, send);
   await dataAdminRoutes(app, send);
+  await trainingRoutes(app, send);
 }
 
 function customersTable(rows: CustomerRow[], showProduct = false): Raw {
