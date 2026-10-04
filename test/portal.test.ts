@@ -28,7 +28,7 @@ type App = Awaited<ReturnType<typeof buildServer>>;
 
 async function reset() {
   await query(`TRUNCATE awaz_events, sbl_events, client_users, client_sessions, client_tokens, invoices, support_requests, client_updates, login_failures,
-    leads, customers, onboarding_steps, tasks, emails, deliveries, stripe_events, events, settings, sessions RESTART IDENTITY CASCADE`);
+    leads, customers, onboarding_steps, tasks, emails, deliveries, stripe_events, events, settings, sessions, webhook_seen RESTART IDENTITY CASCADE`);
 }
 
 function checkoutEvent(id: string, product: string, plan: string, email = "owner@example.co.uk"): Stripe.Event {
@@ -483,6 +483,12 @@ describe("client account areas", () => {
     assert.ok(afterBooking.call_booked_at);
     assert.equal(afterBooking.calls.length, 1);
     assert.ok(await one(`SELECT 1 FROM emails WHERE to_address = 'cal@client.co.uk' AND subject LIKE '%onboarding call is booked%'`));
+    const emailsBefore = (await one(`SELECT count(*)::int AS n FROM emails`)).n;
+    await post({
+      triggerEvent: "BOOKING_CREATED",
+      payload: { uid: "bk1", type: `${c.product}-onboarding`, startTime: "2026-10-06T09:00:00Z", attendees: [{ name: c.name, email: c.email }], metadata: { customer_id: c.id } },
+    });
+    assert.equal((await one(`SELECT count(*)::int AS n FROM emails`)).n, emailsBefore, "the same booking arriving twice sends nothing more");
 
     await post({ triggerEvent: "BOOKING_CANCELLED", payload: { uid: "bk1", type: `${c.product}-onboarding`, attendees: [{ email: c.email }] } });
     const afterCancel = (await one(`SELECT data FROM customers WHERE id = $1`, [c.id])).data;
@@ -555,6 +561,21 @@ describe("client account areas", () => {
       assert.equal(sendingFrom("hello@x.co.uk"), "info@felixclarke.com");
     } finally {
       (config.smtp as any).fromAddress = "";
+    }
+  });
+
+  it("never sends the same email twice when two senders run at once", async () => {
+    const { queueEmail, sendDueEmails } = await import("../src/lib/email.js");
+    const { config } = await import("../src/config.js");
+    await query(`DELETE FROM emails`);
+    (config.smtp as any).url = "log";
+    try {
+      await queueEmail({ kind: "test", to: "a@example.co.uk", subject: "Once", body: "Only once" });
+      const [a, b] = await Promise.all([sendDueEmails(10), sendDueEmails(10)]);
+      assert.equal(a.sent + b.sent, 1);
+      assert.equal((await one(`SELECT status FROM emails`)).status, "sent");
+    } finally {
+      (config.smtp as any).url = "";
     }
   });
 });

@@ -115,21 +115,29 @@ export function sendingFrom(stored: string): string {
 
 /** Send everything due in the outbox. Called by the scheduler every minute. */
 export async function sendDueEmails(limit = 50): Promise<{ sent: number; failed: number; held: number }> {
+  if (!smtpConfigured()) {
+    const waiting = await one<{ n: number }>(`SELECT count(*)::int AS n FROM emails WHERE status = 'queued' AND send_after <= now() AND attempts < 5`);
+    if (waiting?.n) {
+      await createTask({
+        kind: "alert",
+        priority: 1,
+        title: "Emails are waiting but sending is not connected",
+        body: `${waiting.n} email(s) are queued. Set SMTP_URL in the app's settings on DigitalOcean.`,
+        dedupeKey: "alert:smtp-not-configured",
+      });
+    }
+    return { sent: 0, failed: 0, held: waiting?.n ?? 0 };
+  }
+  // Claim the batch first, so two senders running at once (the every-minute job
+  // and a "send now" button) can never send the same email twice. A claimed
+  // email that never gets sent (say the app restarts mid-send) is retried after 10 minutes.
   const due = await query(
-    `SELECT * FROM emails WHERE status = 'queued' AND send_after <= now() AND attempts < 5
-     ORDER BY send_after LIMIT $1`,
+    `UPDATE emails SET send_after = now() + interval '10 minutes'
+     WHERE id IN (SELECT id FROM emails WHERE status = 'queued' AND send_after <= now() AND attempts < 5
+                  ORDER BY send_after LIMIT $1 FOR UPDATE SKIP LOCKED)
+     RETURNING *`,
     [limit],
   );
-  if (due.length && !smtpConfigured()) {
-    await createTask({
-      kind: "alert",
-      priority: 1,
-      title: "Emails are waiting but sending is not connected",
-      body: `${due.length} email(s) are queued. Set SMTP_URL in the app's settings on DigitalOcean.`,
-      dedupeKey: "alert:smtp-not-configured",
-    });
-    return { sent: 0, failed: 0, held: due.length };
-  }
   await clearAlert("alert:smtp-not-configured");
 
   let sent = 0;

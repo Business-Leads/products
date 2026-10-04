@@ -291,7 +291,19 @@ if (process.env.STRIPE_SECRET_KEY) {
 if (CAL_KEY && values.CALCOM_USERNAME) {
   const subscriberUrl = `${app.live_url}/webhooks/calcom/${values.CALCOM_WEBHOOK_TOKEN}`;
   const hooks = asList((await cal("GET", "/v2/webhooks")).json);
-  if (hooks.some((h) => h.subscriberUrl === subscriberUrl)) {
+  // Only one webhook may point at HQ: any older ones (say from a previous app
+  // address) would make every booking arrive twice.
+  for (const h of hooks.filter((h) => /\/webhooks\/calcom\//.test(h.subscriberUrl ?? "") && h.subscriberUrl !== subscriberUrl)) {
+    const r = await cal("DELETE", `/v2/webhooks/${h.id}`);
+    console.log(`Cal.com: removed an extra webhook to HQ (${r.status}).`);
+  }
+  const ours = hooks.filter((h) => h.subscriberUrl === subscriberUrl);
+  for (const h of ours.slice(1)) {
+    const r = await cal("DELETE", `/v2/webhooks/${h.id}`);
+    console.log(`Cal.com: removed a duplicate webhook (${r.status}).`);
+  }
+  console.log(`Cal.com webhooks before tidying: ${hooks.length} in total, ${ours.length} to this address.`);
+  if (ours.length) {
     console.log("Cal.com webhook already exists.");
   } else {
     const r = await cal("POST", "/v2/webhooks", {

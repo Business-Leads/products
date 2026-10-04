@@ -124,6 +124,13 @@ export async function handleCalEvent(body: Payload): Promise<CalResult> {
   if (trigger === "PING" || !trigger) return { handled: true };
   const p: Payload = body.payload && typeof body.payload === "object" ? body.payload : body;
 
+  // Handle each booking change once, however many times Cal.com delivers it.
+  if (typeof p.uid === "string") {
+    const key = `cal:${trigger}:${p.uid}:${p.startTime ?? ""}`;
+    const fresh = await one(`INSERT INTO webhook_seen (key) VALUES ($1) ON CONFLICT DO NOTHING RETURNING key`, [key]);
+    if (!fresh) return { handled: true };
+  }
+
   const slug = String(p.type ?? p.eventType?.slug ?? "");
   const m = /^([a-z]+)-(chat|onboarding)$/.exec(slug);
   const product = m ? getProduct(m[1]!) : undefined;
