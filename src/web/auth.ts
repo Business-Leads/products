@@ -1,15 +1,14 @@
 import { timingSafeEqual, createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { config, isProduction } from "../config.js";
+import { config } from "../config.js";
 import { one, query } from "../db/index.js";
-import { clearFailures, hashToken, recordFailure, tooManyFailures } from "../lib/passwords.js";
+import { clearFailures, hashToken, recordFailure, tooManyFailures, verifyPassword } from "../lib/passwords.js";
 import { logEvent } from "../lib/events.js";
-import { token } from "../lib/util.js";
 import { html } from "./html.js";
 import { publicPage } from "./layout.js";
+import { HQ_COOKIE, startHqSession, teamPublicRoutes, type HqUser } from "./team.js";
 
-const COOKIE = "hq_session";
-const SESSION_DAYS = 7;
+const COOKIE = HQ_COOKIE;
 const FAILURE_LIMIT = 5;
 
 function passwordMatches(given: string): boolean {
@@ -30,7 +29,17 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   if (!(await isAuthed(req))) return reply.redirect(`/login?next=${encodeURIComponent(req.url)}`);
 }
 
+/** Someone with their own login (email + password), or the main password when no email is given. */
+async function signInMatches(email: string, password: string): Promise<{ ok: boolean; userId: number | null }> {
+  if (!email) return { ok: passwordMatches(password), userId: null };
+  const u = await one<HqUser>(`SELECT * FROM hq_users WHERE lower(email) = $1 AND NOT disabled`, [email.toLowerCase()]);
+  const ok = await verifyPassword(password, u?.password_hash);
+  return { ok: ok && !!u, userId: ok && u ? u.id : null };
+}
+
 export async function authRoutes(app: FastifyInstance) {
+  await teamPublicRoutes(app);
+
   app.post("/logout-everywhere", async (req, reply) => {
     if (!(await isAuthed(req))) return reply.redirect("/login", 303);
     await query(`DELETE FROM sessions`);
@@ -50,11 +59,14 @@ export async function authRoutes(app: FastifyInstance) {
           ${noPassword ? html`<p class="flash" role="alert">Sign-in isn't switched on yet. Add an ADMIN_PASSWORD secret in GitHub and redeploy.</p>` : ""}
           ${req.query.error === "locked"
             ? html`<p class="flash" role="alert">Too many wrong tries, so sign-in is paused for 15 minutes. This keeps your dashboard safe.</p>`
-            : req.query.error ? html`<p class="flash" role="alert">That password isn't right. Please try again.</p>` : ""}
+            : req.query.error ? html`<p class="flash" role="alert">That email or password isn't right. Please try again.</p>` : ""}
           <form method="post" action="/login" style="text-align:left">
             <input type="hidden" name="next" value="${req.query.next ?? "/"}">
+            <label for="email">Your email address</label>
+            <input type="email" name="email" id="email" autocomplete="username" autofocus>
+            <p class="help" style="margin:4px 0 0">Using the main password? Leave this empty.</p>
             <label for="password">Your password</label>
-            <input type="password" name="password" id="password" autocomplete="current-password" autofocus required>
+            <input type="password" name="password" id="password" autocomplete="current-password" required>
             <p style="margin-top:18px"><button class="primary">Sign in</button></p>
           </form>
         </div>`,
@@ -63,13 +75,14 @@ export async function authRoutes(app: FastifyInstance) {
     );
   });
 
-  app.post<{ Body: { password?: string; next?: string } }>("/login", async (req, reply) => {
+  app.post<{ Body: { email?: string; password?: string; next?: string } }>("/login", async (req, reply) => {
     // Locked per IP address and overall, so guessing from many addresses is slowed too.
     const scope = `hq:${req.ip}`;
     if ((await tooManyFailures(scope, FAILURE_LIMIT)) || (await tooManyFailures("hq:all", FAILURE_LIMIT * 6))) {
       return reply.redirect("/login?error=locked", 303);
     }
-    if (!passwordMatches(req.body?.password ?? "")) {
+    const result = await signInMatches((req.body?.email ?? "").trim(), req.body?.password ?? "");
+    if (!result.ok) {
       await recordFailure(scope);
       await recordFailure("hq:all");
       await logEvent({ type: "hq.login_failed", level: "warn", message: `Failed HQ sign-in from ${req.ip}` });
@@ -77,16 +90,7 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.redirect("/login?error=1", 303);
     }
     await clearFailures(scope);
-    const t = token(32);
-    await query(`INSERT INTO sessions (token, expires_at) VALUES ($1, now() + ($2 * interval '1 day'))`, [hashToken(t), SESSION_DAYS]);
-    await query(`DELETE FROM sessions WHERE expires_at < now()`);
-    reply.setCookie(COOKIE, t, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction,
-      maxAge: SESSION_DAYS * 86400,
-    });
+    await startHqSession(reply, result.userId);
     const next = req.body?.next?.startsWith("/") && !req.body.next.startsWith("//") ? req.body.next : "/";
     return reply.redirect(next, 303);
   });

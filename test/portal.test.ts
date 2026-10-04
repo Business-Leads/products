@@ -513,4 +513,31 @@ describe("client account areas", () => {
     assert.equal(events[0]!.data.postId, "p1");
     assert.equal(events[1]!.data, "Done");
   });
+
+  it("gives people their own HQ login: invite link, choose a password, sign in by email", async () => {
+    const { sendPendingInvites } = await import("../src/web/team.js");
+    await query(`DELETE FROM hq_users`);
+    await query(`INSERT INTO hq_users (email, name) VALUES ('hello@business-leads.co.uk', 'Felix Clarke')`);
+    assert.equal(await sendPendingInvites(), 1);
+    assert.equal(await sendPendingInvites(), 0, "the link is only sent once");
+    const mail = await one(`SELECT * FROM emails WHERE kind = 'hq_invite'`);
+    assert.equal(mail.to_address, "hello@business-leads.co.uk");
+    const link = /https:\/\/hq\.example\.com(\/hq-invite\/\S+)/.exec(mail.body_text)![1]!;
+    assert.equal((await app.inject({ method: "GET", url: link })).statusCode, 200);
+    const set = await app.inject({ method: "POST", url: link, ...form({ password: "dads own password", confirm: "dads own password" }) });
+    assert.equal(set.headers.location, "/training");
+    assert.equal((await app.inject({ method: "GET", url: "/training", headers: { cookie: cookieFrom(set) } })).statusCode, 200);
+    assert.match((await app.inject({ method: "GET", url: link })).body, /run out/, "links work once");
+
+    const bad = await app.inject({ method: "POST", url: "/login", ...form({ email: "hello@business-leads.co.uk", password: "pw" }) });
+    assert.equal(bad.headers.location, "/login?error=1", "the main password doesn't work with someone's email");
+    const ok = await app.inject({ method: "POST", url: "/login", ...form({ email: "Hello@Business-Leads.co.uk", password: "dads own password" }) });
+    assert.equal(ok.headers.location, "/");
+    const cookie = cookieFrom(ok);
+    assert.equal((await app.inject({ method: "GET", url: "/system/team", headers: { cookie } })).statusCode, 200);
+
+    const u = await one(`SELECT id FROM hq_users`);
+    await app.inject({ method: "POST", url: `/system/team/${u.id}/disable`, ...form({}, await adminCookie(app)) });
+    assert.equal((await app.inject({ method: "GET", url: "/", headers: { cookie } })).statusCode, 302, "switching someone off signs them out");
+  });
 });

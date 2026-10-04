@@ -3,6 +3,7 @@ import { pool } from "./db/index.js";
 import { migrate } from "./db/migrate.js";
 import { startScheduler, stopScheduler } from "./engine/scheduler.js";
 import { buildServer } from "./web/server.js";
+import { sendPendingInvites } from "./web/team.js";
 
 async function main() {
   const problems = assertProductionConfig();
@@ -11,6 +12,8 @@ async function main() {
   }
   const applied = await migrate();
   if (applied.length) console.log(`Applied migrations: ${applied.join(", ")}`);
+  const invited = await sendPendingInvites().catch((err) => (console.error("HQ invites:", err), 0));
+  if (invited) console.log(`Emailed ${invited} HQ login link(s)`);
 
   const app = await buildServer();
   await app.listen({ port: config.port, host: "0.0.0.0" });

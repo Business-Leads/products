@@ -53,6 +53,10 @@ approves and checks quality through the Inbox.
   `engine/clients.ts` holds the actions; every one emails the operator.
 - Clients must never see supplier names: every step and routine needs a
   client label (or null) in the product's `portal` block; a test enforces it.
+- HQ logins: the main ADMIN_PASSWORD (email left empty) or a personal login
+  (`hq_users`, web/team.ts; Settings, People who can sign in). New people get an
+  emailed set-password link; rows added by migration are invited at startup.
+  Felix: hello@business-leads.co.uk. "Learn HQ" (/training) is the interactive training.
 - HQ: `/clients` (all client logins), `/support`, and per-customer panels
   (view their dashboard read-only, password links, disable login, figures,
   post updates that the client can approve to complete a step).
