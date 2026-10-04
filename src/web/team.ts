@@ -119,19 +119,38 @@ export async function teamPublicRoutes(app: FastifyInstance) {
 export async function teamRoutes(app: FastifyInstance, send: (reply: FastifyReply, req: any, title: string, body: Raw, active: string) => Promise<unknown>) {
   const back = (reply: FastifyReply, flash: string) => reply.redirect(`/system/team?flash=${encodeURIComponent(flash)}`, 303);
 
-  app.get("/system/team", async (req, reply) => {
+  async function teamPage(req: any, reply: FastifyReply, shown?: { userId: number; link: string }) {
     const users = await query<HqUser>(`SELECT * FROM hq_users ORDER BY disabled, name`);
+    // What happened to each person's latest login email, so a missing one can be explained.
+    const mails = await query<{ to_address: string; status: string; error: string | null; sent_at: Date | null; created_at: Date }>(
+      `SELECT DISTINCT ON (lower(to_address)) to_address, status, error, sent_at, created_at FROM emails
+       WHERE kind = 'hq_invite' ORDER BY lower(to_address), created_at DESC`,
+    );
+    const mailFor = (email: string) => mails.find((m) => m.to_address.toLowerCase() === email.toLowerCase());
+    const sentTo = shown ? users.find((u) => u.id === shown.userId) : undefined;
+    const shownLink = sentTo ? shown!.link : undefined;
     return send(reply, req, "People who can sign in", html`
       <h1>People who can sign in</h1>
       ${intro("Everyone here has their own login: their email address and a password they chose. The main password still works too.")}
+      ${shownLink ? html`<div class="panel lt-try"><h2>A new link for ${sentTo!.name} is on its way</h2>
+        <p>It's been emailed to ${sentTo!.email}. If it doesn't arrive, copy this link and send it to them another way (a text message is fine). It works once, for ${INVITE_DAYS} days.</p>
+        <p><input id="invite-link" value="${shownLink}" readonly onclick="this.select()" style="width:100%"></p>
+        <p><button type="button" class="primary" onclick="var i=document.getElementById('invite-link');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(function(){this.textContent='Copied'}.bind(this)).catch(function(){document.execCommand('copy')})">Copy the link</button></p></div>` : ""}
       <div class="panel">
         ${users.length ? html`<table><tr><th>Name</th><th>Email</th><th>Status</th><th></th></tr>
           ${users.map((u) => html`<tr><td><strong>${u.name}</strong></td><td>${u.email}</td>
             <td>${u.disabled ? html`<span class="chip bad">Switched off</span>`
               : u.password_hash ? html`<span class="chip ok">Can sign in</span><div class="small muted">${u.last_login_at ? `Last signed in ${ago(u.last_login_at)}` : "Not signed in yet"}</div>`
-              : html`<span class="chip warn">Waiting to choose a password</span><div class="small muted">${u.invited_at ? `Link sent ${ago(u.invited_at)}` : "Link not sent yet"}</div>`}</td>
+              : html`<span class="chip warn">Waiting to choose a password</span><div class="small muted">${u.invited_at ? `Link sent ${ago(u.invited_at)}` : "Link not sent yet"}</div>`}
+              ${(() => {
+                const m = mailFor(u.email);
+                if (!m || u.disabled) return "";
+                if (m.status === "sent") return html`<div class="small muted">Last email delivered to the mail server ${ago(m.sent_at ?? m.created_at)}</div>`;
+                if (m.status === "failed") return html`<div class="small"><span class="chip bad">Email failed</span> ${m.error ?? ""}</div>`;
+                return html`<div class="small"><span class="chip warn">Email not sent yet</span> ${m.error ? html`Last try: ${m.error}` : "It goes out within a minute or two."}</div>`;
+              })()}</td>
             <td><div class="row">
-              ${u.disabled ? "" : html`<form method="post" action="/system/team/${u.id}/invite"><button class="small">${u.password_hash ? "Email a new password link" : "Email the link again"}</button></form>`}
+              ${u.disabled ? "" : html`<form method="post" action="/system/team/${u.id}/invite"><button class="small">${u.password_hash ? "New password link" : "Send a fresh link"}</button></form>`}
               <form method="post" action="/system/team/${u.id}/${u.disabled ? "enable" : "disable"}"><button class="small ${u.disabled ? "" : "danger"}">${u.disabled ? "Switch back on" : "Switch off"}</button></form>
             </div></td></tr>`)}
         </table>` : html`<p class="empty">Nobody yet.</p>`}
@@ -143,6 +162,11 @@ export async function teamRoutes(app: FastifyInstance, send: (reply: FastifyRepl
           <p style="margin-top:14px"><button class="primary">Add them and email their link</button></p>
         </form>
       </div>`, "/system");
+  }
+
+  app.get("/system/team", async (req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    return teamPage(req, reply);
   });
 
   app.post<{ Body: { name?: string; email?: string } }>("/system/team", async (req, reply) => {
@@ -153,15 +177,18 @@ export async function teamRoutes(app: FastifyInstance, send: (reply: FastifyRepl
       `INSERT INTO hq_users (email, name) VALUES ($1, $2) ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, disabled = false RETURNING *`,
       [email, name],
     );
-    await sendInvite(u!);
-    return back(reply, `Added ${name}. Their link is on its way to ${email}.`);
+    const link = await sendInvite(u!);
+    reply.header("Cache-Control", "no-store");
+    return teamPage(req, reply, { userId: u!.id, link });
   });
 
   app.post<{ Params: { id: string } }>("/system/team/:id/invite", async (req, reply) => {
     const u = await one<HqUser>(`SELECT * FROM hq_users WHERE id = $1 AND NOT disabled`, [req.params.id]);
     if (!u) return back(reply, "That person isn't here any more.");
-    await sendInvite(u);
-    return back(reply, `Link emailed to ${u.email}.`);
+    const link = await sendInvite(u);
+    // Shown once on this page (not put in the address bar), so it can be passed on another way.
+    reply.header("Cache-Control", "no-store");
+    return teamPage(req, reply, { userId: u.id, link });
   });
 
   app.post<{ Params: { id: string; action: string } }>("/system/team/:id/:action", async (req, reply) => {

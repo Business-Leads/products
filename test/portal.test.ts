@@ -535,8 +535,11 @@ describe("client account areas", () => {
     assert.equal(ok.headers.location, "/");
     const cookie = cookieFrom(ok);
     assert.equal((await app.inject({ method: "GET", url: "/system/team", headers: { cookie } })).statusCode, 200);
+    const added = await app.inject({ method: "POST", url: "/system/team", ...form({ name: "Sam Helper", email: "sam@example.co.uk" }, cookie) });
+    assert.match(added.body, /id="invite-link" value="https:\/\/hq\.example\.com\/hq-invite\//, "the link is shown to copy, in case the email goes astray");
+    assert.match(added.body, /Email not sent yet/);
 
-    const u = await one(`SELECT id FROM hq_users`);
+    const u = await one(`SELECT id FROM hq_users WHERE email = 'hello@business-leads.co.uk'`);
     await app.inject({ method: "POST", url: `/system/team/${u.id}/disable`, ...form({}, await adminCookie(app)) });
     assert.equal((await app.inject({ method: "GET", url: "/", headers: { cookie } })).statusCode, 302, "switching someone off signs them out");
   });
