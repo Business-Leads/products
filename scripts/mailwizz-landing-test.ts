@@ -20,4 +20,8 @@ console.log("Published at:", url);
 const pub = await fetch(url);
 const text = await pub.text();
 console.log("Public page:", pub.status, "content shows:", text.includes(marker), "styled:", text.includes("Visit our website"));
-if (process.env.DELETE === "yes") console.log("Delete:", await deleteLandingPage(s, pageId));
+if (process.env.DELETE === "yes") {
+  console.log("Delete:", await deleteLandingPage(s, pageId));
+  console.log("Public page after delete:", (await fetch(url)).status);
+  for (const extra of (process.env.ALSO_DELETE ?? "").split(/[\s,]+/).filter(Boolean)) console.log("Delete", extra, await deleteLandingPage(s, extra));
+}

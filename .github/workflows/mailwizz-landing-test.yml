@@ -11,6 +11,9 @@ on:
       delete:
         description: "Delete the test page afterwards (yes/no)"
         default: "yes"
+      also_delete:
+        description: "Other test page ids to delete afterwards"
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -29,4 +32,5 @@ jobs:
           MAILWIZZ_LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
           PAGE: ${{ inputs.page }}
           DELETE: ${{ inputs.delete }}
+          ALSO_DELETE: ${{ inputs.also_delete }}
         run: npx tsx scripts/mailwizz-landing-test.ts
