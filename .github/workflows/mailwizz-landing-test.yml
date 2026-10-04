@@ -1,0 +1,32 @@
+# Tests HQ's MailWizz landing page robot end to end on a throwaway page titled
+# "HQ test - please ignore": fills it in, publishes it, checks the public page,
+# and deletes it if asked. Prints statuses only.
+name: MailWizz landing page test
+on:
+  workflow_dispatch:
+    inputs:
+      page:
+        description: "Existing test page id (blank: create a new test page)"
+        default: ""
+      delete:
+        description: "Delete the test page afterwards (yes/no)"
+        default: "yes"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Test
+        env:
+          MAILWIZZ_API_URL: ${{ secrets.MAILWIZZ_API_URL }}
+          MAILWIZZ_LOGIN_EMAIL: ${{ secrets.MAILWIZZ_LOGIN_EMAIL }}
+          MAILWIZZ_LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
+          PAGE: ${{ inputs.page }}
+          DELETE: ${{ inputs.delete }}
+        run: npx tsx scripts/mailwizz-landing-test.ts
