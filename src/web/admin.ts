@@ -1,3 +1,4 @@
+import { checkSending, queueEmail, sendDueEmails } from "../lib/email.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { assertProductionConfig, config } from "../config.js";
 import { one, query } from "../db/index.js";
@@ -740,6 +741,17 @@ export async function adminRoutes(app: FastifyInstance) {
           ${pausedAll ? html`<button class="primary" name="paused" value="false">Switch everything back on</button>`
                       : html`<button class="stop" name="paused" value="true" onclick="return confirm('Pause everything? No emails or work will go out for any product until you switch it back on.')">Pause everything</button>`}
         </form></div>
+      <div class="panel" id="email"><h2>Email sending</h2>
+        ${await (async () => {
+          const check = await checkSending();
+          const stuck = await one(`SELECT count(*) FILTER (WHERE status = 'queued')::int AS queued, count(*) FILTER (WHERE status = 'failed' AND created_at > now() - interval '7 days')::int AS failed,
+            (SELECT error FROM emails WHERE error IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS last_error,
+            (SELECT max(sent_at) FROM emails WHERE status = 'sent') AS last_sent FROM emails`);
+          return html`<p>${check.ok ? html`<span class="chip ok">Working</span>` : html`<span class="chip bad">Not working</span>`} ${check.detail}</p>
+            <p class="small muted">${stuck?.queued ?? 0} waiting to go · ${stuck?.failed ?? 0} failed this week · last one sent ${stuck?.last_sent ? ago(stuck.last_sent) : "never"}</p>
+            ${stuck?.last_error ? html`<p class="small">Last error: ${stuck.last_error}</p>` : ""}
+            <form method="post" action="/system/email-test" class="row"><input type="email" name="to" aria-label="Send a test email to" placeholder="Send a test email to…" required style="max-width:340px"><button>Send a test email</button></form>`;
+        })()}</div>
       <div class="panel"><h2>People who can sign in</h2><p>Give someone their own login with their email address. <a href="/system/team">See and add people</a>.</p></div>
       <div class="panel"><h2>Prospect database</h2><p>The contacts EmailFirst and Good Questions email. <a href="/system/prospects">Upload or update the master prospect file</a>.</p></div>
       <div class="panel"><h2>Regular jobs</h2>
@@ -769,6 +781,14 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!job) return reply.code(404).send("Unknown job");
     const summary = await runJob(job);
     return back(reply, "/system", summary === null ? `${job.name} is already running, or it hit a problem. See below.` : `Done. ${job.name}: ${summary}`);
+  });
+
+  app.post<{ Body: { to?: string } }>("/system/email-test", async (req, reply) => {
+    const to = (req.body?.to ?? "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return back(reply, "/system#email", "Please type an email address.");
+    await queueEmail({ kind: "test", to, subject: "HQ test email", body: "This is a test from HQ. If you can read this, email sending works." });
+    const r = await sendDueEmails(10);
+    return back(reply, "/system#email", r.sent ? `Sent to ${to}. Check the inbox (and the junk folder).` : `It didn't go: see "Last error" below.`);
   });
 
   app.post<{ Body: { paused?: string } }>("/system/pause", async (req, reply) => {

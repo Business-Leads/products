@@ -94,6 +94,17 @@ export async function queueEmail(e: EmailInput): Promise<QueuedEmail> {
   return { id, held: false };
 }
 
+/** Can the app reach and sign in to its mail server right now? */
+export async function checkSending(): Promise<{ ok: boolean; detail: string }> {
+  if (!smtpConfigured()) return { ok: false, detail: "No mail server is set up (SMTP_URL is empty)." };
+  try {
+    await Promise.race([getTransport().verify(), new Promise((_, rej) => setTimeout(() => rej(new Error("no answer from the mail server after 15 seconds (the connection may be blocked)")), 15000))]);
+    return { ok: true, detail: `Connected to ${new URL(config.smtp.url).hostname}.` };
+  } catch (err) {
+    return { ok: false, detail: errorMessage(err) };
+  }
+}
+
 /** The From line actually used: the product's name, at SMTP_FROM when the server only sends as one mailbox. */
 export function sendingFrom(stored: string): string {
   const only = config.smtp.fromAddress;
