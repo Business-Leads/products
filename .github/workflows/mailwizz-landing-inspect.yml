@@ -6,6 +6,10 @@
 name: MailWizz landing page inspect
 on:
   workflow_dispatch:
+    inputs:
+      create_test:
+        description: "Also create (and leave unpublished) a draft page titled 'HQ test - please ignore' to see the editor"
+        default: "no"
 permissions: {}
 jobs:
   inspect:
@@ -17,6 +21,7 @@ jobs:
           URL: ${{ secrets.MAILWIZZ_API_URL }}
           LOGIN_EMAIL: ${{ secrets.MAILWIZZ_LOGIN_EMAIL }}
           LOGIN_PASSWORD: ${{ secrets.MAILWIZZ_LOGIN_PASSWORD }}
+          CREATE_TEST: ${{ inputs.create_test }}
         run: |
           [ -n "$LOGIN_EMAIL" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "Add MAILWIZZ_LOGIN_EMAIL and MAILWIZZ_LOGIN_PASSWORD as repository secrets first."; exit 1; }
           pip install -q requests beautifulsoup4
@@ -78,4 +83,26 @@ jobs:
                   for m in sorted(set(re.findall(r"[\"'](/?(?:customer/)?(?:index\.php/)?landing[-_a-z/]*[^\"']{0,60})[\"']", js)))[:40]: print("     url:", m)
                   for m in re.findall(r"\$\.(?:post|get|ajax)\([^;]{0,220}", js)[:15]: print("     call:", m[:220])
                   for m in re.findall(r"(?:data\(|attr\()['\"][-a-z_]+['\"]", js)[:30]: print("     attr:", m)
+          if os.environ.get("CREATE_TEST") == "yes":
+              page = s.get(base + "/customer/landing-pages/create", timeout=30)
+              psoup = BeautifulSoup(page.text, "html.parser")
+              f = psoup.find("form", id="yw0")
+              data = {i.get("name"): i.get("value", "") for i in f.find_all(["input", "textarea"]) if i.get("name")}
+              data["LandingPageRevision[template_id]"] = "1"
+              data["LandingPageRevision[title]"] = "HQ test - please ignore"
+              data["LandingPageRevision[description]"] = "Created by HQ to learn the editor. Safe to delete."
+              r = s.post(base + f.get("action"), data=data, timeout=30)
+              print("CREATE ->", r.status_code, r.url.replace(base, ""))
+              esoup = forms(r.text, "after create")
+              for a in esoup.find_all("a", href=True):
+                  h = a["href"].replace(base, "")
+                  if "landing" in h: print("    link", h, "|", a.get_text(" ", strip=True)[:40])
+              for el in esoup.select("[data-url], [data-page-id], [data-slug-url], iframe, [data-builder], [id*=builder], [id*=editor]")[:40]:
+                  attrs = {k: (v if isinstance(v, str) else " ".join(v))[:160] for k, v in el.attrs.items() if k.startswith("data-") or k in ("id", "src", "class")}
+                  print("    el", el.name, attrs)
+              scripts = [sc.get("src") for sc in esoup.find_all("script", src=True)]
+              print("  scripts:", [x for x in scripts if x and not re.search(r"jquery|bootstrap|select2|moment", x, re.I)])
+              for sc in esoup.find_all("script", src=False):
+                  t = sc.get_text()
+                  for m in re.findall(r"(?:url|save|builder|content|json)[^\n]{0,160}", t, re.I)[:25]: print("    inline:", m.strip()[:200])
           PY
