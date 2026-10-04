@@ -65,4 +65,17 @@ jobs:
                   if "landing" in h or "template" in h: print("    link", h, a.get_text(strip=True)[:40])
               scripts = [sc.get("src") for sc in csoup.find_all("script", src=True)]
               print("  editor scripts:", [x for x in scripts if x and re.search(r"builder|grapes|editor|landing", x, re.I)])
+              # The template grid: element attributes only (ids, data-*), no text.
+              for el in csoup.select("[data-template-id], [data-id], .landing-page-template, [data-url], [data-href]")[:40]:
+                  attrs = {k: (v if isinstance(v, str) else " ".join(v))[:120] for k, v in el.attrs.items() if k.startswith("data-") or k in ("id", "class", "href")}
+                  print("    grid", el.name, attrs, "|", el.get_text(" ", strip=True)[:50])
+              for sc in csoup.find_all("script", src=False):
+                  t = sc.get_text()
+                  for m in re.findall(r"(?:url|href|ajax)[^\n]{0,160}", t, re.I)[:15]: print("    inline:", m.strip()[:200])
+              for src in [x for x in scripts if x and re.search(r"landing", x, re.I)]:
+                  js = s.get(src if src.startswith("http") else base + src, timeout=30).text
+                  print(f"  -- {src} ({len(js)} bytes)")
+                  for m in sorted(set(re.findall(r"[\"'](/?(?:customer/)?(?:index\.php/)?landing[-_a-z/]*[^\"']{0,60})[\"']", js)))[:40]: print("     url:", m)
+                  for m in re.findall(r"\$\.(?:post|get|ajax)\([^;]{0,220}", js)[:15]: print("     call:", m[:220])
+                  for m in re.findall(r"(?:data\(|attr\()['\"][-a-z_]+['\"]", js)[:30]: print("     attr:", m)
           PY
