@@ -97,6 +97,13 @@ async function watchdog(): Promise<string> {
     const everRan = await query(`SELECT 1 FROM job_runs WHERE job = $1 LIMIT 1`, [job.name]);
     if (!rows.length && everRan.length) stale.push(job.name);
   }
+  // Older stalled alerts whose jobs have since recovered close themselves.
+  const currentKey = `alert:stalled:${[...stale].sort().join(",")}`;
+  await query(
+    `UPDATE tasks SET status = 'done', resolution = 'Working again: cleared automatically', resolved_at = now()
+     WHERE status = 'open' AND dedupe_key LIKE 'alert:stalled:%' AND dedupe_key <> $1`,
+    [stale.length ? currentKey : ""],
+  );
   if (stale.length) {
     await createTask({
       kind: "alert",

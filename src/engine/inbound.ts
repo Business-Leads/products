@@ -202,6 +202,14 @@ export async function processInbound(): Promise<string> {
   await client.connect();
   let handled = 0;
   try {
+    // The label HQ reads (e.g. "HQ Replies") must exist; if it's missing, make it
+    // (an empty label) rather than failing every few minutes.
+    const boxes = await client.list();
+    if (!boxes.some((b) => b.path === config.imap.folder)) {
+      await client.mailboxCreate(config.imap.folder);
+      await logEvent({ type: "inbound.folder_created", level: "warn", message: `Created the "${config.imap.folder}" label HQ reads replies from` });
+      return `Created the "${config.imap.folder}" label; nothing to read yet`;
+    }
     const lock = await client.getMailboxLock(config.imap.folder);
     try {
       const seen: number[] = [];
