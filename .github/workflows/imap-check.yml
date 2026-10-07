@@ -1,0 +1,38 @@
+# Read-only: signs in to the mailbox HQ reads replies from and checks the
+# label it reads ("HQ Replies") exists. Prints only label names that look like
+# HQ's, and message counts; never any message content.
+name: IMAP check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Check
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
+          REPLY_LABEL: ${{ secrets.REPLY_LABEL }}
+        run: |
+          node --input-type=module -e '
+          import { ImapFlow } from "imapflow";
+          const user = process.env.REPLY_MAILBOX || "info@felixclarke.com";
+          const folder = process.env.REPLY_LABEL || "HQ Replies";
+          const c = new ImapFlow({ host: "imap.gmail.com", port: 993, secure: true, auth: { user, pass: (process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "") }, logger: false });
+          try { await c.connect(); console.log("IMAP sign-in: OK"); } catch (e) { console.log("IMAP sign-in FAILED:", e.message, e.responseText ?? ""); process.exit(1); }
+          const boxes = await c.list();
+          console.log("Mailboxes:", boxes.length);
+          for (const b of boxes) if (/hq|repl/i.test(b.path)) console.log("  similar:", JSON.stringify(b.path), b.specialUse ?? "");
+          const found = boxes.find((b) => b.path === folder);
+          console.log(`Label "${folder}" exists:`, Boolean(found));
+          if (found) { const s = await c.status(folder, { messages: true, unseen: true }); console.log("  messages:", s.messages, "unread:", s.unseen); }
+          try { const lock = await c.getMailboxLock(folder); lock.release(); console.log("Open label: OK"); } catch (e) { console.log("Open label FAILED:", e.message, e.responseText ?? ""); }
+          await c.logout();
+          '
