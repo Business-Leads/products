@@ -188,6 +188,14 @@ Known blockers:
   Campaign drafts automatic; launch (billable leads), replies and harvest
   imports are approval cards. FeedBoss workspaces are created by hand (no API);
   scheduling posts in FeedBoss is still a click (REST has no schedule call).
+- EmailFirst pricing (owner, Oct 2026): £499 a month email campaign (plan `campaign`), with
+  LinkedIn Starter/Business/Growth (£199/£349/£649) as monthly add-ons, matching the
+  live site, which the owner now edits directly on Netlify. Run "Pull sites from
+  Netlify" before publishing sites so a direct edit is never overwritten. The site's
+  Book a chat buttons still go to the old Calendly link; LinkedIn add-ons have no HQ
+  fulfilment yet.
+- Product suite reference for the Manchester and Liverpool directory sites:
+  https://claude.ai/artifact/K6HgnpgUP8SWyMDrKrP8XK (lead EmailFirst, then Linkn; no hub page yet).
 - EmailFirst / Good Questions: MailWizz at portal.emailfirst.co.uk
   (MAILWIZZ_API_URL). Contacts come from our prospect database
   (`engine/prospectdb.ts`), loaded from the master file UK_Prospects_Master.csv
