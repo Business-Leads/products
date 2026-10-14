@@ -173,7 +173,7 @@ describe("Local Falcon (Online Business Builder)", () => {
     const r = await importProspectFile(file);
     assert.equal(r.imported, 4);
     await query(`INSERT INTO suppressions (value, reason) VALUES ('dan@nope.co.uk', 'test')`);
-    const customer = await one(`INSERT INTO customers (product, plan, email) VALUES ('emailfirst', 'weekly', 'c@x.co.uk') RETURNING *`);
+    const customer = await one(`INSERT INTO customers (product, plan, email) VALUES ('emailfirst', 'campaign', 'c@x.co.uk') RETURNING *`);
     const filter = { titles: ["director"], sectors: ["construction"], regions: [], exclude: [] };
     assert.equal(await countMatches(filter, customer.id), 2);
     const first = await pickProspects(filter, customer.id, 10, "b1");
@@ -196,7 +196,7 @@ describe("Local Falcon (Online Business Builder)", () => {
     await query(`UPDATE prospect_db SET last_used_at = NULL`);
     await query(`DELETE FROM prospect_uses`);
     const customer = await one(
-      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'weekly', 'd@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
+      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'campaign', 'd@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
       [JSON.stringify({
         intake: { sender_name: "Dee", reply_to: "dee@dee.co.uk", company: "Dee Ltd" },
         ef_filters: { titles: ["director"], sectors: [], regions: [], exclude: [] },
@@ -255,7 +255,7 @@ describe("Local Falcon (Online Business Builder)", () => {
       return new Response(JSON.stringify({ status: "success", data: { records: [] } }));
     }) as typeof fetch;
     const customer = await one(
-      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'weekly', 'e@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
+      `INSERT INTO customers (product, plan, email, business, data) VALUES ('emailfirst', 'campaign', 'e@x.co.uk', 'Dee Ltd', $1) RETURNING *`,
       [JSON.stringify({
         intake: { company: "Dee Ltd", website: "https://client.example.com", cta: "Book a 15-minute call", reply_to: "dee@dee.co.uk", audience: "directors", offer: "x" },
         ef_copy: { emails: [{ subject: "a", body: "Hi {FNAME}\n\n{LINK}\n\nDee" }, { subject: "b", body: "Still keen?" }], landing: "Grow faster\n\nWe help firms like {COMPANY}.\n\n- One\n- Two" },

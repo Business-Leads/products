@@ -100,14 +100,15 @@ describe("checkout", () => {
     assert.equal(params.branding_settings!.display_name, "Speed to Lead");
   });
 
-  it("bills EmailFirst weekly with recurring and one-off add-ons", () => {
+  it("bills EmailFirst monthly, with LinkedIn management as a monthly add-on", () => {
     const p = requireProduct("emailfirst");
-    const params = buildCheckoutParams(p, getPlan(p, "weekly")!, { addOns: ["phones", "video", "bogus"] });
+    const params = buildCheckoutParams(p, getPlan(p, "campaign")!, { addOns: ["linkedin_business", "bogus"] });
     const items = params.line_items!;
-    assert.equal(items.length, 3);
-    assert.equal(items[0]!.price_data!.recurring!.interval, "week");
-    assert.equal(items[1]!.price_data!.recurring!.interval, "week");
-    assert.equal(items[2]!.price_data!.recurring, undefined);
+    assert.equal(items.length, 2);
+    assert.equal(items[0]!.price_data!.unit_amount, 49900);
+    assert.equal(items[0]!.price_data!.recurring!.interval, "month");
+    assert.equal(items[1]!.price_data!.unit_amount, 34900);
+    assert.equal(items[1]!.price_data!.recurring!.interval, "month");
   });
 });
 

@@ -301,7 +301,7 @@ describe("client account areas", () => {
   });
 
   it("routes support requests to HQ and shows the reply to the client", async () => {
-    const cookie = await signUp(app, "emailfirst", "weekly");
+    const cookie = await signUp(app, "emailfirst", "campaign");
     const sent = await app.inject({ method: "POST", url: "/portal/emailfirst/support", ...form({ subject: "Change of audience", message: "Can we target accountants?" }, cookie) });
     assert.equal(sent.statusCode, 303);
     const request = await one(`SELECT * FROM support_requests`);
@@ -422,7 +422,7 @@ describe("client account areas", () => {
   });
 
   it("collects EmailFirst weekly figures from Mailpulse", async () => {
-    await handleStripeEvent(checkoutEvent("evt_ef", "emailfirst", "weekly"));
+    await handleStripeEvent(checkoutEvent("evt_ef", "emailfirst", "campaign"));
     const c = await one(`SELECT * FROM customers`);
     await query(`UPDATE customers SET data = data || '{"mailwizz_campaigns": "camp1, camp2"}' WHERE id = $1`, [c.id]);
     const d = await one(`INSERT INTO deliveries (customer_id, product, routine, period) VALUES ($1, 'emailfirst', 'weekly_summary', '2026-10-05') RETURNING *`, [c.id]);

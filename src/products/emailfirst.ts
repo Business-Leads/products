@@ -4,30 +4,33 @@ import { BOOKING_URL, HOUSE_VOICE, fromAddress, goLiveStep, welcomeSteps, shared
 export const emailFirst: Product = {
   slug: "emailfirst",
   name: "EmailFirst",
-  tagline: "We email 3,000 UK decision makers a week for you",
+  tagline: "More conversations with qualified buyers",
+  // Matches the live site (emailfirst.co.uk, updated Oct 2026): a monthly email
+  // campaign, with LinkedIn management available at three levels on top.
   description:
-    "Done-for-you UK B2B cold email, openly run by AI. A free pitch check, then three emails and a " +
-    "landing page written for the client, sends to 3,000 UK decision makers a week from the Mailpulse " +
-    "platform, and a report each weekday of verified human clicks with a follow-up already drafted.",
+    "B2B email campaigns and LinkedIn management for UK businesses that sell to other businesses. " +
+    "Offer development, a prospect list matched to the client's ideal customer (data supplied), a custom " +
+    "email sequence and landing page, sending on our platform and a daily report of the decision makers " +
+    "who engaged. LinkedIn follow-up from the client's own profile can be added at three levels.",
   entity: "EmailFirst is a trading name of Emailfirst Limited (company 14162647)",
   siteUrls: ["https://emailfirst.co.uk", "https://www.emailfirst.co.uk", "https://emailfirst.netlify.app"],
   bookingUrl: BOOKING_URL,
   email: { from: fromAddress("emailfirst", "hello@emailfirst.co.uk"), fromName: "EmailFirst" },
-  voice: `${HOUSE_VOICE} Be open that the service is run by AI with a person checking it.`,
+  voice: `${HOUSE_VOICE} Professional and plain. Felix stays involved with every client; never claim a person wrote or checked something they did not.`,
   plans: [
     {
-      id: "weekly",
-      name: "EmailFirst",
-      amountPence: 1900,
-      interval: "week",
-      summary: "No contract. 3,000 sends a week and a report every weekday.",
+      id: "campaign",
+      name: "The email campaign",
+      amountPence: 49900,
+      interval: "month",
+      summary: "Billed monthly, no minimum term. Offer development, prospect list, email sequence, landing page and a daily engagement report.",
     },
   ],
+  // LinkedIn management on top of the campaign, as sold on the site.
   addOns: [
-    { id: "phones", name: "Direct phone numbers", amountPence: 1000, recurring: true },
-    { id: "voice", name: "Morning AI voice call", amountPence: 1000, recurring: true },
-    { id: "audience2", name: "Second audience", amountPence: 1500, recurring: true },
-    { id: "video", name: "Video sales page", amountPence: 9500, recurring: false },
+    { id: "linkedin_starter", name: "LinkedIn Starter", amountPence: 19900, recurring: true },
+    { id: "linkedin_business", name: "LinkedIn Business", amountPence: 34900, recurring: true },
+    { id: "linkedin_growth", name: "LinkedIn Growth", amountPence: 64900, recurring: true },
   ],
   intake: [
     { key: "company", label: "Company", type: "text", required: true },
@@ -90,10 +93,10 @@ export const emailFirst: Product = {
   ],
   tools: ["mailwizz", "anthropic", "smtp", "stripe"],
   leadBrief:
-    "This reply is the free pitch check. From what they told us, say plainly what is strong about their " +
-    "offer, what a UK decision maker would doubt, and one or two changes that would make a cold email land. " +
-    "If there is too little to judge, ask the three questions that would let us check it. Nothing is charged " +
-    "until the pitch has passed the check and they choose to go ahead.",
+    "From what they told us, say plainly what is strong about their offer and what a UK decision maker " +
+    "would want to know before replying, then invite them to book a short chat with Felix to agree their " +
+    "ideal customer and develop the offer before anything is launched. The campaign is £499 a month with " +
+    "no minimum term; LinkedIn management can be added from £199 a month.",
   leadFollowUpDays: [2, 6],
   pauseAfterPastDueDays: 7,
   portal: {
