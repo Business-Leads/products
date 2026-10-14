@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>EmailFirst. Opening soon</title>
-<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Privacy | Online Business Builder</title>
+<meta name="description" content="How Online Business Builder collects, uses and protects your personal information.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Urbanist:wght@100..900&display=swap">
@@ -315,24 +316,239 @@ body:has(> .ft-stage--canvas) { background: var(--canvas); }
 @media (max-width: 860px) { .ft-threads { zoom: .5; } .ft-arc { zoom: .55; } .ft-hero, .ft-section { padding-left: 20px; padding-right: 20px; } .ft-hero__title { font-size: 52px; line-height: 54px; } .ft-section-head__title.display-l { font-size: 44px; line-height: 48px; } .ft-fan > .ft-quote.is-back-l, .ft-fan > .ft-quote.is-back-r { display: none; } }
 @media (max-width: 640px) { .ft-nav { padding-left: 14px; } .ft-nav__brand { margin-right: 12px; font-size: 17px; } .ft-nav .ft-btn--soft { display: none; } .ft-threads { zoom: .27 !important; } .ft-hero { padding-top: 112px; } .ft-footer { padding: 40px 24px 28px; } .ft-footer__bottom { margin-top: var(--space-40); } .ft-panel { padding-left: 16px; padding-right: 16px; } .ft-grid { grid-template-columns: 1fr; } .ft-card--wide { grid-column: auto; } .ft-threads { zoom: .3; } .ft-arc { zoom: .35; } .ft-quote { width: 100%; } .ft-footer__cols { flex-wrap: wrap; gap: 28px; } }
 
-:root { color-scheme: light; }
-body.ft-page { background: var(--canvas); min-height: 100vh; }
-.ft-hero { padding-top: calc(200px + env(safe-area-inset-top, 0px)); }
-.ft-hero__lead { max-width: 520px; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 116px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body.ft-page { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ft-navbar { top: calc(var(--space-34) + env(safe-area-inset-top, 0px)); }
+.obb-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: var(--space-40); }
+.ft-hero .obb-actions .ft-btn--cta { margin-top: 0; }
+.ft-hero__lead { max-width: 460px; }
+.obb-note { margin-top: 18px; color: var(--ink-muted); }
+.obb-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 48px; padding: 0 12px; }
+.obb-step > .ft-tile { margin-bottom: 24px; }
+.obb-step h3 { color: var(--ink); margin-bottom: 8px; }
+.obb-step p { color: var(--ink-muted); max-width: 320px; }
+.obb-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.obb-plan { padding: 36px 32px 32px; min-height: 0; }
+.obb-plan .label { color: var(--ink); }
+.obb-price { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 14px; }
+.obb-price b { font: 600 76px/76px var(--font-display); letter-spacing: -0.03em; font-variation-settings: 'opsz' 32; color: var(--ink); }
+.obb-price span { color: var(--ink-muted); }
+.obb-plan > p.copy { color: var(--ink-muted); max-width: 440px; }
+.obb-list { display: grid; gap: 12px; margin: 26px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line); list-style: none; }
+.obb-list li { display: flex; gap: 12px; align-items: flex-start; color: var(--ink); }
+.obb-list .ft-icon { flex: none; width: 22px; height: 22px; color: var(--violet-500); margin-top: 1px; }
+.obb-small { margin-top: 28px; text-align: center; color: var(--ink-muted); }
+.obb-choice { padding: 32px 28px; min-height: 0; }
+.obb-choice > .ft-tile { margin-bottom: 28px; }
+.obb-choice p { color: var(--ink-muted); margin-top: 8px; }
+.obb-faq { max-width: 860px; margin: 40px auto 0; }
+.obb-faq details { border-top: 1px solid var(--line); }
+.obb-faq details:last-child { border-bottom: 1px solid var(--line); }
+.obb-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 4px; cursor: pointer; list-style: none; color: var(--ink); }
+.obb-faq summary::-webkit-details-marker { display: none; }
+.obb-faq summary .ft-icon { flex: none; width: 22px; height: 22px; transition: transform .2s ease; }
+.obb-faq details[open] summary .ft-icon { transform: rotate(180deg); }
+.obb-faq summary:focus-visible { outline: 2px solid var(--violet-600); outline-offset: 2px; border-radius: 6px; }
+.obb-faq .copy { padding: 0 4px 24px; color: var(--ink-muted); max-width: 720px; }
+.obb-faq .copy + .copy { margin-top: -12px; }
+.obb-start { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: start; }
+.obb-talk { padding: 36px 32px; min-height: 0; }
+.obb-talk > .ft-tile { margin-bottom: 32px; }
+.obb-talk h3 { color: var(--ink); margin-bottom: 12px; }
+.obb-talk p { color: var(--ink-muted); }
+.obb-talk .obb-tile-gap, .obb-talk form > .ft-tile { margin-bottom: 24px; }
+.obb-fields--one { grid-template-columns: 1fr; }
+.obb-talk .obb-submit .ft-btn { width: 100%; }
+.obb-form { padding: 36px 32px; min-height: 0; }
+.obb-form h3 { color: var(--ink); }
+.obb-form form > p.copy { margin-top: 8px; color: var(--ink-muted); }
+.obb-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; margin-top: 28px; }
+.obb-field { display: grid; gap: 8px; }
+.obb-field--full { grid-column: 1 / -1; }
+.obb-field label { font: 500 15px/20px var(--font-text); color: var(--ink); }
+.obb-field label span { color: var(--ink-muted); font-weight: 400; }
+.obb-field input, .obb-field select, .obb-field textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-button); background: var(--raised); color: var(--ink); font: 400 16px/22px var(--font-text); }
+.obb-field textarea { min-height: 104px; resize: vertical; }
+.obb-field input:focus, .obb-field select:focus, .obb-field textarea:focus { outline: 2px solid var(--violet-600); outline-offset: 2px; background: var(--canvas); }
+.obb-consent { display: flex; gap: 14px; align-items: flex-start; grid-column: 1 / -1; margin-top: 6px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--raised); }
+.obb-consent input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--violet-600); }
+.obb-consent label { font: 400 15px/21px var(--font-text); color: var(--ink); }
+.obb-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 28px; }
+.obb-submit .ft-btn { border: 0; cursor: pointer; }
+.obb-submit p { color: var(--ink-muted); max-width: 300px; }
+.obb-status { margin-top: 18px; color: var(--ink); }
+.obb-status[data-kind="error"] { color: var(--coral-600); }
+.obb-thanks { display: none; }
+.obb-form.is-sent .obb-thanks { display: block; }
+.obb-form.is-sent form { display: none; }
+.obb-thanks > .ft-tile { margin-bottom: 28px; }
+.obb-thanks p { margin-top: 10px; color: var(--ink-muted); max-width: 460px; }
+.obb-hidden { position: absolute; left: -9999px; }
+@media (max-width: 1080px) { .obb-start, .obb-two { grid-template-columns: 1fr; } .obb-start .ft-card, .obb-two .ft-card { grid-column: auto; } .obb-steps { grid-template-columns: 1fr; gap: 32px; } }
+@media (max-width: 640px) { .obb-fields { grid-template-columns: 1fr; } .obb-plan, .obb-form, .obb-talk { padding: 28px 20px; } .obb-price b { font-size: 60px; line-height: 60px; } .ft-hero .ft-btn, .ft-section-head .ft-btn { min-width: 0; width: 100%; } .obb-actions { flex-direction: column; } .obb-faq summary.label { font-size: 18px; } }
+
+@media (max-width: 860px) {
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 84px); }
+  .ft-navbar { top: 0; display: block; }
+  .ft-navbar .ft-nav { display: flex; width: 100%; height: auto; min-height: calc(env(safe-area-inset-top, 0px) + 68px); padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px 20px; border-width: 0 0 1px; border-color: var(--line); border-radius: 0; background: #FFFFFFEB; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .ft-hero { padding-top: calc(env(safe-area-inset-top, 0px) + 108px); }
+}
+
+.obb-one { max-width: 560px; margin: 0 auto; }
+.ft-footer__top.obb-foot { grid-template-columns: 402px auto; }
+@media (max-width: 640px) {
+  .ft-section { padding-top: 56px; padding-bottom: 56px; }
+  .ft-section__body { margin-top: 36px; }
+  .ft-section-head > .ft-tile { margin-bottom: 28px; }
+  .ft-section-head__lead { margin-top: 16px; }
+  .ft-grid { gap: 16px; }
+  .ft-card { min-height: 0; }
+  .ft-card__art { flex: none; height: 214px; min-height: 0; }
+  .ft-card__text { padding: 0 22px 24px; }
+  .ft-card__title { font-size: 23px; line-height: 28px; }
+  .ft-rings { top: 98px; width: 210px; height: 210px; margin: -105px 0 0 -105px; }
+  .ft-rings::after { inset: 38px; }
+  .ft-chip { height: 54px; gap: 12px; padding: 0 18px 0 8px; font-size: 16px; }
+  .ft-chip > .ft-tile { --size: 38px; --r: 9px; }
+  .ft-chipstack { display: flex; flex-direction: column; align-items: center; gap: 10px; top: 46px; }
+  .ft-chipstack > .ft-chip { grid-area: auto; }
+  .ft-chipstack > .ft-chip.is-back { order: 2; transform: none; opacity: .7; }
+  .ft-doc { width: 96px; height: 72px; }
+  .ft-card--wide .ft-mini { left: 50% !important; margin-left: -140px; }
+  .ft-card--wide .ft-mini + .ft-mini { display: none; }
+  .ft-card--wide .ft-card__art > .ft-tile[style*="left:28px"] { display: none; }
+  .ft-card--wide .ft-mini { top: 16px !important; }
+  .obb-submit .ft-btn { width: 100%; }
+  .obb-submit p { max-width: none; }
+  .ft-card .ft-tile--lg[style*="position:absolute"] { --size: 96px; --r: 20px; margin-left: -48px !important; top: 50px !important; }
+  .obb-choice > .ft-tile, .obb-talk > .ft-tile { margin-bottom: 22px; }
+  .ft-panel { padding-top: 32px; padding-bottom: 32px; }
+  .obb-steps { margin-top: 32px; gap: 28px; padding: 0 6px; }
+  .obb-step > .ft-tile { margin-bottom: 16px; }
+  .obb-faq { margin-top: 24px; }
+  .obb-faq summary { padding: 18px 2px; }
+  .ft-hero { padding-bottom: 64px; }
+  .ft-footer__bottom { margin-top: 32px; }
+}
+
+@media (max-width: 1080px) { .ft-footer__top.obb-foot { grid-template-columns: 1fr; gap: 36px; } }
+@media (max-width: 640px) { .ft-footer__brand { font-size: 26px; line-height: 30px; } .ft-footer__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 24px; } }
+.obb-one .obb-plan .ft-btn { width: 100%; }
+
+.obb-about { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 48px; align-items: center; padding: 48px; }
+.obb-about__photo { margin: 0; }
+.obb-about__photo img { display: block; width: 100%; height: auto; border-radius: var(--radius-tile-xl); background: var(--surface); box-shadow: var(--shadow-tile); }
+.obb-about__text h2 { margin-top: 18px; letter-spacing: -0.025em; }
+.obb-about__text .lead { margin-top: 14px; color: var(--ink-muted); }
+.obb-about__text .ft-btn { margin-top: 26px; }
+.obb-quotes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; width: var(--content); max-width: 100%; margin: 0 auto; }
+.obb-quote { grid-column: span 2; display: flex; flex-direction: column; margin: 0; padding: 30px 28px 26px; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.obb-quote:nth-child(n+4) { grid-column: span 3; }
+.obb-quote blockquote { margin: 0; color: var(--ink); }
+.obb-quote blockquote::before { content: ""; display: block; width: 26px; height: 3px; margin-bottom: 16px; border-radius: 2px; background: var(--grad-violet-tile); }
+.obb-quote figcaption { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; }
+.obb-quote img { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--surface); }
+.obb-quote b { font: 600 15px/20px var(--font-display); letter-spacing: -0.01em; }
+@media (max-width: 1080px) {
+  .obb-quotes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .obb-quote, .obb-quote:nth-child(n+4) { grid-column: span 1; }
+  .obb-quote:last-child { grid-column: span 2; }
+  .obb-about { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 36px 28px; text-align: center; }
+  .obb-about__photo { width: 200px; margin: 0 auto; }
+  .obb-about .ft-btn { margin: 26px auto 0; }
+}
+@media (max-width: 640px) {
+  .obb-quotes { grid-template-columns: minmax(0, 1fr); max-width: min(480px, 100%); }
+  .obb-quote, .obb-quote:nth-child(n+4), .obb-quote:last-child { grid-column: span 1; }
+  .obb-quote { padding: 24px 22px; }
+}
+
+
+.ft-chipstack { display: flex; flex-direction: column; align-items: center; gap: 10px; top: 50px; }
+.ft-chipstack > .ft-chip { grid-area: auto; }
+.ft-chipstack > .ft-chip.is-back { order: 2; transform: none; opacity: .6; }
+
+.obb-legal { max-width: 760px; margin: 0 auto; padding: 48px 48px 56px; }
+.obb-legal h1 { margin-bottom: 12px; }
+.obb-legal .obb-updated { color: var(--ink-muted); margin-bottom: 36px; }
+.obb-legal h2 { margin: 36px 0 12px; }
+.obb-legal p, .obb-legal li { color: var(--ink-muted); }
+.obb-legal p + p { margin-top: 12px; }
+.obb-legal ul { list-style: disc; padding-left: 22px; display: grid; gap: 8px; margin: 10px 0 14px; }
+.obb-legal a { color: var(--ink); }
+@media (max-width: 640px) { .obb-legal { padding: 28px 20px 36px; } }
 </style>
 </head>
 <body class="ft-page">
 <div class="ft-navbar">
   <nav class="ft-nav" aria-label="Main">
-    <a class="ft-nav__brand brand" href="/">EmailFirst</a>
-    <div class="ft-nav__actions"><a class="ft-btn ft-btn--primary" href="/">Back to the home page</a></div>
+    <a class="ft-nav__brand brand" href="/">Online Business Builder</a>
+    <ul class="ft-nav__links">
+      <li><a href="/#website">Website</a></li>
+      <li><a href="/#profile">Google profile</a></li>
+      <li><a href="/#about">About</a></li>
+      <li><a href="/#pricing">Pricing</a></li>
+      <li><a href="/#faqs">Questions</a></li>
+    </ul>
+    <div class="ft-nav__actions">
+      <a class="ft-btn ft-btn--primary" href="https://account.onlinebusinessbuilder.co.uk/chat" target="_blank" rel="noopener">Book a call</a>
+    </div>
   </nav>
 </div>
-<header class="ft-hero">
-  <span class="ft-tile ft-tile--violet"><svg class="ft-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4.5 7.5l7.5 6 7.5-6"/></svg></span>
-  <h1 class="display-l ft-hero__title" style="margin-top: var(--space-40)">Opening soon</h1>
-  <p class="lead ft-hero__lead">This part of EmailFirst isn't open yet. The service is being built and will take its first clients shortly.</p>
-  <a class="ft-btn ft-btn--cta" href="/">Back to the home page</a>
-</header>
+<main>
+<section class="ft-section" style="padding-top:132px">
+  <article class="ft-panel obb-legal">
+    <h1 class="display-m">Privacy notice</h1>
+    <p class="copy-sm obb-updated">Last updated 7 October 2026</p>
+
+    <p class="copy">This notice explains what personal information Online Business Builder collects when you use this website or our service, why we collect it, and what your rights are. We keep it short and in plain English. If anything is unclear, call us on <a href="tel:+443333604102">03333 604 102</a>.</p>
+
+    <h2 class="card-title">Who we are</h2>
+    <p class="copy">Online Business Builder, Eastham Hall, Eastham, Cheshire, CH62 0AF. We are the data controller for the information described here.</p>
+
+    <h2 class="card-title">What we collect and why</h2>
+    <p class="copy">We only collect what we need to respond to you and to run the service.</p>
+    <ul>
+      <li class="copy"><b>When you ask for a free Google profile review</b>, we collect your name, business name, the area you serve, your email address and, if you give it, your website or Google profile link. We use these to prepare the review and send it to you.</li>
+      <li class="copy"><b>When you book a call</b>, our booking page collects your name, email address and phone number so we can hold the appointment and contact you about it.</li>
+      <li class="copy"><b>When you sign up</b>, we collect your name, business details, contact details and the information we need to build your website and manage your Google Business Profile. Card payments are handled by Stripe. We do not see or store your full card number.</li>
+      <li class="copy"><b>When you visit this website</b>, our hosting provider records standard technical information such as your IP address, browser type and the pages requested. This is used to keep the site running and secure. We do not use advertising cookies or tracking pixels on this page.</li>
+    </ul>
+
+    <h2 class="card-title">Our lawful basis</h2>
+    <p class="copy">When you ask us for something, such as a review or a call, we process your details because you have asked us to and it is in our legitimate interest to reply. When you become a client, we process your details to perform our contract with you. We keep accounting records because the law requires it.</p>
+
+    <h2 class="card-title">Who we share it with</h2>
+    <p class="copy">We share your information only with the suppliers we need to deliver the service, and only what they need to do their job:</p>
+    <ul>
+      <li class="copy">Stripe, to take payments.</li>
+      <li class="copy">Our website hosting and email providers, to run this site and communicate with you.</li>
+      <li class="copy">Google, when we manage your Google Business Profile on your behalf.</li>
+      <li class="copy">Our accountants, for the records we are required to keep.</li>
+    </ul>
+    <p class="copy">We do not sell your information and we do not pass it to anyone for their own marketing.</p>
+
+    <h2 class="card-title">How long we keep it</h2>
+    <p class="copy">If you ask for a review or a call and do not go further, we delete your details within 12 months. If you become a client, we keep your details for as long as you are a client and for six years afterwards, which is how long we are required to keep financial records.</p>
+
+    <h2 class="card-title">Your rights</h2>
+    <p class="copy">Under UK data protection law you can ask us to show you the information we hold about you, correct it, delete it, or stop using it. To do any of these, call <a href="tel:+443333604102">03333 604 102</a> or write to the address above. We will reply within one month.</p>
+    <p class="copy">If you are unhappy with how we have handled your information, you can complain to the Information Commissioner's Office at <a href="https://ico.org.uk" target="_blank" rel="noopener">ico.org.uk</a> or on 0303 123 1113.</p>
+
+    <h2 class="card-title">Changes to this notice</h2>
+    <p class="copy">If we change how we use your information, we will update this page and change the date at the top.</p>
+  </article>
+</section>
+<section class="ft-section" style="padding-top:0">
+  <footer class="ft-footer">
+    <div class="ft-footer__bottom" style="margin-top:0; padding-top:0; border-top:0">
+      <p class="copy-sm ft-footer__legal">Online Business Builder, Eastham Hall, Eastham, Cheshire, CH62 0AF. Telephone <a href="tel:+443333604102" style="font:inherit">03333 604 102</a>.</p>
+      <a href="/">Back to the site</a>
+    </div>
+  </footer>
+</section>
+</main>
 </body>
 </html>
