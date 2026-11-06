@@ -33,12 +33,22 @@ jobs:
             echo "GET /v1/hooks/calls: $code, webhook host: $( [ -n "$url" ] && sed -E 's#^https?://##; s#/.*##' <<<"$url" || echo none)"
           }
           show
+          echo "  webhooks listed: $(jq -r '(if type == "array" then . elif (.items // .data // .hooks) != null then (.items // .data // .hooks) else [.] end) | length' <<<"$body")"
           if [ "$CONFIRM" = "DELETE" ] && [ -n "$url" ]; then
             if grep -qE 'onlinebusinessbuilder\.co\.uk|ondigitalocean\.app|account\.speedtolead\.co\.uk|make\.com' <<<"$url"; then
-              del=$(jq -n --arg u "$url" '{hookUrl: $u}' | curl -s -o /dev/null -w '%{http_code}' -X DELETE \
-                -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d @- "$api")
-              echo "DELETE /v1/hooks/calls: $del"
-              show
+              # The endpoint (DELETE /v1/hooks/calls) takes the webhook's address; try the forms it may expect, checking after each.
+              enc=$(jq -rn --arg u "$url" '$u | @uri')
+              for how in body-hookUrl body-url query-hookUrl query-url; do
+                case $how in
+                  body-hookUrl) del=$(jq -n --arg u "$url" '{hookUrl: $u}' | curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d @- "$api") ;;
+                  body-url) del=$(jq -n --arg u "$url" '{url: $u}' | curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d @- "$api") ;;
+                  query-hookUrl) del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" "$api?hookUrl=$enc") ;;
+                  query-url) del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" "$api?url=$enc") ;;
+                esac
+                echo "DELETE ($how): $del"
+                show
+                [ -n "$url" ] || { echo "Removed."; break; }
+              done
             else
               echo "The webhook goes somewhere else, so it was left alone."
             fi
