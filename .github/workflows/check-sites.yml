@@ -20,4 +20,7 @@ jobs:
             r=$(curl -s -o page.html -L --max-time 20 -w "%{http_code} %{url_effective}" "$u" || echo "000 failed")
             title=$(grep -o '<title>[^<]*' page.html 2>/dev/null | head -1 | sed 's/<title>//')
             echo "$u -> $r | ${title:-no title}"
+            # Where the page's sign-up, booking and form links go (public links only).
+            grep -oE '(href|action)="[^"]*(account\.|buy\.stripe\.com|checkout\.stripe\.com|cal\.com|calendly\.com|/buy/|/api/leads|/chat|/login)[^"]*"|fetch\(['"'"'"][^'"'"'"]+' page.html 2>/dev/null \
+              | sed -E 's/[?].*//; s/^(href|action)="//; s/"$//; s/^fetch\(.//' | sort | uniq -c | sed 's/^/    /'
           done
