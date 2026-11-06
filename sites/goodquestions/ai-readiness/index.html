@@ -71,8 +71,7 @@
       <div class="areas" id="areas"></div>
       <h2>What to do next</h2>
       <ol class="steps" id="steps"></ol>
-      <form id="report" name="ai-readiness" method="POST" data-netlify="true" netlify-honeypot="company-name" novalidate>
-        <input type="hidden" name="form-name" value="ai-readiness"><input type="hidden" name="scores"><input type="hidden" name="answers"><input type="hidden" name="ref">
+      <form id="report" novalidate>
         <h2>Get your written report</h2>
         <p class="hp"><label>Leave this empty <input name="company-name" tabindex="-1" autocomplete="off"></label></p>
         <label for="r-name">Your name</label><input type="text" id="r-name" name="name" autocomplete="name">
@@ -88,6 +87,7 @@
 </div>
 <script>
 (function () {
+  var API = "https://account.goodquestions.co.uk/api/leads/goodquestions";
   var AREAS = { strategy: "Strategy", leadership: "Leadership", people: "People", data: "Data", implementation: "Implementation" };
   var ADVICE = {
     strategy: "Write down three tasks where AI would save real time, and put them in order.",
@@ -136,9 +136,9 @@
     $("question").focus();
   }
   function next() { if (i < Q.length - 1) { i++; render(); } else finish(); }
-  function send(f) {
-    f.scores.value = JSON.stringify(scores); f.answers.value = JSON.stringify(answers); f.ref.value = ref;
-    return fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(new FormData(f)).toString() });
+  function send(extra) {
+    var body = Object.assign({ _type: "assessment", ref: ref, scores: scores, answers: answers }, extra || {});
+    return fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
   function finish() {
     var sum = {}, n = {};
@@ -152,6 +152,7 @@
     $("steps").innerHTML = Object.keys(AREAS).sort(function (a, b) { return scores[a] - scores[b]; }).slice(0, 3)
       .map(function (a) { return "<li>" + ADVICE[a] + "</li>"; }).join("");
     show("result");
+    send().catch(function () {});
   }
   $("start").addEventListener("click", function () { show("quiz"); render(); });
   $("back").addEventListener("click", function () { if (i > 0) { i--; render(); } });
@@ -160,8 +161,8 @@
     var f = e.target, status = $("status");
     if (!f.email.checkValidity()) { status.textContent = "Please enter your email address."; f.email.focus(); return; }
     var btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
-    send(f)
-      .then(function (r) { if (!r.ok) throw new Error(); f.innerHTML = '<h2>Thank you</h2><p>Your written report will be emailed to ' + f.email.value.replace(/[<>&"]/g, "") + ' within two working days.</p>'; })
+    send({ name: f.name.value, email: f.email.value, business: f.business.value, wants_help: f.wants_help.checked, "company-name": f["company-name"].value })
+      .then(function (r) { if (!r.ok) throw new Error(); f.innerHTML = '<h2>Thank you</h2><p>Your written report is on its way to ' + f.email.value.replace(/[<>&"]/g, "") + '.</p>'; })
       .catch(function () { status.textContent = "Sorry, that did not send. Please try again."; btn.disabled = false; btn.textContent = "Email me the report"; });
   });
 })();
