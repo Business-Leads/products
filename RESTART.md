@@ -50,9 +50,10 @@ back.
   (account.goodquestions.co.uk/survey/…).
 - Reading replies. Mail to info+hq@felixclarke.com still lands in Gmail under the
   "HQ Replies" label, but nothing acts on it.
-- Webhooks into HQ. HQ's own Stripe and Cal.com webhooks were removed. The Sbl.so
-  webhook and the Make scenario "Watch Calls" (Awaz calls) were set up by hand and
-  now point at nothing, so turn the Make scenario off to stop its error emails.
+- Webhooks into HQ. HQ's own Stripe and Cal.com webhooks were removed, and so was
+  Awaz's call webhook, which fed the Make scenario "Watch Calls" (Awaz calls) that
+  passed calls on to HQ. That scenario now never runs. The Sbl.so webhook was set up
+  by hand in Sbl.so and now points at nothing, which does no harm.
 
 ## Where everything is kept
 
@@ -64,7 +65,7 @@ back.
 | Cal.com call types | Cal.com, unchanged |
 | Stripe products, prices and payment links | Stripe (Email First Ltd account, shared with Mailpulse and Business Leads) |
 | Prospect master file | UK_Prospects_Master.csv in Felix's Google Drive (also inside the backup) |
-| DNS | GoDaddy still has the CNAMEs for hq.onlinebusinessbuilder.co.uk and account.linkn.co.uk, account.speedtolead.co.uk, account.goodquestions.co.uk and account.onlinebusinessbuilder.co.uk. Cloudflare has account.emailfirst.co.uk. They point at the deleted app and are harmless; Deploy points them at the new app. |
+| DNS | The GoDaddy CNAMEs for hq.onlinebusinessbuilder.co.uk and account.linkn.co.uk, account.speedtolead.co.uk, account.goodquestions.co.uk and account.onlinebusinessbuilder.co.uk were removed on 6 November 2026 ("Remove HQ DNS records" workflow). Deploy adds them back. account.emailfirst.co.uk is in Cloudflare and is added or removed there by hand. |
 
 HQ uses these repository secrets. DIGITALOCEAN_ACCESS_TOKEN, STRIPE_SECRET_KEY,
 ANTHROPIC_API_KEY, ADMIN_PASSWORD (optional), GMAIL_APP_PASSWORD, REPLY_MAILBOX
@@ -131,7 +132,8 @@ Allow about an hour. Do the steps in order.
    SBL_WEBHOOK_TOKEN and AWAZ_WEBHOOK_TOKEN from the app-settings file in part 1 into
    the app's settings in DigitalOcean (App, web, Settings, Environment Variables).
    Otherwise copy the new addresses from HQ's Linkn and Speed to Lead product pages
-   into Sbl.so and the Make scenario "Watch Calls", and turn the scenario back on.
+   into Sbl.so and the Make scenario "Watch Calls". Then turn the scenario off and on
+   again in Make, which gives Awaz its call webhook back.
 7. **Before switching on**, catch up on what happened while HQ was off.
    - People who booked on Cal.com while HQ was off. Clear their follow-ups, and tick
      onboarding calls on each customer's page.
@@ -196,3 +198,5 @@ Allow about an hour. Do the steps in order.
 | Pull sites from Netlify | Copies the live sites into `sites/` and commits | No |
 | Check sites | Loads pages as a visitor and lists their booking, sign-up and form links | No |
 | SMTP check, IMAP check | Check the Gmail login HQ sends and reads with | No |
+| Awaz hooks | Shows, or removes, Awaz's call webhook | No |
+| Remove HQ DNS records | Lists, or removes, the GoDaddy CNAMEs that pointed at HQ | No |
