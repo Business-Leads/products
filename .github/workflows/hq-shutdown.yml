@@ -1,0 +1,41 @@
+# Shuts HQ down: deletes the DigitalOcean app products-hq and its database
+# cluster products-hq-db, and HQ's own Stripe and Cal.com webhooks. See
+# scripts/hq-shutdown.mjs and RESTART.md.
+# Without "DELETE" typed in, it only lists what it would remove. Deleting also
+# needs a successful "HQ snapshot" run from the last 7 days.
+name: HQ shutdown
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DELETE to remove HQ for real (anything else is a dry run)'
+        default: ""
+permissions:
+  contents: read
+  actions: read
+jobs:
+  shutdown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Check there's a recent backup
+        if: inputs.confirm == 'DELETE'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow hq-snapshot.yml --status success --limit 1 --json createdAt,url > last.json
+          when=$(jq -r '.[0].createdAt // empty' last.json)
+          [ -n "$when" ] || { echo "No successful HQ snapshot yet: run that first."; exit 1; }
+          age=$(( ( $(date +%s) - $(date -d "$when" +%s) ) / 86400 ))
+          echo "Latest good snapshot: $when ($(jq -r '.[0].url' last.json))"
+          [ "$age" -le 7 ] || { echo "That snapshot is $age days old: take a fresh one first."; exit 1; }
+      - name: Shut down
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          CALCOM_API_KEY: ${{ secrets.CALCOM_API_KEY }}
+        run: node scripts/hq-shutdown.mjs ${{ inputs.confirm == 'DELETE' && '--delete' || '' }}

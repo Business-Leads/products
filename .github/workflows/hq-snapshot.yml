@@ -1,0 +1,127 @@
+# Takes a full backup of HQ's database (DigitalOcean cluster products-hq-db) so
+# HQ can be shut down and brought back later with all its data. See RESTART.md.
+#
+# 1. Pauses HQ (the same switch as Settings, Pause everything), so nothing goes
+#    out while it is shut down, and so a restored HQ starts paused.
+# 2. Dumps the database and emails it, in 15 MB parts, to the owner's mailbox
+#    (REPLY_MAILBOX, default info@felixclarke.com). The repo is public, so the
+#    backup is never stored here or uploaded as a workflow artifact.
+# 3. Reads the parts back from the mailbox, checks them and restores them into
+#    a throwaway database, to prove the backup can be restored.
+# Only table names, row counts and checksums are printed; never contact data.
+name: HQ snapshot
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      id: ${{ steps.dump.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Pause HQ and back up its database
+        id: dump
+        env:
+          DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
+        run: |
+          set -euo pipefail
+          curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases" \
+            | jq -e '.databases[] | select(.name == "products-hq-db")' > cluster.json
+          echo "::add-mask::$(jq -r .connection.password cluster.json)"
+          V=$(jq -r .version cluster.json)
+          echo "Cluster products-hq-db: Postgres $V, $(jq -r .status cluster.json)"
+          [ "$V" = "16" ] || { echo "This workflow expects Postgres 16; update it for $V."; exit 1; }
+          export PGHOST=$(jq -r .connection.host cluster.json)
+          export PGPORT=$(jq -r .connection.port cluster.json)
+          export PGUSER=$(jq -r .connection.user cluster.json)
+          export PGPASSWORD=$(jq -r .connection.password cluster.json)
+          export PGDATABASE=$(jq -r .connection.database cluster.json)
+          export PGSSLMODE=require
+          rm cluster.json
+          BIN=/usr/lib/postgresql/16/bin
+
+          echo "Databases on the cluster: $(psql -Atc "SELECT string_agg(datname, ', ') FROM pg_database WHERE NOT datistemplate")"
+          psql -v ON_ERROR_STOP=1 -qc "INSERT INTO settings (key, value, updated_at) VALUES ('paused:all', 'true', now())
+            ON CONFLICT (key) DO UPDATE SET value = 'true', updated_at = now()"
+          echo "HQ is paused (Settings, Pause everything)."
+
+          counts() {
+            psql -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1" \
+              | while read -r t; do echo "$t $(psql -Atc "SELECT count(*) FROM \"$t\"")"; done
+          }
+          counts > before.txt
+          ID="hq-snapshot-$(date -u +%Y%m%d-%H%M)"
+          "$BIN/pg_dump" -Fc -Z 9 --no-owner --no-acl -f backup.dump
+          "$BIN/pg_restore" --list backup.dump > /dev/null
+          counts > after.txt
+          # Tables whose count didn't move while the dump ran must match exactly after a restore.
+          LC_ALL=C join <(LC_ALL=C sort before.txt) <(LC_ALL=C sort after.txt) | awk '$2 == $3 { print $1, $2 }' > stable.txt
+          echo "Rows per table at backup time:"; sed 's/^/  /' after.txt
+          {
+            echo "Rows per table at backup time:"; sed 's/^/  /' after.txt
+            echo; echo "Customers by product and status:"
+            psql -At -F ' ' -c "SELECT product, status, count(*) FROM customers GROUP BY 1, 2 ORDER BY 1, 2" | sed 's/^/  /'
+          } > notes.txt
+          echo "Customers by product and status:"; sed -n '/^Customers/,$p' notes.txt | tail -n +2
+
+          node scripts/hq-snapshot.mjs send "$ID" backup.dump notes.txt
+          rm -f backup.dump
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: row-counts
+          path: |
+            after.txt
+            stable.txt
+          retention-days: 7
+
+  verify:
+    needs: snapshot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: restore
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with: { name: row-counts }
+      - name: Read the backup back from the mailbox and restore it into a test database
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
+          ID: ${{ needs.snapshot.outputs.id }}
+        run: |
+          set -euo pipefail
+          node scripts/hq-snapshot.mjs fetch "$ID" backup.dump
+          export PGHOST=localhost PGUSER=postgres PGPASSWORD=test PGDATABASE=restore
+          /usr/lib/postgresql/16/bin/pg_restore --no-owner --no-acl --exit-on-error --single-transaction -d restore backup.dump
+          rm -f backup.dump
+          bad=0
+          while read -r t n; do
+            got=$(psql -Atc "SELECT count(*) FROM \"$t\"" 2>/dev/null || echo missing)
+            if grep -q "^$t " stable.txt; then
+              [ "$got" = "$n" ] && echo "  $t: $got rows, matches" || { echo "  $t: $got rows, expected $n"; bad=1; }
+            else
+              [ "$got" != missing ] && echo "  $t: $got rows (was changing during the backup: $n)" || { echo "  $t: missing"; bad=1; }
+            fi
+          done < after.txt
+          [ "$bad" = 0 ] || { echo "The restored copy doesn't match."; exit 1; }
+          echo "Backup $ID restored cleanly: it is safe to shut HQ down."
