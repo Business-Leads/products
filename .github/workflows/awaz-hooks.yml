@@ -1,12 +1,14 @@
-# Lists the call webhooks Awaz (Speed to Lead) sends calls to, and with "DELETE"
-# removes the ones that went to HQ (deleted 6 Nov 2026) or to the Make scenario
-# that forwarded calls to HQ. Prints only each webhook's host, never its token.
+# Shows where Awaz (Speed to Lead) sends its call webhook, and with "DELETE"
+# removes it when it goes to HQ (deleted 6 Nov 2026) or to the Make scenario
+# "Watch Calls" that forwarded calls to HQ. Awaz has one call webhook per account
+# (public API: GET and DELETE /v1/hooks/calls, from api.awaz.ai/docs-json).
+# Prints only the webhook's host, never its token. To restart, see RESTART.md.
 name: Awaz hooks
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type DELETE to remove the HQ and Make webhooks (anything else only lists)'
+        description: 'Type DELETE to remove the HQ or Make call webhook (anything else only shows it)'
         default: ""
 permissions: {}
 jobs:
@@ -14,31 +16,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Awaz call webhooks
+      - name: Awaz call webhook
         env:
           KEY: ${{ secrets.AWAZ_API_KEY }}
           CONFIRM: ${{ inputs.confirm }}
         run: |
           set -uo pipefail
-          api=https://api.awaz.ai/v1
-          get() { curl -s -w '\n%{http_code}' -H "Authorization: Bearer $KEY" -H "Accept: application/json" "$api$1"; }
-          for path in /hooks/calls /hooks; do
-            out=$(get "$path"); code=$(tail -n1 <<<"$out"); body=$(sed '$d' <<<"$out")
-            echo "GET $path: $code"
-            [ "$code" = 200 ] || { echo "  $(head -c 200 <<<"$body")"; continue; }
-            # The field names of each webhook (never their values), then id, host, status and agents only.
-            jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[] | "  fields: \(keys | join(", "))"' <<<"$body"
-            # The list, wherever the API puts it; show id, host, status and agent count only.
-            jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
-                   | "  \(.id // ._id // .hookId // .uuid // "?")  \((.hookUrl // .url // "") | sub("^https?://"; "") | split("/")[0])  \(.status // "" | tostring)  agents=\((.agents // []) | length)"' <<<"$body" || echo "  (unexpected shape: $(jq -c 'keys? // type' <<<"$body"))"
-            if [ "$CONFIRM" = "DELETE" ]; then
-              jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
-                     | select((.hookUrl // .url // "") | test("onlinebusinessbuilder\\.co\\.uk|ondigitalocean\\.app|account\\.speedtolead\\.co\\.uk|make\\.com"))
-                     | (.id // ._id // .hookId // .uuid)' <<<"$body" | while read -r id; do
-                [ -n "$id" ] || continue
-                del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" "$api$path/$id")
-                echo "  removed $id ($del)"
-              done
+          api=https://api.awaz.ai/v1/hooks/calls
+          show() {
+            out=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $KEY" -H "Accept: application/json" "$api")
+            code=$(tail -n1 <<<"$out"); body=$(sed '$d' <<<"$out")
+            url=$(jq -r '(if type == "array" then .[0] else . end) | (.url // .hookUrl // empty)' <<<"$body" 2>/dev/null)
+            echo "GET /v1/hooks/calls: $code, webhook host: $( [ -n "$url" ] && sed -E 's#^https?://##; s#/.*##' <<<"$url" || echo none)"
+          }
+          show
+          if [ "$CONFIRM" = "DELETE" ] && [ -n "$url" ]; then
+            if grep -qE 'onlinebusinessbuilder\.co\.uk|ondigitalocean\.app|account\.speedtolead\.co\.uk|make\.com' <<<"$url"; then
+              del=$(jq -n --arg u "$url" '{hookUrl: $u}' | curl -s -o /dev/null -w '%{http_code}' -X DELETE \
+                -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d @- "$api")
+              echo "DELETE /v1/hooks/calls: $del"
+              show
+            else
+              echo "The webhook goes somewhere else, so it was left alone."
             fi
-            break
-          done
+          fi
