@@ -8,6 +8,20 @@ The owner's plan usage is limited. Read this file and README.md, then work
 directly. Don't re-research the products: what's known is encoded in
 `src/products/*.ts`.
 
+## Status: HQ is switched off (6 Nov 2026)
+The owner shut HQ down to stop the DigitalOcean bill ("I don't want the HQ
+anymore"). Read RESTART.md first: what still works, where everything is kept
+and how to bring it back. Don't redeploy or restart HQ unless the owner asks.
+- The sites run without HQ: calls are booked straight on Cal.com
+  (cal.com/felix-clarke/<product>-chat), sign-ups use Stripe payment links
+  (`scripts/payment-links.ts`, then the onboarding call on Cal.com), and forms
+  use Netlify Forms, emailed to info@felixclarke.com. No site links to account.<site>.
+- The database backup is emails in info@felixclarke.com, subject
+  `hq-snapshot-20261106-1503 part N of M` (HQ made it itself, `src/ops/snapshot.ts`;
+  its database was an App Platform dev database only the app could reach, and the
+  products-hq-db cluster was empty). Never delete those emails.
+- The rest of this file describes HQ as it ran, for when it comes back.
+
 ## What this is
 One Node 22 / TypeScript app (Fastify + Postgres, no frontend build) that
 markets, onboards and runs six products: FirstPageLocal, Linkn, Speed to
@@ -127,6 +141,8 @@ Known blockers:
   faces on gradient tiles. Keep new icons in that style.
 - Stripe checkout must never show Business Leads: `checkoutBranding()` in
   lib/stripe.ts sets each product's name, icon (static/products/*.png) and colours.
+  The one exception is the sites' payment links (Nov 2026): Stripe can't brand a
+  payment link, so they show the account name, which the owner accepted.
 - Ask one simple question at a time; no long explanations.
 - Do everything yourself; only make something a manual job when it truly
   can't be automated, and then give it a `guide` (why, minutes, numbered
@@ -191,9 +207,8 @@ Known blockers:
 - EmailFirst pricing (owner, Oct 2026): £499 a month email campaign (plan `campaign`), with
   LinkedIn Starter/Business/Growth (£199/£349/£649) as monthly add-ons, matching the
   live site, which the owner now edits directly on Netlify. Run "Pull sites from
-  Netlify" before publishing sites so a direct edit is never overwritten. The site's
-  Book a chat buttons still go to the old Calendly link; LinkedIn add-ons have no HQ
-  fulfilment yet.
+  Netlify" before publishing sites so a direct edit is never overwritten. All of the
+  sites' calls are Cal.com; LinkedIn add-ons have no HQ fulfilment yet.
 - Product suite reference for the Manchester and Liverpool directory sites:
   https://claude.ai/artifact/K6HgnpgUP8SWyMDrKrP8XK (lead EmailFirst, then Linkn; no hub page yet).
 - EmailFirst / Good Questions: MailWizz at portal.emailfirst.co.uk
