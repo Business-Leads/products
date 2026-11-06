@@ -44,7 +44,7 @@ jobs:
           export PGUSER=$(jq -r .connection.user cluster.json)
           export PGPASSWORD=$(jq -r .connection.password cluster.json)
           export PGDATABASE=$(jq -r .connection.database cluster.json)
-          export PGSSLMODE=require
+          export PGSSLMODE=require PGOPTIONS='-c search_path=app,public'
           rm cluster.json
           BIN=/usr/lib/postgresql/16/bin
 
@@ -54,7 +54,7 @@ jobs:
           echo "HQ is paused (Settings, Pause everything)."
 
           counts() {
-            psql -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1" \
+            psql -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'app' AND table_type = 'BASE TABLE' ORDER BY 1" \
               | while read -r t; do echo "$t $(psql -Atc "SELECT count(*) FROM \"$t\"")"; done
           }
           counts > before.txt
@@ -111,7 +111,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/hq-snapshot.mjs fetch "$ID" backup.dump
-          export PGHOST=localhost PGUSER=postgres PGPASSWORD=test PGDATABASE=restore
+          export PGHOST=localhost PGUSER=postgres PGPASSWORD=test PGDATABASE=restore PGOPTIONS='-c search_path=app,public'
           /usr/lib/postgresql/16/bin/pg_restore --no-owner --no-acl --exit-on-error --single-transaction -d restore backup.dump
           rm -f backup.dump
           bad=0

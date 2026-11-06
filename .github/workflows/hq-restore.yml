@@ -1,0 +1,68 @@
+# Loads an HQ snapshot (made by "HQ snapshot", kept as emails in the owner's
+# mailbox) into HQ's database. Run it after the Deploy workflow has created
+# the app and its database again. See RESTART.md.
+# Replaces everything in the database with the snapshot. HQ comes back paused;
+# switch it on in Settings (Switch everything back on) when ready.
+# Prints only row counts and checksums.
+name: Restore HQ snapshot
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: 'Snapshot name, e.g. hq-snapshot-20261106-1340, or "latest"'
+        default: latest
+      confirm:
+        description: 'Type RESTORE to replace the database with the snapshot'
+        default: ""
+permissions:
+  contents: read
+jobs:
+  restore:
+    if: inputs.confirm == 'RESTORE'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Fetch the snapshot from the mailbox
+        env:
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
+        run: node scripts/hq-snapshot.mjs fetch "${{ inputs.snapshot }}" backup.dump
+      - name: Load it into products-hq-db
+        env:
+          DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases" \
+            | jq -e '.databases[] | select(.name == "products-hq-db")' > cluster.json \
+            || { echo "No products-hq-db cluster: run the Deploy workflow first."; exit 1; }
+          echo "::add-mask::$(jq -r .connection.password cluster.json)"
+          [ "$(jq -r .status cluster.json)" = online ] || { echo "The database isn't online yet; try again in a few minutes."; exit 1; }
+          export PGHOST=$(jq -r .connection.host cluster.json)
+          export PGPORT=$(jq -r .connection.port cluster.json)
+          export PGUSER=$(jq -r .connection.user cluster.json)
+          export PGPASSWORD=$(jq -r .connection.password cluster.json)
+          export PGDATABASE=$(jq -r .connection.database cluster.json)
+          export PGSSLMODE=require PGOPTIONS='-c search_path=app,public'
+          rm cluster.json
+          V=$(psql -Atc "SHOW server_version_num" | cut -c1-2)
+          BIN=/usr/lib/postgresql/16/bin
+          if [ "$V" != "16" ]; then
+            sudo apt-get install -y -q postgresql-common > /dev/null
+            sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+            sudo apt-get install -y -q "postgresql-client-$V" > /dev/null
+            BIN=/usr/lib/postgresql/$V/bin
+          fi
+          # One transaction: either the whole snapshot goes in, or nothing changes.
+          # If HQ was busy and this fails on a lock, just run it again.
+          "$BIN/pg_restore" --clean --if-exists --no-owner --no-acl --exit-on-error --single-transaction -d "$PGDATABASE" backup.dump
+          rm -f backup.dump
+          psql -v ON_ERROR_STOP=1 -qc "INSERT INTO settings (key, value, updated_at) VALUES ('paused:all', 'true', now())
+            ON CONFLICT (key) DO UPDATE SET value = 'true', updated_at = now()"
+          echo "Restored. Rows per table:"
+          psql -At -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'app' AND table_type = 'BASE TABLE' ORDER BY 1" \
+            | while read -r t; do echo "  $t $(psql -Atc "SELECT count(*) FROM \"$t\"")"; done
+          echo "HQ is paused. Sign in and use Settings, Switch everything back on, when you're ready."
