@@ -3,16 +3,19 @@
 # mailbox (info@felixclarke.com), because its database can only be reached from
 # inside the app and the repo is public.
 # This reads the parts back from the mailbox, checks the checksum, restores the
-# backup into a throwaway database and compares every row count. A successful
-# run is what "HQ shutdown" needs before it deletes anything.
+# backup into a throwaway database and compares every row count. Only emails the
+# mailbox sent itself count (Sent Mail, from its own address). A successful run
+# for the backup named in SNAPSHOT_REQUEST is what "HQ shutdown" needs before it
+# deletes anything.
 # Only sizes, checksums, table names and row counts are printed; never contact data.
 name: HQ snapshot
+run-name: HQ snapshot check ${{ inputs.snapshot }}
 on:
   workflow_dispatch:
     inputs:
       snapshot:
-        description: 'Backup name, e.g. hq-snapshot-20261106-1440, or "latest"'
-        default: latest
+        description: 'Backup name, exactly as HQ logged it, e.g. hq-snapshot-20261106-1440'
+        required: true
 permissions:
   contents: read
 jobs:
@@ -40,6 +43,7 @@ jobs:
           SNAPSHOT: ${{ inputs.snapshot }}
         run: |
           set -euo pipefail
+          [[ "$SNAPSHOT" =~ ^hq-snapshot-[0-9]{8}-[0-9]{4}$ ]] || { echo "Give the backup's exact name, e.g. hq-snapshot-20261106-1440."; exit 1; }
           npx tsx scripts/hq-snapshot.ts fetch "$SNAPSHOT" backup.dump
           export PGHOST=localhost PGUSER=postgres PGPASSWORD=test PGDATABASE=restore PGOPTIONS='-c search_path=app,public'
           /usr/lib/postgresql/16/bin/pg_restore --no-owner --no-acl --exit-on-error --single-transaction -d restore backup.dump

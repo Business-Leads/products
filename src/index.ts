@@ -11,7 +11,11 @@ async function main() {
   if (isProduction && problems.length) {
     throw new Error(`Refusing to start: ${problems.join("; ")}`);
   }
-  // A requested backup is loaded first, once, so a restarted HQ comes back with its data (paused).
+  // The web server answers first (the health check only needs the database to be reachable),
+  // so a long restore doesn't fail the deployment.
+  const app = await buildServer();
+  await app.listen({ port: config.port, host: "0.0.0.0" });
+  // A requested backup is loaded before the tables are set up, once, so a restarted HQ comes back with its data (paused).
   if (RESTORE_REQUEST) await restoreSnapshot(RESTORE_REQUEST);
   const applied = await migrate();
   if (applied.length) console.log(`Applied migrations: ${applied.join(", ")}`);
@@ -31,8 +35,6 @@ async function main() {
   const invited = await sendPendingInvites().catch((err) => (console.error("HQ invites:", err), 0));
   if (invited) console.log(`Emailed ${invited} HQ login link(s)`);
 
-  const app = await buildServer();
-  await app.listen({ port: config.port, host: "0.0.0.0" });
   // A requested backup is made once, before any jobs run (it pauses HQ first).
   if (SNAPSHOT_REQUEST) await makeSnapshot(SNAPSHOT_REQUEST).catch((err) => console.log(`HQ snapshot: ${(err as Error).message}`));
   startScheduler();

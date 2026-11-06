@@ -153,7 +153,7 @@ if (!DO) {
       let found = 0;
       for (const u of urls) {
         const text = await fetch(u, { signal: AbortSignal.timeout(20_000) }).then((r) => r.text()).catch(() => "");
-        for (const line of text.split("\n")) if (/HQ database:|Applied migrations:/.test(line)) { say(`  log: ${line.replace(/^.*?(HQ database:|Applied migrations:)/, "$1")}`); found++; }
+        for (const line of text.split("\n")) if (/HQ database:|HQ snapshot |HQ restore|Applied migrations:/.test(line)) { say(`  log: ${line.replace(/^.*?(HQ database:|HQ snapshot |HQ restore|Applied migrations:)/, "$1")}`); found++; }
       }
       if (!found) say(`  log: no "HQ database" line yet${logs.error ? ` (${logs.error})` : ""}`);
     }

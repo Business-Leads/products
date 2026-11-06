@@ -2,7 +2,8 @@
 # cluster products-hq-db, and HQ's own Stripe and Cal.com webhooks. See
 # scripts/hq-shutdown.mjs and RESTART.md.
 # Without "DELETE" typed in, it only lists what it would remove. Deleting also
-# needs a successful "HQ snapshot" run from the last 7 days.
+# needs a successful "HQ snapshot" check, in the last 7 days, of the backup that
+# SNAPSHOT_REQUEST in src/ops/snapshot.ts names.
 name: HQ shutdown
 on:
   workflow_dispatch:
@@ -21,18 +22,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - name: Check there's a recent backup
+      - name: Check the backup was made and checked
         if: inputs.confirm == 'DELETE'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh run list --repo "$GITHUB_REPOSITORY" --workflow hq-snapshot.yml --status success --limit 1 --json createdAt,url > last.json
-          when=$(jq -r '.[0].createdAt // empty' last.json)
-          [ -n "$when" ] || { echo "No successful HQ snapshot yet: run that first."; exit 1; }
+          # The backup HQ was asked to make (src/ops/snapshot.ts), and a successful "HQ snapshot" check of exactly that one.
+          id=$(grep -oE '^export const SNAPSHOT_REQUEST = "hq-snapshot-[0-9]{8}-[0-9]{4}"' src/ops/snapshot.ts | grep -oE 'hq-snapshot-[0-9]{8}-[0-9]{4}' || true)
+          [ -n "$id" ] || { echo "SNAPSHOT_REQUEST in src/ops/snapshot.ts names no backup: HQ hasn't been asked to make one."; exit 1; }
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow hq-snapshot.yml --status success --limit 50 --json displayTitle,createdAt,url \
+            | jq --arg id "$id" '[.[] | select(.displayTitle == "HQ snapshot check " + $id)][0] // empty' > last.json
+          [ -s last.json ] || { echo "No successful HQ snapshot check of $id yet: run that first."; exit 1; }
+          when=$(jq -r .createdAt last.json)
           age=$(( ( $(date +%s) - $(date -d "$when" +%s) ) / 86400 ))
-          echo "Latest good snapshot: $when ($(jq -r '.[0].url' last.json))"
-          [ "$age" -le 7 ] || { echo "That snapshot is $age days old: take a fresh one first."; exit 1; }
+          echo "Backup $id was checked on $when ($(jq -r .url last.json))."
+          [ "$age" -le 7 ] || { echo "That check is $age days old: take a fresh backup first."; exit 1; }
       - name: Shut down
         env:
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
