@@ -30,10 +30,13 @@ back.
   The "Payment links" workflow (`scripts/payment-links.ts`) lists them, or makes any
   that are missing. The EmailFirst site has no sign-up button; it books a chat.
 - **Forms** (the Linkn and Online Business Builder profile reviews, and the Good
-  Questions AI readiness report) use Netlify Forms. Each entry is emailed to
-  info@felixclarke.com and is also listed in Netlify under Forms. The AI readiness page
-  tells people their written report will follow within two working days, so Felix
-  sends it by hand.
+  Questions "ask for help" form) use Netlify Forms. Each entry is emailed to
+  info@felixclarke.com and is also listed in Netlify under Forms.
+- **The Good Questions AI readiness report** is the result on the page itself, with a
+  button to print it or save it as a PDF. Nothing is emailed. Only people who ask for
+  help send their details and scores, and Felix gets back to them within two working
+  days. While HQ was running it emailed the report and kept every result for the
+  research; that stopped with HQ.
 - **MailWizz** landing pages and anything already scheduled in MailWizz keep running,
   as they never depended on HQ.
 

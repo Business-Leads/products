@@ -16,12 +16,17 @@ jobs:
         env:
           URLS: ${{ inputs.urls }}
         run: |
-          # A sitemap (…/sitemap.xml) is expanded into the pages it lists (up to 300).
+          # A sitemap (…/sitemap.xml) is expanded into the pages it lists.
           list=""
           for u in $URLS; do
             if [[ "$u" == *sitemap*.xml ]]; then
-              pages=$(curl -sL --max-time 20 "$u" | grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g' | head -300)
-              echo "$u lists $(wc -w <<<"$pages") pages"
+              locs() { curl -sL --max-time 20 "$1" | grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g'; }
+              pages=""
+              for loc in $(locs "$u" | head -300); do
+                # A sitemap index lists further sitemaps: take up to 40 pages from each.
+                if [[ "$loc" == *.xml ]]; then pages="$pages $(locs "$loc" | head -40)"; else pages="$pages $loc"; fi
+              done
+              echo "$u: checking $(wc -w <<<"$pages") pages"
               list="$list $pages"
             else
               list="$list $u"

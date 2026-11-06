@@ -26,13 +26,15 @@ jobs:
             out=$(get "$path"); code=$(tail -n1 <<<"$out"); body=$(sed '$d' <<<"$out")
             echo "GET $path: $code"
             [ "$code" = 200 ] || { echo "  $(head -c 200 <<<"$body")"; continue; }
+            # The field names of each webhook (never their values), then id, host, status and agents only.
+            jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[] | "  fields: \(keys | join(", "))"' <<<"$body"
             # The list, wherever the API puts it; show id, host, status and agent count only.
             jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
-                   | "  \(.id // ._id // "?")  \((.hookUrl // .url // "") | sub("^https?://"; "") | split("/")[0])  \(.status // "" | tostring)  agents=\((.agents // []) | length)"' <<<"$body" || echo "  (unexpected shape: $(jq -c 'keys? // type' <<<"$body"))"
+                   | "  \(.id // ._id // .hookId // .uuid // "?")  \((.hookUrl // .url // "") | sub("^https?://"; "") | split("/")[0])  \(.status // "" | tostring)  agents=\((.agents // []) | length)"' <<<"$body" || echo "  (unexpected shape: $(jq -c 'keys? // type' <<<"$body"))"
             if [ "$CONFIRM" = "DELETE" ]; then
               jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
                      | select((.hookUrl // .url // "") | test("onlinebusinessbuilder\\.co\\.uk|ondigitalocean\\.app|account\\.speedtolead\\.co\\.uk|make\\.com"))
-                     | (.id // ._id)' <<<"$body" | while read -r id; do
+                     | (.id // ._id // .hookId // .uuid)' <<<"$body" | while read -r id; do
                 [ -n "$id" ] || continue
                 del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" "$api$path/$id")
                 echo "  removed $id ($del)"
