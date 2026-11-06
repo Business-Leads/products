@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       urls:
-        description: "Space-separated URLs"
+        description: "Space-separated URLs (prefix js: for pages that need JavaScript)"
         required: true
 jobs:
   read:
@@ -16,7 +16,12 @@ jobs:
           URLS: ${{ inputs.urls }}
         run: |
           pip install -q html2text
+          # A URL starting "js:" is opened in headless Chrome first, for pages that need JavaScript.
           for u in $URLS; do
             echo "=================== $u"
-            curl -sL --max-time 30 "$u" | python3 -c "import sys,html2text; h=html2text.HTML2Text(); h.ignore_images=True; h.body_width=0; print(h.handle(sys.stdin.read())[:60000])"
+            if [[ "$u" == js:* ]]; then
+              timeout 60 google-chrome --headless=new --disable-gpu --no-sandbox --virtual-time-budget=15000 --dump-dom "${u#js:}" 2>/dev/null
+            else
+              curl -sL --max-time 30 "$u"
+            fi | python3 -c "import sys,html2text; h=html2text.HTML2Text(); h.ignore_images=True; h.body_width=0; print(h.handle(sys.stdin.read())[:60000])"
           done
