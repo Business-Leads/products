@@ -55,8 +55,8 @@ if (!SK) {
     const k = `${product} ${s.status}`;
     subs.set(k, (subs.get(k) ?? 0) + 1);
   }
-  say(`Subscriptions started through HQ that are still open: ${subs.size ? [...subs].map(([k, n]) => `\n  ${k}: ${n}`).join("") : "none"}`);
-  if (subs.size) say("  (These keep billing in Stripe after HQ is gone; nobody is told about payments or cancellations.)");
+  say(`Open subscriptions for our products (HQ checkouts and payment links): ${subs.size ? [...subs].map(([k, n]) => `\n  ${k}: ${n}`).join("") : "none"}`);
+  if (subs.size) say("  (These keep billing in Stripe without HQ; Stripe emails receipts, and Felix sees them in Stripe.)");
 
   const links = [];
   for await (const l of stripeAll("/payment_links?active=true")) links.push(l);

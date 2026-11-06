@@ -1,0 +1,25 @@
+# Lists, or creates, the Stripe payment links the product sites use for sign-ups
+# (scripts/payment-links.ts). Prints only the links themselves.
+name: Payment links
+on:
+  workflow_dispatch:
+    inputs:
+      create:
+        description: "Create any missing links (otherwise only lists them)"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Payment links
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: npx tsx scripts/payment-links.ts ${{ inputs.create && '--create' || '' }}
