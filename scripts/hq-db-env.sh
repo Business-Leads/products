@@ -22,7 +22,17 @@ export PGSSLMODE=require
 rm -f cluster.json
 
 owner=$(psql -Atc "SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname = 'app'")
-[ -n "$owner" ] || { echo "HQ's tables aren't in the database yet (no app schema): let HQ start once first."; exit 1; }
+if [ -z "$owner" ]; then
+  echo "HQ's tables aren't in $PGDATABASE (no app schema). What is there:"
+  echo "  schemas: $(psql -Atc "SELECT string_agg(nspname || ' (' || pg_get_userbyid(nspowner) || ')', ', ') FROM pg_namespace WHERE nspname NOT LIKE 'pg\_%' AND nspname <> 'information_schema'")"
+  echo "  schema_migrations tables: $(psql -Atc "SELECT string_agg(n.nspname, ', ') FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'schema_migrations'")"
+  echo "  databases (DO API): $(curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases/$HQ_CLUSTER_ID/dbs" | jq -r '[.dbs[].name] | join(", ")')"
+  echo "  users (DO API): $(curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases/$HQ_CLUSTER_ID/users" | jq -r '[.users[].name] | join(", ")')"
+  echo "  app's database settings (DO API): $(curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/apps?per_page=200" | jq -c '.apps[] | select(.spec.name == "products-hq") | .spec.databases')"
+  echo "  app's database env names: $(curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/apps?per_page=200" | jq -r '.apps[] | select(.spec.name == "products-hq") | [.spec.services[0].envs[] | select(.key | test("DATABASE")) | .key + "=" + (if .type == "SECRET" then "(secret)" else (.value // "") end)] | join(", ")' | sed 's#://[^@ ]*@#://(hidden)@#g')"
+  echo "Let HQ start once first, or check the above."
+  exit 1
+fi
 echo "HQ's tables belong to database user $owner."
 if [ "$owner" != "$PGUSER" ]; then
   curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases/$HQ_CLUSTER_ID/users/$owner" > dbuser.json
