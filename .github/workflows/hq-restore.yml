@@ -36,19 +36,8 @@ jobs:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
-          curl -sf -H "Authorization: Bearer $DO_TOKEN" "https://api.digitalocean.com/v2/databases" \
-            | jq -e '.databases[] | select(.name == "products-hq-db")' > cluster.json \
-            || { echo "No products-hq-db cluster: run the Deploy workflow first."; exit 1; }
-          echo "::add-mask::$(jq -r .connection.password cluster.json)"
-          [ "$(jq -r .status cluster.json)" = online ] || { echo "The database isn't online yet; try again in a few minutes."; exit 1; }
-          export PGHOST=$(jq -r .connection.host cluster.json)
-          export PGPORT=$(jq -r .connection.port cluster.json)
-          export PGUSER=$(jq -r .connection.user cluster.json)
-          export PGPASSWORD=$(jq -r .connection.password cluster.json)
-          export PGDATABASE=$(jq -r .connection.database cluster.json)
-          export PGSSLMODE=require PGOPTIONS='-c search_path=app,public'
-          rm cluster.json
-          V=$(psql -Atc "SHOW server_version_num" | cut -c1-2)
+          source scripts/hq-db-env.sh
+          V=$HQ_PG_VERSION
           BIN=/usr/lib/postgresql/16/bin
           if [ "$V" != "16" ]; then
             sudo apt-get install -y -q postgresql-common > /dev/null
