@@ -33,3 +33,30 @@ jobs:
           publish goodquestions 50b517f9-76d3-451b-ba51-f764bbc53a06
           publish onlinebusinessbuilder 002190b8-b963-4446-a83e-b9b6d5a5af8b
           publish emailfirst 02fa6241-324b-4ffc-bf46-5fce0cee02f0
+      - name: Email form entries
+        # The sites' forms use Netlify Forms (HQ, which used to take them, was shut down
+        # in Nov 2026). Each entry is emailed to FORMS_EMAIL; also listed in Netlify, Forms.
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ inputs.site }}
+          FORMS_EMAIL: info@felixclarke.com
+        run: |
+          set -e
+          api=https://api.netlify.com/api/v1
+          notify() {
+            name="$1"; id="$2"
+            if [ "$SITE" != "all" ] && [ "$SITE" != "$name" ]; then return; fi
+            have=$(curl -sf -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "$api/hooks?site_id=$id" \
+              | jq --arg e "$FORMS_EMAIL" '[.[] | select(.type == "email" and .event == "submission_created" and .data.email == $e)] | length')
+            if [ "$have" = "0" ]; then
+              jq -n --arg e "$FORMS_EMAIL" '{type: "email", event: "submission_created", data: {email: $e}}' \
+                | curl -sf -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" -H "Content-Type: application/json" -d @- "$api/hooks?site_id=$id" > /dev/null
+              echo "$name: form entries will be emailed to $FORMS_EMAIL"
+            else
+              echo "$name: form entries already emailed to $FORMS_EMAIL"
+            fi
+            echo "  forms Netlify found: $(curl -sf -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "$api/sites/$id/forms" | jq -r '[.[] | .name + " (" + (.fields | map(.name) | join(", ")) + ")"] | join("; ")')"
+          }
+          notify linkn 76010523-af1e-4be8-bdc2-342f3c3519e0
+          notify goodquestions 50b517f9-76d3-451b-ba51-f764bbc53a06
+          notify onlinebusinessbuilder 002190b8-b963-4446-a83e-b9b6d5a5af8b
