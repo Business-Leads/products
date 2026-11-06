@@ -1,11 +1,11 @@
-# Lists, or creates, the Stripe payment links the product sites use for sign-ups
-# (scripts/payment-links.ts). Prints only the links themselves.
+# One-off (6 Nov 2026): archives the unused Stripe product and price left by a
+# refused payment-link attempt (scripts/stripe-tidy.mjs). To be removed after use.
 name: Payment links
 on:
   workflow_dispatch:
     inputs:
       create:
-        description: "Create any missing links (otherwise only lists them)"
+        description: "Archive (otherwise only lists)"
         type: boolean
         default: false
 permissions:
@@ -17,9 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
-      - name: Payment links
+        with: { node-version: 22 }
+      - name: Tidy
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        run: npx tsx scripts/payment-links.ts ${{ inputs.create && '--create' || '' }}
+        run: node scripts/stripe-tidy.mjs ${{ inputs.create && '--archive' || '' }}
