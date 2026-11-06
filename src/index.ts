@@ -3,6 +3,7 @@ import { pool } from "./db/index.js";
 import { migrate } from "./db/migrate.js";
 import { startScheduler, stopScheduler } from "./engine/scheduler.js";
 import { buildServer } from "./web/server.js";
+import { makeSnapshot, restoreSnapshot, RESTORE_REQUEST, SNAPSHOT_REQUEST } from "./ops/snapshot.js";
 import { sendPendingInvites } from "./web/team.js";
 
 async function main() {
@@ -10,6 +11,8 @@ async function main() {
   if (isProduction && problems.length) {
     throw new Error(`Refusing to start: ${problems.join("; ")}`);
   }
+  // A requested backup is loaded first, once, so a restarted HQ comes back with its data (paused).
+  if (RESTORE_REQUEST) await restoreSnapshot(RESTORE_REQUEST);
   const applied = await migrate();
   if (applied.length) console.log(`Applied migrations: ${applied.join(", ")}`);
   // Which database HQ is using (host, names and counts only), so backups know where to look.
@@ -30,6 +33,8 @@ async function main() {
 
   const app = await buildServer();
   await app.listen({ port: config.port, host: "0.0.0.0" });
+  // A requested backup is made once, before any jobs run (it pauses HQ first).
+  if (SNAPSHOT_REQUEST) await makeSnapshot(SNAPSHOT_REQUEST).catch((err) => console.log(`HQ snapshot: ${(err as Error).message}`));
   startScheduler();
 
   const shutdown = async () => {

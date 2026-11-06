@@ -1,6 +1,8 @@
-# Loads an HQ snapshot (made by "HQ snapshot", kept as emails in the owner's
-# mailbox) into HQ's database. Run it after the Deploy workflow has created
-# the app and its database again. See RESTART.md.
+# Loads an HQ backup (made by HQ itself, kept as emails in the owner's mailbox)
+# into the products-hq-db cluster from outside. See RESTART.md: the usual way is
+# for HQ to restore itself on start (RESTORE_REQUEST in src/ops/snapshot.ts). Use
+# this only when HQ's database is that cluster (the "HQ database" line in the
+# HQ shutdown dry run shows which database HQ uses).
 # Replaces everything in the database with the snapshot. HQ comes back paused;
 # switch it on in Settings (Switch everything back on) when ready.
 # Prints only row counts and checksums.
@@ -9,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       snapshot:
-        description: 'Snapshot name, e.g. hq-snapshot-20261106-1340, or "latest"'
+        description: 'Snapshot name, e.g. hq-snapshot-20261106-1440, or "latest"'
         default: latest
       confirm:
         description: 'Type RESTORE to replace the database with the snapshot'
@@ -30,7 +32,8 @@ jobs:
         env:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           REPLY_MAILBOX: ${{ secrets.REPLY_MAILBOX }}
-        run: node scripts/hq-snapshot.mjs fetch "${{ inputs.snapshot }}" backup.dump
+          SNAPSHOT: ${{ inputs.snapshot }}
+        run: npx tsx scripts/hq-snapshot.ts fetch "$SNAPSHOT" backup.dump
       - name: Load it into products-hq-db
         env:
           DO_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
