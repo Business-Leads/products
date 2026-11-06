@@ -130,6 +130,27 @@ if (!DO) {
   say(cluster ? `Database cluster ${CLUSTER}: Postgres ${cluster.version}, ${cluster.size}, ${cluster.status}` : `Database cluster ${CLUSTER}: not found`);
   const others = ((await doApi("GET", "/apps?per_page=200")).apps ?? []).filter((a) => a.spec?.name !== APP).map((a) => a.spec?.name);
   if (others.length) say(`Other apps on the account (left alone): ${others.join(", ")}`);
+  // Where HQ's data actually lives (names and dates only).
+  for (const c of (await doApi("GET", "/databases")).databases ?? []) {
+    say(`  cluster ${c.name}: created ${c.created_at}, ${c.engine} ${c.version}, ${c.status}, dbs [${(c.db_names ?? []).join(", ")}], users [${(c.users ?? []).map((u) => u.name).join(", ")}]`);
+  }
+  if (cluster) {
+    const pools = (await doApi("GET", `/databases/${cluster.id}/pools`).catch(() => ({}))).pools ?? [];
+    const fw = (await doApi("GET", `/databases/${cluster.id}/firewall`).catch(() => ({}))).rules ?? [];
+    say(`  ${CLUSTER} pools [${pools.map((p) => `${p.name}->${p.db}`).join(", ")}], trusted sources [${fw.map((r) => `${r.type}:${r.value}`).join(", ")}]`);
+  }
+  if (app) {
+    const full = (await doApi("GET", `/apps/${app.id}`)).app;
+    say(`  app created ${full.created_at}; active deployment ${full.active_deployment?.id ?? "none"} from ${full.active_deployment?.created_at ?? "?"} (${full.active_deployment?.phase ?? "?"})`);
+    say(`  active deployment's databases: ${JSON.stringify(full.active_deployment?.spec?.databases ?? [])}`);
+    say(`  active deployment's database env: ${(full.active_deployment?.spec?.services?.[0]?.envs ?? []).filter((e) => /DATABASE/.test(e.key)).map((e) => `${e.key}=${e.type === "SECRET" ? "(secret)" : String(e.value ?? "").replace(/:\/\/[^@\s]*@/g, "://(hidden)@")}`).join(", ")}`);
+    const deps = (await doApi("GET", `/apps/${app.id}/deployments?per_page=5`)).deployments ?? [];
+    for (const d of deps) say(`  deployment ${d.created_at} ${d.phase} (${d.cause ?? ""})`);
+  }
+  for (const u of ["https://hq.onlinebusinessbuilder.co.uk/healthz"]) {
+    const r = await fetch(u).catch((e) => ({ status: e.message, text: async () => "" }));
+    say(`  ${u}: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  }
   if (DELETE) {
     if (app) {
       await doApi("DELETE", `/apps/${app.id}`);
