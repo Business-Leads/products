@@ -146,6 +146,17 @@ if (!DO) {
     say(`  active deployment's database env: ${(full.active_deployment?.spec?.services?.[0]?.envs ?? []).filter((e) => /DATABASE/.test(e.key)).map((e) => `${e.key}=${e.type === "SECRET" ? "(secret)" : String(e.value ?? "").replace(/:\/\/[^@\s]*@/g, "://(hidden)@")}`).join(", ")}`);
     const deps = (await doApi("GET", `/apps/${app.id}/deployments?per_page=5`)).deployments ?? [];
     for (const d of deps) say(`  deployment ${d.created_at} ${d.phase} (${d.cause ?? ""})`);
+    // HQ logs which database it uses when it starts (host, names and counts only). Only those lines are shown.
+    if (full.active_deployment?.id) {
+      const logs = await doApi("GET", `/apps/${app.id}/deployments/${full.active_deployment.id}/components/web/logs?type=RUN&follow=false`).catch((e) => ({ error: e.message }));
+      const urls = logs.historic_urls ?? (logs.live_url ? [logs.live_url] : []);
+      let found = 0;
+      for (const u of urls) {
+        const text = await fetch(u, { signal: AbortSignal.timeout(20_000) }).then((r) => r.text()).catch(() => "");
+        for (const line of text.split("\n")) if (/HQ database:|Applied migrations:/.test(line)) { say(`  log: ${line.replace(/^.*?(HQ database:|Applied migrations:)/, "$1")}`); found++; }
+      }
+      if (!found) say(`  log: no "HQ database" line yet${logs.error ? ` (${logs.error})` : ""}`);
+    }
   }
   for (const u of ["https://hq.onlinebusinessbuilder.co.uk/healthz"]) {
     const r = await fetch(u).catch((e) => ({ status: e.message, text: async () => "" }));

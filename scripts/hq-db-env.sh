@@ -25,7 +25,7 @@ owner=$(psql -Atc "SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspn
 if [ -z "$owner" ]; then
   echo "HQ's tables aren't in $PGDATABASE (no app schema). What is there:"
   echo "  schemas: $(psql -Atc "SELECT string_agg(nspname || ' (' || pg_get_userbyid(nspowner) || ')', ', ') FROM pg_namespace WHERE nspname NOT LIKE 'pg\_%' AND nspname <> 'information_schema'")"
-  echo "  connected as: $(psql -Atc "SELECT current_user || ' to ' || current_database() || ', server ' || version()")"
+  echo "  connected as: $(psql -Atc "SELECT current_user || ' to ' || current_database() || ' on ' || coalesce(inet_server_addr()::text, '?') || ', server started ' || pg_postmaster_start_time()") (host $PGHOST)"
   echo "  tables per schema: $(psql -Atc "SELECT string_agg(schemaname || '=' || n, ', ') FROM (SELECT schemaname, count(*) n FROM pg_tables GROUP BY 1) t")"
   echo "  other connections: $(psql -Atc "SELECT string_agg(coalesce(usename,'?') || '@' || coalesce(datname,'?') || ' ' || coalesce(application_name,'') || ' ' || coalesce(state,''), '; ') FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND backend_type = 'client backend'")"
   echo "  schema_migrations tables: $(psql -Atc "SELECT string_agg(n.nspname, ', ') FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'schema_migrations'")"
