@@ -1,0 +1,44 @@
+# Removes the GoDaddy DNS records that pointed at the HQ app on DigitalOcean,
+# which was deleted on 6 Nov 2026 (see RESTART.md): the CNAMEs for
+# hq.onlinebusinessbuilder.co.uk and account.<site> on the GoDaddy domains.
+# Only a CNAME whose value is an ondigitalocean.app address is touched; nothing
+# else (no A, MX or TXT records, no other names). Without "DELETE" typed in it
+# only lists what it would remove. The Deploy workflow adds them back on a restart.
+# account.emailfirst.co.uk is in Cloudflare, not GoDaddy, so it isn't covered here.
+name: Remove HQ DNS records
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DELETE to remove them (anything else only lists them)'
+        default: ""
+permissions: {}
+jobs:
+  dns:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: HQ records on GoDaddy
+        env:
+          KEY: ${{ secrets.GODADDY_API_KEY }}
+          SECRET: ${{ secrets.GODADDY_API_SECRET }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -uo pipefail
+          api=https://api.godaddy.com/v1/domains
+          auth="Authorization: sso-key $KEY:$SECRET"
+          for rec in onlinebusinessbuilder.co.uk/hq linkn.co.uk/account speedtolead.co.uk/account goodquestions.co.uk/account onlinebusinessbuilder.co.uk/account; do
+            domain=${rec%/*}; name=${rec#*/}
+            body=$(curl -s -w '\n%{http_code}' -H "$auth" "$api/$domain/records/CNAME/$name")
+            code=$(tail -n1 <<<"$body"); json=$(sed '$d' <<<"$body")
+            [ "$code" = 200 ] || { echo "$name.$domain: GoDaddy said $code"; continue; }
+            value=$(jq -r '.[0].data // empty' <<<"$json")
+            if [ -z "$value" ]; then echo "$name.$domain: no CNAME (nothing to remove)"; continue; fi
+            if [[ "$value" != *ondigitalocean.app* ]]; then echo "$name.$domain: CNAME -> $value is not the HQ app, left alone"; continue; fi
+            if [ "$CONFIRM" = "DELETE" ]; then
+              del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "$auth" "$api/$domain/records/CNAME/$name")
+              echo "$name.$domain: CNAME -> $value removed ($del)"
+            else
+              echo "$name.$domain: CNAME -> $value would be removed"
+            fi
+          done

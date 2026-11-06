@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       urls:
-        description: "Space-separated URLs"
+        description: "Space-separated URLs (a sitemap.xml checks every page it lists)"
         required: true
 permissions: {}
 jobs:
@@ -16,11 +16,22 @@ jobs:
         env:
           URLS: ${{ inputs.urls }}
         run: |
+          # A sitemap (…/sitemap.xml) is expanded into the pages it lists (up to 300).
+          list=""
           for u in $URLS; do
+            if [[ "$u" == *sitemap*.xml ]]; then
+              pages=$(curl -sL --max-time 20 "$u" | grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g' | head -300)
+              echo "$u lists $(wc -w <<<"$pages") pages"
+              list="$list $pages"
+            else
+              list="$list $u"
+            fi
+          done
+          for u in $list; do
             r=$(curl -s -o page.html -L --max-time 20 -w "%{http_code} %{url_effective}" "$u" || echo "000 failed")
             title=$(grep -o '<title>[^<]*' page.html 2>/dev/null | head -1 | sed 's/<title>//')
             echo "$u -> $r | ${title:-no title}"
             # Where the page's sign-up, booking and form links go (public links only).
-            grep -oE '(href|action)="[^"]*(account\.|buy\.stripe\.com|checkout\.stripe\.com|cal\.com|calendly\.com|/buy/|/api/leads|/chat|/login)[^"]*"|fetch\(['"'"'"][^'"'"'"]+' page.html 2>/dev/null \
+            grep -oE '(href|action)="[^"]*(account\.|hq\.onlinebusinessbuilder|buy\.stripe\.com|checkout\.stripe\.com|cal\.com|calendly\.com|/buy/|/api/leads|/chat|/login)[^"]*"|fetch\(['"'"'"][^'"'"'"]+' page.html 2>/dev/null \
               | sed -E 's/[?].*//; s/^(href|action)="//; s/"$//; s/^fetch\(.//' | sort | uniq -c | sed 's/^/    /'
           done

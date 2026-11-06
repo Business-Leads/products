@@ -1,0 +1,42 @@
+# Lists the call webhooks Awaz (Speed to Lead) sends calls to, and with "DELETE"
+# removes the ones that went to HQ (deleted 6 Nov 2026) or to the Make scenario
+# that forwarded calls to HQ. Prints only each webhook's host, never its token.
+name: Awaz hooks
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DELETE to remove the HQ and Make webhooks (anything else only lists)'
+        default: ""
+permissions: {}
+jobs:
+  hooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Awaz call webhooks
+        env:
+          KEY: ${{ secrets.AWAZ_API_KEY }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -uo pipefail
+          api=https://api.awaz.ai/v1
+          get() { curl -s -w '\n%{http_code}' -H "Authorization: Bearer $KEY" -H "Accept: application/json" "$api$1"; }
+          for path in /hooks/calls /hooks; do
+            out=$(get "$path"); code=$(tail -n1 <<<"$out"); body=$(sed '$d' <<<"$out")
+            echo "GET $path: $code"
+            [ "$code" = 200 ] || { echo "  $(head -c 200 <<<"$body")"; continue; }
+            # The list, wherever the API puts it; show id, host, status and agent count only.
+            jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
+                   | "  \(.id // ._id // "?")  \((.hookUrl // .url // "") | sub("^https?://"; "") | split("/")[0])  \(.status // "" | tostring)  agents=\((.agents // []) | length)"' <<<"$body" || echo "  (unexpected shape: $(jq -c 'keys? // type' <<<"$body"))"
+            if [ "$CONFIRM" = "DELETE" ]; then
+              jq -r '(if type == "array" then . else (.items // .data // .hooks // []) end)[]
+                     | select((.hookUrl // .url // "") | test("onlinebusinessbuilder\\.co\\.uk|ondigitalocean\\.app|account\\.speedtolead\\.co\\.uk|make\\.com"))
+                     | (.id // ._id)' <<<"$body" | while read -r id; do
+                [ -n "$id" ] || continue
+                del=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $KEY" "$api$path/$id")
+                echo "  removed $id ($del)"
+              done
+            fi
+            break
+          done

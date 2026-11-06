@@ -46,6 +46,8 @@
   footer { margin-top: 26px; color: var(--muted); font-size: 15px; }
   :focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
   @media (max-width: 600px) { .card { padding: 24px; } .area { grid-template-columns: 110px 1fr 36px; } h1 { font-size: 28px; } }
+  /* Printing (or saving as a PDF) keeps just the report. */
+  @media print { body { background: #fff; font-size: 13pt; } .wrap { padding: 0; } .card { border: 0; padding: 0; } .noprint, form, .back { display: none !important; } .area .track { border: 1px solid #999; } .area .track i { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
 </style>
 </head>
 <body>
@@ -71,20 +73,23 @@
       <div class="areas" id="areas"></div>
       <h2>What to do next</h2>
       <ol class="steps" id="steps"></ol>
+      <p class="muted">A low score is not a verdict. It is a short list of the things worth doing first.</p>
+      <p class="noprint"><button class="btn soft" type="button" id="print">Print or save your report as a PDF</button></p>
       <form id="report" name="ai-readiness" method="POST" data-netlify="true" netlify-honeypot="company-name" novalidate>
         <input type="hidden" name="form-name" value="ai-readiness"><input type="hidden" name="scores"><input type="hidden" name="answers"><input type="hidden" name="ref">
-        <h2>Get your written report</h2>
+        <h2>Would you like help improving your score?</h2>
+        <p>Leave your details and Felix will be in touch within two working days to talk it through. There is no obligation.</p>
         <p class="hp"><label>Leave this empty <input name="company-name" tabindex="-1" autocomplete="off"></label></p>
         <label for="r-name">Your name</label><input type="text" id="r-name" name="name" autocomplete="name">
         <label for="r-email">Email</label><input type="email" id="r-email" name="email" autocomplete="email" required>
         <label for="r-business">Business name <span class="muted">(optional)</span></label><input type="text" id="r-business" name="business" autocomplete="organization">
-        <label class="check"><input type="checkbox" name="wants_help" id="r-help"> <span>I'd like help improving my score. <span class="muted">Leave this unticked and you won't hear from us again.</span></span></label>
-        <button class="btn" type="submit">Email me the report</button>
+        <input type="hidden" name="wants_help" value="yes">
+        <button class="btn" type="submit">Ask for help</button>
         <p class="status" id="status" role="status"></p>
       </form>
     </section>
   </main>
-  <footer>Your answers are combined with everyone else's to show how UK businesses are doing. Published findings are totals and percentages, never named businesses. Good Questions is a trading name of AI Future Technologies Ltd, registered in England and Wales, company number 16785608.</footer>
+  <footer>Your answers stay on this page unless you ask for help, when they are sent to us with your details so we can talk them through. Good Questions is a trading name of AI Future Technologies Ltd, registered in England and Wales, company number 16785608.</footer>
 </div>
 <script>
 (function () {
@@ -154,6 +159,7 @@
     show("result");
   }
   $("start").addEventListener("click", function () { show("quiz"); render(); });
+  $("print").addEventListener("click", function () { window.print(); });
   $("back").addEventListener("click", function () { if (i > 0) { i--; render(); } });
   $("report").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -161,8 +167,8 @@
     if (!f.email.checkValidity()) { status.textContent = "Please enter your email address."; f.email.focus(); return; }
     var btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
     send(f)
-      .then(function (r) { if (!r.ok) throw new Error(); f.innerHTML = '<h2>Thank you</h2><p>Your written report will be emailed to ' + f.email.value.replace(/[<>&"]/g, "") + ' within two working days.</p>'; })
-      .catch(function () { status.textContent = "Sorry, that did not send. Please try again."; btn.disabled = false; btn.textContent = "Email me the report"; });
+      .then(function (r) { if (!r.ok) throw new Error(); f.innerHTML = '<h2>Thank you</h2><p>Felix will be in touch at ' + f.email.value.replace(/[<>&"]/g, "") + ' within two working days.</p>'; })
+      .catch(function () { status.textContent = "Sorry, that did not send. Please try again."; btn.disabled = false; btn.textContent = "Ask for help"; });
   });
 })();
 </script>
