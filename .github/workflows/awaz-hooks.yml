@@ -26,7 +26,10 @@ jobs:
           show() {
             out=$(curl -s -w '\n%{http_code}' -H "Authorization: Bearer $KEY" -H "Accept: application/json" "$api")
             code=$(tail -n1 <<<"$out"); body=$(sed '$d' <<<"$out")
-            url=$(jq -r '(if type == "array" then .[0] else . end) | (.url // .hookUrl // empty)' <<<"$body" 2>/dev/null)
+            # The reply is a list of webhooks, bare or inside items/data/hooks; take the first.
+            url=$(jq -r '(if type == "array" then . elif (.items // .data // .hooks) != null then (.items // .data // .hooks) else [.] end)
+                         | map(.url // .hookUrl // empty) | first // empty' <<<"$body" 2>/dev/null)
+            echo "  reply shape: $(jq -c 'if type == "object" then keys else type end' <<<"$body" 2>/dev/null)"
             echo "GET /v1/hooks/calls: $code, webhook host: $( [ -n "$url" ] && sed -E 's#^https?://##; s#/.*##' <<<"$url" || echo none)"
           }
           show
